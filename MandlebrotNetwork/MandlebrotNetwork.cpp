@@ -24,7 +24,7 @@ int main()
 	Matrix x;
 	Matrix y;
 	int batch_size = 500;
-	int epochs = 100;
+	int epochs = 20;
 	float learning_rate = 0.1f;
 	float validation_split = 0.05f;
 	bool shuffle = true;
@@ -69,7 +69,7 @@ int main()
 		weight_init
 	);
 
-	for (int i = 0; i < 1; i++) {
+	for (int i = 0; i < 10; i++) {
 
 		// Actual dataset, create new one each training session
 		std::tie(x, y) = mandlebrot.make_dataset(200000, 250, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);

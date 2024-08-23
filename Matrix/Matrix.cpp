@@ -5,7 +5,7 @@
 Matrix::Matrix(size_t rows, size_t columns) : RowCount(rows), ColumnCount(columns) {
 	this->matrix = (float*)calloc(RowCount * ColumnCount, sizeof(float));
 }
-Matrix::Matrix(size_t rows, size_t columns, float value) : RowCount(rows), ColumnCount(columns), matrix((float*)malloc(rows* columns * sizeof(float))) {
+Matrix::Matrix(size_t rows, size_t columns, float value) : RowCount(rows), ColumnCount(columns), matrix((float*)malloc(rows * columns * sizeof(float))) {
 	std::fill(matrix, matrix + (RowCount * ColumnCount), value);
 }
 Matrix::Matrix(size_t rows, size_t columns, init initType) : RowCount(rows), ColumnCount(columns), matrix((float*)malloc(rows * columns * sizeof(float))) {
@@ -728,7 +728,7 @@ std::string Matrix::ToString() const {
 	return out;
 }
 std::string Matrix::Size() const {
-	return std::to_string(RowCount).append(" :: ").append(std::to_string(ColumnCount)).append(" :: ").append(std::to_string(RowCount * ColumnCount)).append("\n");
+	return std::to_string(RowCount).append(" :: ").append(std::to_string(ColumnCount)).append("\n");
 }
 
 Matrix Matrix::Combine(Matrix element) {

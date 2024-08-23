@@ -153,6 +153,8 @@ NeuralNetwork::result_matrices NeuralNetwork::forward_propogate(Matrix x, networ
 	for (int i = 0; i < results.total.size(); i++) {
 		results.total[i] = (net.weights[i].dot_product(i == 0 ? x : results.activation[i - 1]) + net.biases[i]);
 		results.activation[i] = i < results.total.size() - 1 ? (results.total[i].*activation_function)() : (results.total[i].*end_activation_function)();
+		//if (i == results.total.size() - 1) { std::cout << results.total.back().SegmentC(0, 5).ToString() << std::endl; }
+		//if (i == 0) { std::cout << results.total[i].SegmentR(0, 5).SegmentC(0, 5).ToString() << std::endl; }
 	}
 	return results;
 }
@@ -160,7 +162,15 @@ NeuralNetwork::result_matrices NeuralNetwork::forward_propogate(Matrix x, networ
 NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Matrix y, float learning_rate, network_structure net, result_matrices results, derivative_matrices deriv) {
 	
 	// Compute loss
-	deriv.d_total[deriv.d_total.size() - 1] = (this->*loss_function)(results.activation.back(), y).Transpose();
+	deriv.d_total[deriv.d_total.size() - 1] = (this->*loss_function)(results.activation.back(), y.Transpose());
+
+	std::cout << "Y: " << y.Transpose().SegmentC(0, 5).ToString();
+	std::cout << "P: " << results.activation.back().SegmentC(0, 5).ToString();
+	std::cout << "L: " << deriv.d_total.back().SegmentC(0, 5).ToString() << std::endl;
+
+	//std::cout << "y: " << y.Size();
+	//std::cout << "p: " << results.activation.back().Size();
+	//std::cout << "l: " << deriv.d_total.back().Size();
 
 	for (int i = deriv.d_total.size() - 1; i > 0; i--) {
 		deriv.d_total[i - 1] = net.weights[i].Transpose().dot_product(deriv.d_total[i]) * (results.total[i - 1].*activation_function_derivative)();
@@ -173,12 +183,13 @@ NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Ma
 
 	for (int i = 0; i < net.weights.size(); i++) {
 
-		if (i == 1) {
-			std::cout << "d_weight[" << i << "]:\n" << deriv.d_weights[i].SegmentR(0, std::min(5, (int)deriv.d_weights[i].RowCount)).SegmentC(0, std::min(5, (int)deriv.d_weights[i].ColumnCount)).ToString() << std::endl;
-			std::cout << "weight[" << i << "]:\n" << net.weights[i].SegmentR(0, std::min(5, (int)net.weights[i].RowCount)).SegmentC(0, std::min(5, (int)net.weights[i].ColumnCount)).ToString() << std::endl;
-		}
+		//if (i == 1) {
+		//	std::cout << "d_weight[" << i << "]:\n" << deriv.d_weights[i].SegmentR(0, std::min(5, (int)deriv.d_weights[i].RowCount)).SegmentC(0, std::min(5, (int)deriv.d_weights[i].ColumnCount)).ToString();
+		//	std::cout << "weight[" << i << "]_b:\n" << net.weights[i].SegmentR(0, std::min(5, (int)net.weights[i].RowCount)).SegmentC(0, std::min(5, (int)net.weights[i].ColumnCount)).ToString();
+		//}
 
 		net.weights[i] -= deriv.d_weights[i].Multiply(learning_rate);
+
 		for (int idx_x = 0; idx_x < net.biases[i].size(); idx_x++) {
 			net.biases[i][idx_x] -= (deriv.d_biases[i][idx_x] * learning_rate);
 		}
