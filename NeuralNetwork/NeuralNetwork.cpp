@@ -151,8 +151,13 @@ std::tuple<Matrix, Matrix, Matrix, Matrix> NeuralNetwork::data_preprocessing(Mat
 
 NeuralNetwork::result_matrices NeuralNetwork::forward_propogate(Matrix x, network_structure net, result_matrices results) {
 	for (int i = 0; i < results.total.size(); i++) {
-		results.total[i] = (net.weights[i].dot_product(i == 0 ? x : results.activation[i - 1]) + net.biases[i]);
+		results.total[i] = (net.weights[i].dot_product(((i == 0) ? x : results.activation[i - 1])) + net.biases[i]);
 		results.activation[i] = i < results.total.size() - 1 ? (results.total[i].*activation_function)() : (results.total[i].*end_activation_function)();
+
+		std::cout << i << ":\n";
+		std::cout << "total: " << results.total[i].SegmentR(0, 1).SegmentC(0, std::min(5, (int)results.total[i].ColumnCount)).ToString();
+		std::cout << "activ: " << results.activation[i].SegmentR(0, 1).SegmentC(0, std::min(5, (int)results.activation[i].ColumnCount)).ToString() << std::endl;
+
 		//if (i == results.total.size() - 1) { std::cout << results.total.back().SegmentC(0, 5).ToString() << std::endl; }
 		//if (i == 0) { std::cout << results.total[i].SegmentR(0, 5).SegmentC(0, 5).ToString() << std::endl; }
 	}
@@ -164,9 +169,9 @@ NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Ma
 	// Compute loss
 	deriv.d_total[deriv.d_total.size() - 1] = (this->*loss_function)(results.activation.back(), y.Transpose());
 
-	std::cout << "Y: " << y.Transpose().SegmentC(0, 5).ToString();
-	std::cout << "P: " << results.activation.back().SegmentC(0, 5).ToString();
-	std::cout << "L: " << deriv.d_total.back().SegmentC(0, 5).ToString() << std::endl;
+	//std::cout << "Y: " << y.Transpose().SegmentC(0, 5).ToString();
+	//std::cout << "P: " << results.activation.back().SegmentC(0, 5).ToString();
+	//std::cout << "L: " << deriv.d_total.back().SegmentC(0, 5).ToString() << std::endl;
 
 	//std::cout << "y: " << y.Size();
 	//std::cout << "p: " << results.activation.back().Size();
