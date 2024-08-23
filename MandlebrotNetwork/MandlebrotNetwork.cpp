@@ -22,7 +22,7 @@ int main()
 	int batch_size = 500;
 	int epochs = 20;
 	float learning_rate = 0.1f;
-	float validation_split = 0.01f;
+	float validation_split = 0.05f;
 	bool shuffle = true;
 	int validation_freq = 5;
 
@@ -38,8 +38,10 @@ int main()
 	float lower_norm = 0.0f;
 	float upper_norm = 1.0f;
 
-	std::tie(x, y) = mandlebrot.make_dataset(20000, 50, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
+	std::tie(x, y) = mandlebrot.make_dataset(100000, 50, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
 	dims[0] = x.RowCount;
+
+	x = x.Transpose();
 
 	std::cout << "X: " << x.Size();
 	std::cout << "Y: " << y.Size();

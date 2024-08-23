@@ -23,12 +23,7 @@ void NeuralNetwork::Compile(loss_metrics loss, loss_metrics metrics, optimizatio
 
 	// Initialization of network matrices
 	for (int i = 0; i < network_dimensions.size() - 1; i++) {
-		if (res_net_layers.find(i) != res_net_layers.end()) {
-			current_network.weights.emplace_back(network_dimensions[i] + network_dimensions[0], network_dimensions[i + 1], weight_initialization);
-		}
-		else {
-			current_network.weights.emplace_back(network_dimensions[i + 1], network_dimensions[i], weight_initialization);
-		}
+		current_network.weights.emplace_back(network_dimensions[i + 1], network_dimensions[i], weight_initialization);
 		current_network.biases.emplace_back(network_dimensions[i + 1], 0);
 	}
 
@@ -71,7 +66,7 @@ NeuralNetwork::training_history NeuralNetwork::Fit(Matrix x_train, Matrix y_trai
 
 		for (int i = 0; i < iterations; i++) {
 
-			Matrix x = x_train.SegmentR((i * batch_size), (batch_size + (i * batch_size)));
+			Matrix x = x_train.SegmentR((i * batch_size), (batch_size + (i * batch_size))).Transpose();
 			Matrix y = y_train.SegmentR((i * batch_size), (batch_size + (i * batch_size)));
 
 			current_results = forward_propogate(x, current_network, current_results);
@@ -117,20 +112,12 @@ std::tuple<NeuralNetwork::result_matrices, NeuralNetwork::derivative_matrices> N
 	result_matrices results;
 	derivative_matrices derivs;
 
-	// Initialize result matrices and derivative matrices in local variables
-	for (int i = 0; i < current_network.weights.size(); i++) {
-		if (res_net_layers.find(i) != res_net_layers.end()) {
-			results.total.emplace_back(batch_size, current_network.weights[i].ColumnCount + network_dimensions[0], 0);
-		}
-		else {
-			results.total.emplace_back(batch_size, current_network.weights[i].ColumnCount, 0);
-		}
-		results.activation.emplace_back(results.total[i].RowCount, results.total[i].ColumnCount, 0);
-		derivs.d_total.emplace_back(results.total[i].RowCount, results.total[i].ColumnCount, 0);
+	results.total = std::vector<Matrix>(current_network.weights.size());
+	results.activation = std::vector<Matrix>(current_network.weights.size());
 
-		derivs.d_weights.emplace_back(current_network.weights[i].RowCount, current_network.weights[i].ColumnCount, 0);
-		derivs.d_biases.emplace_back(current_network.biases[i].size(), 0);
-	}
+	derivs.d_total = std::vector<Matrix>(current_network.weights.size());
+	derivs.d_weights = std::vector<Matrix>(current_network.weights.size());
+	derivs.d_biases = std::vector<std::vector<float>>(current_network.weights.size());
 
 	return std::make_tuple(results, derivs);
 }
@@ -160,27 +147,8 @@ std::tuple<Matrix, Matrix, Matrix, Matrix> NeuralNetwork::data_preprocessing(Mat
 
 
 NeuralNetwork::result_matrices NeuralNetwork::forward_propogate(Matrix x, network_structure net, result_matrices results) {
-
-	std::cout << "\nforward:\n";
-
 	for (int i = 0; i < results.total.size(); i++) {
-		if (res_net_layers.find(i) != res_net_layers.end()) {
-
-			results.total[i].Insert(0, x);
-			results.activation[i].Insert(0, x);
-
-			results.total[i].Insert(x.RowCount, (net.weights[i].dot_product(i == 0 ? x : results.activation[i - 1]) + net.biases[i]).Transpose());
-		}
-		else {
-			std::cout << "total[" << i << "]_b: " << results.total[i].Size();
-			std::cout << "weights[" << i << "]: " << net.weights[i].Size();
-
-			if (i == 0) { std::cout << "input: " << x.Size(); }
-			else { std::cout << "activation[" << i - 1 << "]: " << results.activation[i - 1].Size(); }
-
-			results.total[i] = (net.weights[i].dot_product(i == 0 ? x : results.activation[i - 1]) + net.biases[i]);
-			//results.total[i] = ((i == 0 ? x.dot_product(net.weights[i]) : results.activation[i - 1].dot_product(net.weights[i])) + net.biases[i]);
-		}
+		results.total[i] = (net.weights[i].dot_product(i == 0 ? x : results.activation[i - 1]) + net.biases[i]);
 		results.activation[i] = i < results.total.size() - 1 ? (results.total[i].*activation_function)() : (results.total[i].*end_activation_function)();
 	}
 	return results;
@@ -188,34 +156,15 @@ NeuralNetwork::result_matrices NeuralNetwork::forward_propogate(Matrix x, networ
 
 NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Matrix y, float learning_rate, network_structure net, result_matrices results, derivative_matrices deriv) {
 	
-	std::cout << "\nbackward:\n";
-
 	// Compute loss
-	deriv.d_total[deriv.d_total.size() - 1] = (this->*loss_function)(results.activation.back(), y);
+	deriv.d_total[deriv.d_total.size() - 1] = (this->*loss_function)(results.activation.back(), y).Transpose();
 
 	for (int i = deriv.d_total.size() - 1; i > 0; i--) {
-		if (res_net_layers.find(i) != res_net_layers.end()) {
-			deriv.d_total[i] = ((deriv.d_total[i + 1].dot_product(net.weights[i + 1].SegmentR(x.RowCount))).Transpose() * (results.total[i].SegmentR(x.RowCount).*activation_function_derivative)());
-		}
-		else {
-			deriv.d_total[i - 1] = deriv.d_total[i].dot_product(net.weights[i].Transpose()) * (results.total[i - 1].*activation_function_derivative)();
-
-			if (i == 1) {
-				std::cout << "\ninfo:\n";
-				//std::cout << "d_total[" << i - 1 << "]: " << deriv.d_total[i - 1].SegmentR(0, 5).SegmentC(0, 5).ToString() << std::endl;
-
-				Matrix dot = deriv.d_total[i].dot_product(net.weights[i].Transpose());
-				std::cout << "dot_result:\n" << dot.SegmentR(0, 10).SegmentC(0, 5).ToString() << std::endl;
-
-				std::cout << "d_total[" << i << "]:\n" << deriv.d_total[i].SegmentR(0, 10).SegmentC(0, 5).ToString() << std::endl;
-				std::cout << "weights[" << i << "]:\n" << net.weights[i].Transpose().SegmentR(0, 10).SegmentC(0, 5).ToString() << std::endl;
-				//std::cout << "deriv[" << i - 1 << "]: " << (results.total[i - 1].*activation_function_derivative)().SegmentR(0, 5).SegmentC(0, 5).ToString() << std::endl;
-			}
-		}
+		deriv.d_total[i - 1] = net.weights[i].Transpose().dot_product(deriv.d_total[i]) * (results.total[i - 1].*activation_function_derivative)();
 	}
 
 	for (int i = 0; i < deriv.d_weights.size(); i++) {
-		deriv.d_weights[i] = (i == 0 ? x.Transpose().dot_product(deriv.d_total[i]) : results.activation[i - 1].Transpose().dot_product(deriv.d_total[i])) * (1.0f / x.RowCount);
+		deriv.d_weights[i] = deriv.d_total[i].dot_product(i == 0 ? x.Transpose() : results.activation[i - 1].Transpose()) * (1.0f / x.RowCount);
 		deriv.d_biases[i] = deriv.d_total[i].Multiply(1.0f / x.RowCount).ColumnSums();
 	}
 
@@ -237,19 +186,10 @@ std::string NeuralNetwork::test_network(Matrix x, Matrix y, network_structure ne
 	result_matrices test_results;
 
 	// Initialize test result matrices
-	test_results.total.reserve(current_network.weights.size());
-	test_results.activation.reserve(current_network.weights.size());
+	test_results.total = std::vector<Matrix>(net.weights.size());
+	test_results.activation = std::vector<Matrix>(net.weights.size());
 
-	for (int i = 0; i < current_network.weights.size(); i++) {
-		if (res_net_layers.find(i) != res_net_layers.end()) {
-			test_results.total.emplace_back(current_network.weights[i].ColumnCount + network_dimensions[0], x.ColumnCount);
-		}
-		else {
-			test_results.total.emplace_back(current_network.weights[i].ColumnCount, x.ColumnCount);
-		}
-		test_results.activation.emplace_back(current_network.weights[i].ColumnCount, x.ColumnCount);
-	}
-
+	x = x.Transpose();
 	test_results = forward_propogate(x, net, test_results);
 
 	switch (loss) {

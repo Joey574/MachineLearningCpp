@@ -20,7 +20,7 @@ public:
 		Random, Normalize, Xavier, He
 	};
 
-	Matrix() : RowCount(0), ColumnCount(0) {}
+	Matrix() : RowCount(0), ColumnCount(0), matrix(nullptr) {}
 	Matrix(size_t rows, size_t columns);
 	Matrix(size_t rows, size_t columns, init initType);
 	Matrix(size_t rows, size_t columns, float value);
@@ -306,7 +306,9 @@ public:
 	float* matrix;
 
 	~Matrix() {
-		free(matrix);
+		if (matrix != nullptr) {
+			free(matrix);
+		}
 	}
 
 
