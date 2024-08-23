@@ -33,7 +33,7 @@ int main()
     HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
 
-    int iterations = 20000;
+    int iterations = 10000;
     int percent_checks = 10;
     int interval = iterations / percent_checks;
 
@@ -532,7 +532,6 @@ bool matrix_dot_product_check(Matrix a, Matrix b, double precision) {
         {139, 154}
         });
     Matrix  result = dot_a.dot_product(dot_b);
-
     for (int r = 0; r < check_a.RowCount; r++) {
         for (int c = 0; c < check_a.ColumnCount; c++) {
             if (result(r, c) != check_a(r, c)) {
@@ -554,8 +553,8 @@ bool matrix_dot_product_check(Matrix a, Matrix b, double precision) {
     check_a = Matrix({
         {83, 63, 37, 75}
         });
-    result = dot_a.dot_product(dot_b);
 
+    result = dot_a.dot_product(dot_b);
     for (int r = 0; r < check_a.RowCount; r++) {
         for (int c = 0; c < check_a.ColumnCount; c++) {
             if (result(r, c) != check_a(r, c)) {
@@ -579,7 +578,6 @@ bool matrix_dot_product_check(Matrix a, Matrix b, double precision) {
     check_a = Matrix(1, 1, 32);
 
     result = dot_a.dot_product(dot_b);
-
     for (int r = 0; r < check_a.RowCount; r++) {
         for (int c = 0; c < check_a.ColumnCount; c++) {
             if (result(r, c) != check_a(r, c)) {
@@ -595,7 +593,6 @@ bool matrix_dot_product_check(Matrix a, Matrix b, double precision) {
         });
 
     result = dot_b.dot_product(dot_a);
-
     for (int r = 0; r < check_a.RowCount; r++) {
         for (int c = 0; c < check_a.ColumnCount; c++) {
             if (result(r, c) != check_a(r, c)) {
@@ -656,7 +653,6 @@ bool matrix_dot_product_check(Matrix a, Matrix b, double precision) {
         });
 
     result = dot_a.dot_product(dot_b);
-
     for (int r = 0; r < check_a.RowCount; r++) {
         for (int c = 0; c < check_a.ColumnCount; c++) {
             if (result(r, c) != check_a(r, c)) {

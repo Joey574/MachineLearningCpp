@@ -25,10 +25,10 @@ int main()
 	Matrix y;
 	int batch_size = 500;
 	int epochs = 20;
-	float learning_rate = 0.1f;
+	float learning_rate = 0.05f;
 	float validation_split = 0.05f;
 	bool shuffle = true;
-	int validation_freq = 5;
+	int validation_freq = 1;
 
 	// Feature engineering and dataset processing
 	Mandlebrot mandlebrot;
@@ -69,7 +69,7 @@ int main()
 		weight_init
 	);
 
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < 5; i++) {
 
 		// Actual dataset, create new one each training session
 		std::tie(x, y) = mandlebrot.make_dataset(200000, 250, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
@@ -87,13 +87,13 @@ int main()
 		);
 
 		// Create bmp image of model predictions
-		make_bmp("test_" + std::to_string(i).append(".bmp"), width, height, 0.95f, model, mandlebrot.create_image_features(width, height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
+		make_bmp("NetworkImages/test_" + std::to_string(i).append(".bmp"), width, height, 0.95f, model, mandlebrot.create_image_features(width, height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
 	}
 
 	int f_width = 800;
 	int f_height = 450;
 
-	make_bmp("final", f_width, f_height, 0.95f, model, mandlebrot.create_image_features(f_width, f_height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
+	make_bmp("NetworkImages/final.bmp", f_width, f_height, 0.95f, model, mandlebrot.create_image_features(f_width, f_height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
 }
 
 void make_bmp(std::string filename, int width, int height, float confidence_threshold, NeuralNetwork model, Matrix image_data) {

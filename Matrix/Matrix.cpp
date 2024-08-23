@@ -333,43 +333,6 @@ Matrix Matrix::dot_product(const Matrix& element) const {
 	}
 
 	return mat;
-
-	//Matrix a = element.Transpose();
-
-	//for (int i = 0; i < RowCount; i++) {
-	//	for (int j = 0; j < element.ColumnCount; j++) {
-	//		__m256 sum = _mm256_setzero_ps();
-
-	//		int k = 0;
-	//		for (; k + 8 <= ColumnCount; k += 8) {
-	//			__m256 loaded_a = _mm256_load_ps(&matrix[i * ColumnCount + k]);
-	//			//__m256 loaded_b = _mm256_load_ps(&element.matrix[k * element.ColumnCount + j]);
-	//			__m256 loaded_b = _mm256_load_ps(&a.matrix[k * element.ColumnCount + j]);
-
-	//			sum = _mm256_fmadd_ps(loaded_a, loaded_b, sum);
-	//		}
-
-	//		float result[4];
-
-	//		__m128 _a = _mm256_extractf128_ps(sum, 0);
-	//		__m128 _b = _mm256_extractf128_ps(sum, 1);
-
-	//		_a = _mm_hadd_ps(_a, _a);
-	//		_b = _mm_hadd_ps(_b, _b);
-
-	//		_a = _mm_hadd_ps(_a, _b);
-
-	//		_mm_store_ps(result, _a);
-
-	//		for (; k < ColumnCount; k++) {
-	//			result[0] += matrix[i * ColumnCount + k] * element.matrix[k * element.ColumnCount + j];
-	//		}
-
-	//		mat.matrix[i * mat.ColumnCount + j] = result[0];
-	//	}
-	//}
-
-	//return mat;
 }
 
 std::vector<float> Matrix::log_sum_exp() const noexcept {
