@@ -89,6 +89,11 @@ int main()
 		// Create bmp image of model predictions
 		make_bmp("test_" + std::to_string(i).append(".bmp"), width, height, 0.95f, model, mandlebrot.create_image_features(width, height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
 	}
+
+	int f_width = 800;
+	int f_height = 450;
+
+	make_bmp("final", f_width, f_height, 0.95f, model, mandlebrot.create_image_features(f_width, f_height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
 }
 
 void make_bmp(std::string filename, int width, int height, float confidence_threshold, NeuralNetwork model, Matrix image_data) {

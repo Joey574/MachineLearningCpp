@@ -173,7 +173,7 @@ public:
 	Matrix SoftplusDerivative() const;
 	Matrix SiLUDerivative() const;
 
-	Matrix Transpose();
+	Matrix Transpose() const;
 
 	Matrix Combine(Matrix element);
 	Matrix Join(Matrix element);

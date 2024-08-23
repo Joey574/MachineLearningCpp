@@ -154,12 +154,20 @@ NeuralNetwork::result_matrices NeuralNetwork::forward_propogate(Matrix x, networ
 		results.total[i] = (net.weights[i].dot_product(((i == 0) ? x : results.activation[i - 1])) + net.biases[i]);
 		results.activation[i] = i < results.total.size() - 1 ? (results.total[i].*activation_function)() : (results.total[i].*end_activation_function)();
 
-		std::cout << i << ":\n";
-		std::cout << "total: " << results.total[i].SegmentR(0, 1).SegmentC(0, std::min(5, (int)results.total[i].ColumnCount)).ToString();
-		std::cout << "activ: " << results.activation[i].SegmentR(0, 1).SegmentC(0, std::min(5, (int)results.activation[i].ColumnCount)).ToString() << std::endl;
+		if (i == 1) {
 
-		//if (i == results.total.size() - 1) { std::cout << results.total.back().SegmentC(0, 5).ToString() << std::endl; }
-		//if (i == 0) { std::cout << results.total[i].SegmentR(0, 5).SegmentC(0, 5).ToString() << std::endl; }
+			/*std::cout << "weight: " << net.weights[i].Size();
+			std::cout << "activ_in: " << results.activation[i - 1].Size() << std::endl;
+
+			std::cout << "total: " << results.total[i].Size();
+			std::cout << "actic_out: " << results.activation[i].Size() << std::endl;*/
+
+			/*std::cout << "weights:\n" << net.weights[i].ToString();
+			std::cout << "activ_in:\n" << results.activation[i - 1].SegmentC(0, 1).Transpose().ToString() << std::endl;
+			
+			std::cout << "total:\n" << results.total[i].SegmentC(0, 1).Transpose().ToString();
+			std::cout << "activ_out:\n" << results.activation[i].SegmentC(0, 1).ToString() << std::endl;*/
+		}
 	}
 	return results;
 }

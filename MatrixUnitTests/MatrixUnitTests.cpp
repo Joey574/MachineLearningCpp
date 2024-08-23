@@ -533,8 +533,8 @@ bool matrix_dot_product_check(Matrix a, Matrix b, double precision) {
         });
     Matrix  result = dot_a.dot_product(dot_b);
 
-    for (int r = 0; r < result.RowCount; r++) {
-        for (int c = 0; c < result.ColumnCount; c++) {
+    for (int r = 0; r < check_a.RowCount; r++) {
+        for (int c = 0; c < check_a.ColumnCount; c++) {
             if (result(r, c) != check_a(r, c)) {
                 return false;
             }
@@ -556,8 +556,8 @@ bool matrix_dot_product_check(Matrix a, Matrix b, double precision) {
         });
     result = dot_a.dot_product(dot_b);
 
-    for (int r = 0; r < result.RowCount; r++) {
-        for (int c = 0; c < result.ColumnCount; c++) {
+    for (int r = 0; r < check_a.RowCount; r++) {
+        for (int c = 0; c < check_a.ColumnCount; c++) {
             if (result(r, c) != check_a(r, c)) {
                 return false;
             }
@@ -580,8 +580,8 @@ bool matrix_dot_product_check(Matrix a, Matrix b, double precision) {
 
     result = dot_a.dot_product(dot_b);
 
-    for (int r = 0; r < result.RowCount; r++) {
-        for (int c = 0; c < result.ColumnCount; c++) {
+    for (int r = 0; r < check_a.RowCount; r++) {
+        for (int c = 0; c < check_a.ColumnCount; c++) {
             if (result(r, c) != check_a(r, c)) {
                 return false;
             }
@@ -596,8 +596,8 @@ bool matrix_dot_product_check(Matrix a, Matrix b, double precision) {
 
     result = dot_b.dot_product(dot_a);
 
-    for (int r = 0; r < result.RowCount; r++) {
-        for (int c = 0; c < result.ColumnCount; c++) {
+    for (int r = 0; r < check_a.RowCount; r++) {
+        for (int c = 0; c < check_a.ColumnCount; c++) {
             if (result(r, c) != check_a(r, c)) {
                 return false;
             }
@@ -657,8 +657,8 @@ bool matrix_dot_product_check(Matrix a, Matrix b, double precision) {
 
     result = dot_a.dot_product(dot_b);
 
-    for (int r = 0; r < result.RowCount; r++) {
-        for (int c = 0; c < result.ColumnCount; c++) {
+    for (int r = 0; r < check_a.RowCount; r++) {
+        for (int c = 0; c < check_a.ColumnCount; c++) {
             if (result(r, c) != check_a(r, c)) {
                 return false;
             }
