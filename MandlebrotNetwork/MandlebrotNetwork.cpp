@@ -38,13 +38,10 @@ int main()
 	float lower_norm = 0.0f;
 	float upper_norm = 1.0f;
 
-	std::tie(x, y) = mandlebrot.make_dataset(100000, 50, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
+	std::tie(x, y) = mandlebrot.make_dataset(200000, 50, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
 	dims[0] = x.RowCount;
 
 	x = x.Transpose();
-
-	std::cout << "X: " << x.Size();
-	std::cout << "Y: " << y.Size();
 
 	// Define the model
 	NeuralNetwork model;
