@@ -26,10 +26,7 @@ public:
 	Matrix(size_t rows, size_t columns, float value);
 	Matrix(const std::vector<std::vector<float>>& matrix);
 	Matrix(const float* matrix, size_t rows, size_t columns);
-
-	Matrix(const Matrix& other) : RowCount(other.RowCount), ColumnCount(other.ColumnCount), matrix((float*)malloc((other.RowCount* other.ColumnCount) * sizeof(float))) {
-		std::memcpy(matrix, other.matrix, (RowCount * ColumnCount) * sizeof(float));
-	}
+	Matrix(const Matrix& other);
 
 	std::vector<float> Column(int index) const;
 	std::vector<float> Row(int index) const;
@@ -292,14 +289,16 @@ public:
 	}
 
 	inline Matrix& operator = (const Matrix& other) noexcept {
-		free(matrix);
 		RowCount = other.RowCount;
 		ColumnCount = other.ColumnCount;
 
-		matrix = (float*)malloc((RowCount * ColumnCount) * sizeof(float));
+		if (matrix) {
+			free(matrix);
+		}
+
+		matrix = (float*)malloc(RowCount * ColumnCount * sizeof(float));
 
 		std::memcpy(matrix, other.matrix, RowCount * ColumnCount * sizeof(float));
-
 		return *this;
 	}
 

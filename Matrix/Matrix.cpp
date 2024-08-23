@@ -8,11 +8,9 @@ Matrix::Matrix(size_t rows, size_t columns) : RowCount(rows), ColumnCount(column
 Matrix::Matrix(size_t rows, size_t columns, float value) : RowCount(rows), ColumnCount(columns), matrix((float*)malloc(rows* columns * sizeof(float))) {
 	std::fill(matrix, matrix + (RowCount * ColumnCount), value);
 }
-Matrix::Matrix(size_t rows, size_t columns, init initType) : RowCount(rows), ColumnCount(columns) {
-	float lowerRand = -0.5;
-	float upperRand = 0.5;
-
-	this->matrix = (float*)malloc(RowCount * ColumnCount * sizeof(float));
+Matrix::Matrix(size_t rows, size_t columns, init initType) : RowCount(rows), ColumnCount(columns), matrix((float*)malloc(rows * columns * sizeof(float))) {
+	float lowerRand = -0.5f;
+	float upperRand = 0.5f;
 
 	std::random_device rd;
 	std::mt19937 gen(rd());
@@ -29,8 +27,8 @@ Matrix::Matrix(size_t rows, size_t columns, init initType) : RowCount(rows), Col
 				matrix[r * ColumnCount + c] = dist_x(gen);
 			}
 		}
+		break;
 	}
-							 break;
 	case Matrix::init::He: {
 		std::normal_distribution<float> dist_h(0.0, std::sqrt(2.0f / RowCount));
 
@@ -39,28 +37,28 @@ Matrix::Matrix(size_t rows, size_t columns, init initType) : RowCount(rows), Col
 				matrix[r * ColumnCount + c] = dist_h(gen);
 			}
 		}
+		break;
 	}
-						 break;
 	case Matrix::init::Normalize: {
 		std::uniform_real_distribution<float> dist_n(lowerRand, upperRand);
 
 		for (int r = 0; r < RowCount; r++) {
 			for (int c = 0; c < ColumnCount; c++) {
-				matrix[r * ColumnCount + c] = dist_n(gen);
+				matrix[r * ColumnCount + c] = dist_n(gen) * std::sqrt(1.0f / ColumnCount);
 			}
 		}
+		break;
 	}
-								break;
 	case Matrix::init::Random: {
 		std::uniform_real_distribution<float> dist_r(lowerRand, upperRand);
 
 		for (int r = 0; r < RowCount; r++) {
 			for (int c = 0; c < ColumnCount; c++) {
-				matrix[r * ColumnCount + c] = dist_r(gen) * std::sqrt(1.0f / ColumnCount);
+				matrix[r * ColumnCount + c] = dist_r(gen);
 			}
 		}
+		break;
 	}
-							 break;
 	}
 }
 Matrix::Matrix(const std::vector<std::vector<float>>& matrix) : RowCount(matrix.size()), ColumnCount(matrix[0].size()) {
@@ -74,6 +72,9 @@ Matrix::Matrix(const std::vector<std::vector<float>>& matrix) : RowCount(matrix.
 }
 Matrix::Matrix(const float* matrix, size_t rows, size_t columns) : RowCount(rows), ColumnCount(columns), matrix((float*)malloc(rows* columns * sizeof(float))) {
 std:memcpy(this->matrix, matrix, rows * columns * sizeof(float));
+}
+Matrix::Matrix(const Matrix& other) : RowCount(other.RowCount), ColumnCount(other.ColumnCount), matrix((float*)malloc(RowCount * ColumnCount * sizeof(float))) {
+	std::memcpy(matrix, other.matrix, RowCount * ColumnCount * sizeof(float));
 }
 // Util
 

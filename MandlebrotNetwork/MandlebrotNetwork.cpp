@@ -1,7 +1,11 @@
 #include <iostream>
+#include <atlimage.h>
 
 #include "NeuralNetwork.h"
 #include "Mandlebrot.cpp"
+
+// Prototypes
+void make_bmp(std::string filename, int width, int height, float confidence_threshold, NeuralNetwork model, Matrix image_data);
 
 int main()
 {
@@ -20,7 +24,7 @@ int main()
 	Matrix x;
 	Matrix y;
 	int batch_size = 500;
-	int epochs = 20;
+	int epochs = 100;
 	float learning_rate = 0.1f;
 	float validation_split = 0.05f;
 	bool shuffle = true;
@@ -38,10 +42,12 @@ int main()
 	float lower_norm = 0.0f;
 	float upper_norm = 1.0f;
 
-	std::tie(x, y) = mandlebrot.make_dataset(200000, 50, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
-	dims[0] = x.RowCount;
+	int width = 160;
+	int height = 90;
 
-	x = x.Transpose();
+	// Temp dataset just to get dimensions
+	std::tie(x, y) = mandlebrot.make_dataset(1, 1, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
+	dims[0] = x.ColumnCount;
 
 	// Define the model
 	NeuralNetwork model;
@@ -63,15 +69,50 @@ int main()
 		weight_init
 	);
 
-	// Fit model to training data
-	model.Fit(
-		x,
-		y,
-		batch_size,
-		epochs,
-		learning_rate,
-		validation_split,
-		shuffle,
-		validation_freq
-	);
+	for (int i = 0; i < 1; i++) {
+
+		// Actual dataset, create new one each training session
+		std::tie(x, y) = mandlebrot.make_dataset(200000, 250, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
+
+		// Fit model to training data
+		model.Fit(
+			x,
+			y,
+			batch_size,
+			epochs,
+			learning_rate,
+			validation_split,
+			shuffle,
+			validation_freq
+		);
+
+		// Create bmp image of model predictions
+		make_bmp("test_" + std::to_string(i).append(".bmp"), width, height, 0.95f, model, mandlebrot.create_image_features(width, height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
+	}
+}
+
+void make_bmp(std::string filename, int width, int height, float confidence_threshold, NeuralNetwork model, Matrix image_data) {
+
+	// Convert std::string to wstring with black magic
+	int wideStrLength = MultiByteToWideChar(CP_UTF8, 0, filename.c_str(), -1, nullptr, 0);
+	std::wstring wideStr(wideStrLength, L'\0');
+	MultiByteToWideChar(CP_UTF8, 0, filename.c_str(), -1, &wideStr[0], wideStrLength);
+
+	CImage image;
+	image.Create(width, height, 24);
+
+	Matrix pixel_data = model.Predict(image_data);
+
+	for (int y = 0; y < height; y++) {
+		for (int x = 0; x < width; x++) {
+
+			float color = pixel_data(0, (y * width) + x) * 255.0f;
+			float other = pixel_data(0, (y * width) + x) > confidence_threshold ? 255.0f : 0;
+
+			image.SetPixel(x, y, RGB(color, other, other));
+		}
+	}
+
+	image.Save(wideStr.c_str(), Gdiplus::ImageFormatBMP);
+	image.Destroy();
 }

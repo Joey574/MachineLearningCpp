@@ -17,6 +17,7 @@ bool matrix_dot_product_check(Matrix a, Matrix b, double precision);
 bool matrix_sums_check(Matrix a, Matrix b, double precision);
 bool matrix_set_check(Matrix a, Matrix b, double precision);
 bool matrix_segment_check(Matrix a, Matrix b, double precision);
+bool matrix_equal_operator_check(Matrix a, Matrix b, double precision);
 
 bool is_near(float a, float b, double precision);
 
@@ -80,6 +81,7 @@ int main()
     bool matrix_sum_test = run_test(&matrix_sums_check, "Matrix sums test: ", iterations, percent_checks, a, b, precision);
     bool matrix_set_test = run_test(&matrix_set_check, "Matrix set row/col test: ", iterations, percent_checks, a, b, precision);
     bool matrix_segment_test = run_test(&matrix_segment_check, "Matrix segment test: ", iterations, percent_checks, a, b, precision);
+    bool matrix_equal_operator_test = run_test(&matrix_equal_operator_check, "Matrix equal operator test: ", iterations, percent_checks, a, b, precision);
 
    
 
@@ -116,6 +118,9 @@ int main()
 
     SetConsoleTextAttribute(hConsole, matrix_segment_test ? GREEN_TEXT : RED_TEXT);
     std::cout << "\tMatrix segment test: " << (matrix_segment_test ? "passed" : "failed") << std::endl;
+
+    SetConsoleTextAttribute(hConsole, matrix_equal_operator_test ? GREEN_TEXT : RED_TEXT);
+    std::cout << "\tMatrix equal operator test: " << (matrix_equal_operator_test ? "passed" : "failed") << std::endl;
 
 
     SetConsoleTextAttribute(hConsole, WHITE_TEXT);
@@ -737,6 +742,61 @@ bool matrix_segment_check(Matrix a, Matrix b, double precision) {
     for (int r = 0; r < a.RowCount; r++) {
         for (int c = 0; c < result.ColumnCount; c++) {
             if (result(r, c) != a(r, c)) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+bool matrix_equal_operator_check(Matrix a, Matrix b, double precision) {
+
+    Matrix original = a;
+
+    for (int r = 0; r < a.RowCount; r++) {
+        for (int c = 0; c < a.ColumnCount; c++) {
+            if (original(r, c) != a(r, c)) {
+                return false;
+            }
+        }
+    }
+
+    original = a;
+    a -= b;
+    for (int r = 0; r < a.RowCount; r++) {
+        for (int c = 0; c < a.ColumnCount; c++) {
+            if (original(r, c) - b(r, c) != a(r, c)) {
+                return false;
+            }
+        }
+    }
+
+    original = a;
+    a += b;
+    for (int r = 0; r < a.RowCount; r++) {
+        for (int c = 0; c < a.ColumnCount; c++) {
+            if (original(r, c) + b(r, c) != a(r, c)) {
+                return false;
+            }
+        }
+    }
+
+    original = a;
+    a *= b;
+    for (int r = 0; r < a.RowCount; r++) {
+        for (int c = 0; c < a.ColumnCount; c++) {
+            if (original(r, c) * b(r, c) != a(r, c)) {
+                return false;
+            }
+        }
+    }
+
+    original = a;
+    a /= b;
+    for (int r = 0; r < a.RowCount; r++) {
+        for (int c = 0; c < a.ColumnCount; c++) {
+            if (original(r, c) / b(r, c) != a(r, c)) {
                 return false;
             }
         }

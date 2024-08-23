@@ -97,11 +97,14 @@ NeuralNetwork::training_history NeuralNetwork::Fit(Matrix x_train, Matrix y_trai
 }
 
 Matrix NeuralNetwork::Predict(Matrix x_test) {
+
 	result_matrices test_results;
-	derivative_matrices t;
 
-	std::tie(test_results, t) = initialize_result_matrices(x_test.RowCount);
+	// Initialize test result matrices
+	test_results.total = std::vector<Matrix>(current_network.weights.size());
+	test_results.activation = std::vector<Matrix>(current_network.weights.size());
 
+	x_test = x_test.Transpose();
 	test_results = forward_propogate(x_test, current_network, test_results);
 
 	return test_results.activation.back();
@@ -169,6 +172,12 @@ NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Ma
 	}
 
 	for (int i = 0; i < net.weights.size(); i++) {
+
+		if (i == 1) {
+			std::cout << "d_weight[" << i << "]:\n" << deriv.d_weights[i].SegmentR(0, std::min(5, (int)deriv.d_weights[i].RowCount)).SegmentC(0, std::min(5, (int)deriv.d_weights[i].ColumnCount)).ToString() << std::endl;
+			std::cout << "weight[" << i << "]:\n" << net.weights[i].SegmentR(0, std::min(5, (int)net.weights[i].RowCount)).SegmentC(0, std::min(5, (int)net.weights[i].ColumnCount)).ToString() << std::endl;
+		}
+
 		net.weights[i] -= deriv.d_weights[i].Multiply(learning_rate);
 		for (int idx_x = 0; idx_x < net.biases[i].size(); idx_x++) {
 			net.biases[i][idx_x] -= (deriv.d_biases[i][idx_x] * learning_rate);
