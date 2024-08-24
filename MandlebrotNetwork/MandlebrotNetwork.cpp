@@ -9,6 +9,8 @@ void make_bmp(std::string filename, int width, int height, float confidence_thre
 
 int main()
 {
+	srand(time(0));
+
 	// Model definitions
 	std::vector<int> dims = { 2, 32, 1 };
 	std::unordered_set<int> res = {  };
@@ -24,8 +26,8 @@ int main()
 	Matrix x;
 	Matrix y;
 	int batch_size = 500;
-	int epochs = 20;
-	float learning_rate = 0.05f;
+	int epochs = 10;
+	float learning_rate = 0.025f;
 	float validation_split = 0.05f;
 	bool shuffle = true;
 	int validation_freq = 1;
@@ -69,7 +71,8 @@ int main()
 		weight_init
 	);
 
-	for (int i = 0; i < 5; i++) {
+
+	for (int i = 0; i < 20; i++) {
 
 		// Actual dataset, create new one each training session
 		std::tie(x, y) = mandlebrot.make_dataset(200000, 250, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);

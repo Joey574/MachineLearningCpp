@@ -291,13 +291,9 @@ Matrix Matrix::dot_product(const Matrix& element) const {
 
 	/*for (int i = 0; i < RowCount; i++) {
 		mat.SetRow(i, element.Multiply(this->Row(i)).ColumnSums());
-	}
+	}*/
 
-	return mat;*/
-
-
-	for (int c = 0; c < element.ColumnCount; c++) {
-
+	/*for (int c = 0; c < element.ColumnCount; c++) {
 		std::vector<float> column = element.Column(c);
 
 		for (int r = 0; r < RowCount; r++) {
@@ -329,6 +325,26 @@ Matrix Matrix::dot_product(const Matrix& element) const {
 			}
 
 			mat.matrix[r * mat.ColumnCount + c] = result[0];
+		}
+	}*/
+
+	for (int r = 0; r < RowCount; r++) {
+
+		for (int k = 0; k < element.RowCount; k++) {
+			__m256 scalar = _mm256_set1_ps(matrix[r * ColumnCount + k]);
+
+			int c = 0;
+			for (; c + 8 <= element.ColumnCount; c += 8) {
+
+				__m256 loaded_a = _mm256_load_ps(&element.matrix[k * element.ColumnCount + c]);
+				__m256 loaded_b = _mm256_load_ps(&mat.matrix[r * element.ColumnCount + c]);
+
+				_mm256_store_ps(&mat.matrix[r * element.ColumnCount + c], _mm256_fmadd_ps(loaded_a, scalar, loaded_b));
+			}
+
+			for (; c < element.ColumnCount; c++) {
+				mat.matrix[r * element.ColumnCount + c] += matrix[r * ColumnCount + k] * element.matrix[k * element.ColumnCount + c];
+			}
 		}
 	}
 
