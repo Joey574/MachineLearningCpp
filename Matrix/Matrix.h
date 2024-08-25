@@ -36,6 +36,10 @@ public:
 	void SetRow(int index, const std::vector<float>& row);
 	void SetRow(int index, const std::vector<int>& row);
 
+	void add_row(float* row);
+	void add_row(const std::vector<float>& row);
+	void add_row(const std::vector<int>& row);
+
 	Matrix SegmentR(int startRow, int endRow) const;
 	Matrix SegmentR(int startRow) const;
 

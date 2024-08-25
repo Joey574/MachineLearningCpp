@@ -78,23 +78,42 @@ Matrix::Matrix(const Matrix& other) : RowCount(other.RowCount), ColumnCount(othe
 }
 // Util
 
-void Matrix::SetColumn(int index, const std::vector<float>& vector) {
+void Matrix::SetColumn(int index, const std::vector<float>& column) {
 	for (int i = 0; i < RowCount; i++) {
-		matrix[i * ColumnCount + index] = vector[i];
+		matrix[i * ColumnCount + index] = column[i];
 	}
 }
-void Matrix::SetColumn(int index, const std::vector<int>& vector) {
+void Matrix::SetColumn(int index, const std::vector<int>& column) {
 	for (int i = 0; i < RowCount; i++) {
-		matrix[i * ColumnCount + index] = vector[i];
+		matrix[i * ColumnCount + index] = column[i];
 	}
 }
 
-void Matrix::SetRow(int index, const std::vector<float>& vector) {
-	std::memcpy(matrix + (index * ColumnCount), vector.data(), ColumnCount * sizeof(float));
+void Matrix::SetRow(int index, const std::vector<float>& row) {
+	std::memcpy(matrix + (index * ColumnCount), row.data(), ColumnCount * sizeof(float));
 }
-void Matrix::SetRow(int index, const std::vector<int>& vector) {
+void Matrix::SetRow(int index, const std::vector<int>& row) {
 	for (int i = 0; i < ColumnCount; i++) {
-		matrix[index * ColumnCount + i] = vector[i];
+		matrix[index * ColumnCount + i] = row[i];
+	}
+}
+
+void Matrix::add_row(float* row) {
+	RowCount++;
+	matrix = (float*)realloc(matrix, RowCount * ColumnCount * sizeof(float));
+	std::memcpy(matrix + ((RowCount - 1) * ColumnCount), row, ColumnCount * sizeof(float));
+}
+void Matrix::add_row(const std::vector<float>& row) {
+	RowCount++;
+	matrix = (float*)realloc(matrix, RowCount * ColumnCount * sizeof(float));
+	std::memcpy(matrix + ((RowCount - 1) * ColumnCount), row.data(), ColumnCount * sizeof(float));
+}
+void Matrix::add_row(const std::vector<int>& row) {
+	RowCount++;
+	matrix = (float*)realloc(matrix, RowCount * ColumnCount * sizeof(float));
+
+	for (int i = 0; i < ColumnCount; i++) {
+		matrix[(RowCount - 1) * ColumnCount + i] = row[i];
 	}
 }
 
