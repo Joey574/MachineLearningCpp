@@ -3,7 +3,7 @@
 
 #include "Matrix.h"
 
-static class Mandlebrot {
+class Mandlebrot {
 public:
 
 	/// <summary>

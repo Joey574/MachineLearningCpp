@@ -10,7 +10,7 @@ public:
 
 	// Network Enums
 	static enum class loss_metrics {
-		none, mse, mae
+		none, mse, mae, one_hot, accuracy
 	};
 	static enum class optimization_technique {
 		none
@@ -42,6 +42,8 @@ public:
 	training_history Fit(
 		Matrix x_train,
 		Matrix y_train,
+		Matrix x_valid,
+		Matrix y_valid,
 		int batch_size,
 		int epochs,
 		float learning_rate,
@@ -52,7 +54,7 @@ public:
 
 	std::tuple<Matrix, Matrix> Shuffle(Matrix x, Matrix y);
 
-	std::string Evaluate(Matrix x_train, Matrix y_train);
+	std::string Evaluate(Matrix x_test, Matrix y_test);
 
 	Matrix Predict(Matrix x_test);
 
@@ -79,12 +81,12 @@ private:
 	Matrix(Matrix::* activation_function_derivative)() const;
 
 	Matrix(NeuralNetwork::* loss_function)(Matrix final_activation, Matrix labels);
+	Matrix(NeuralNetwork::* metric_function)(Matrix final_activation, Matrix labels);
 	loss_metrics loss;
+	loss_metrics metric;
 
 	// Network
 	network_structure current_network;
-	//result_matrices current_results;
-	//derivative_matrices current_derivs;
 
 	std::vector<int> network_dimensions;
 
@@ -92,7 +94,7 @@ private:
 	std::unordered_set<int> batch_norm_layers;
 
 	std::tuple<result_matrices, derivative_matrices> initialize_result_matrices(int batch_size);
-	std::tuple<Matrix, Matrix, Matrix, Matrix> data_preprocessing(Matrix x_train, Matrix y_train, bool shuffle, float validation_split);
+	std::tuple<Matrix, Matrix, Matrix, Matrix> data_preprocessing(Matrix x_train, Matrix y_train, Matrix x_valid, Matrix y_valid, bool shuffle, float validation_split);
 
 	result_matrices forward_propogate(Matrix x, network_structure net, result_matrices results);
 	network_structure backward_propogate(Matrix x, Matrix y, float learning_rate, network_structure net, result_matrices results, derivative_matrices deriv);
@@ -100,6 +102,8 @@ private:
 
 	Matrix mse_loss(Matrix final_activation, Matrix labels);
 	Matrix mae_loss(Matrix final_activation, Matrix labels);
+	Matrix one_hot(Matrix final_activation, Matrix labels);
+	Matrix accuracy(Matrix final_activation, Matrix labels);
 
 	std::string clean_time(double time);
 };

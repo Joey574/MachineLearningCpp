@@ -28,6 +28,7 @@ void NeuralNetwork::Compile(loss_metrics loss, loss_metrics metrics, optimizatio
 	}
 
 	this->loss = loss;
+	this->metric = metrics;
 	switch (loss) {
 	case loss_metrics::mse:
 		loss_function = &NeuralNetwork::mse_loss;
@@ -35,12 +36,32 @@ void NeuralNetwork::Compile(loss_metrics loss, loss_metrics metrics, optimizatio
 	case loss_metrics::mae:
 		loss_function = &NeuralNetwork::mae_loss;
 		break;
+	case loss_metrics::one_hot:
+		loss_function = &NeuralNetwork::one_hot;
+		break;
+	case loss_metrics::accuracy:
+		break;
+	}
+
+	switch (metric) {
+	case loss_metrics::mse:
+		metric_function = &NeuralNetwork::mse_loss;
+		break;
+	case loss_metrics::mae:
+		metric_function = &NeuralNetwork::mae_loss;
+		break;
+	case loss_metrics::one_hot:
+
+		break;
+	case loss_metrics::accuracy:
+		metric_function = &NeuralNetwork::accuracy;
+		break;
 	}
 
 	std::cout << "Status: network_compiled\n";
 }
 
-NeuralNetwork::training_history NeuralNetwork::Fit(Matrix x_train, Matrix y_train, int batch_size, int epochs, float learning_rate, float validation_split, bool shuffle, int validation_freq) {
+NeuralNetwork::training_history NeuralNetwork::Fit(Matrix x_train, Matrix y_train, Matrix x_valid, Matrix y_valid, int batch_size, int epochs, float learning_rate, float validation_split, bool shuffle, int validation_freq) {
 	std::cout << "Status: network_training\n";
 
 	auto start_time = std::chrono::high_resolution_clock::now();
@@ -51,15 +72,16 @@ NeuralNetwork::training_history NeuralNetwork::Fit(Matrix x_train, Matrix y_trai
 
 	training_history history;
 
-	Matrix x_test;
-	Matrix y_test;
+	// If validation data is provided, don't split training data
+	if (x_valid.matrix && y_valid.matrix) {
+		validation_split = 0.0f;
+	}
 
 	std::tie(current_results, current_derivs) = initialize_result_matrices(batch_size);
 
-	std::tie(x_train, y_train, x_test, y_test) = data_preprocessing(x_train, y_train, shuffle, validation_split);
+	std::tie(x_train, y_train, x_valid, y_valid) = data_preprocessing(x_train, y_train, x_valid, y_valid, shuffle, validation_split);
 
 	const int iterations = x_train.RowCount / batch_size;
-
 	for (int e = 0; e < epochs; e++) {
 
 		auto epoch_start_time = std::chrono::high_resolution_clock::now();
@@ -75,8 +97,8 @@ NeuralNetwork::training_history NeuralNetwork::Fit(Matrix x_train, Matrix y_trai
 
 		// Test network every n epochs
 		std::string out;
-		if (e % validation_freq == validation_freq - 1) {
-			std::string score = test_network(x_test, y_test, current_network);
+		if (e % validation_freq == 0) {
+			std::string score = test_network(x_valid, y_valid, current_network);
 
 			time = std::chrono::high_resolution_clock::now() - epoch_start_time;
 			std::cout << "Epoch: " << e << " Time: " << clean_time(time.count()) << " " << score << std::endl;
@@ -110,6 +132,9 @@ Matrix NeuralNetwork::Predict(Matrix x_test) {
 	return test_results.activation.back();
 }
 
+std::string NeuralNetwork::Evaluate(Matrix x_test, Matrix y_test) {
+	return test_network(x_test, y_test, current_network);
+}
 
 std::tuple<NeuralNetwork::result_matrices, NeuralNetwork::derivative_matrices> NeuralNetwork::initialize_result_matrices(int batch_size) {
 	result_matrices results;
@@ -125,10 +150,7 @@ std::tuple<NeuralNetwork::result_matrices, NeuralNetwork::derivative_matrices> N
 	return std::make_tuple(results, derivs);
 }
 
-std::tuple<Matrix, Matrix, Matrix, Matrix> NeuralNetwork::data_preprocessing(Matrix x_train, Matrix y_train, bool shuffle, float validation_split) {
-	Matrix x_test;
-	Matrix y_test;
-
+std::tuple<Matrix, Matrix, Matrix, Matrix> NeuralNetwork::data_preprocessing(Matrix x_train, Matrix y_train, Matrix x_valid, Matrix y_valid, bool shuffle, float validation_split) {
 	Matrix x;
 	Matrix y;
 
@@ -139,13 +161,16 @@ std::tuple<Matrix, Matrix, Matrix, Matrix> NeuralNetwork::data_preprocessing(Mat
 	if (validation_split > 0.0f) {
 		int elements = (float)x_train.RowCount * validation_split;
 
-		x_test = x_train.SegmentR(x_train.RowCount - elements);
-		y_test = y_train.SegmentR(x_train.RowCount - elements);
+		x_valid = x_train.SegmentR(x_train.RowCount - elements);
+		y_valid = y_train.SegmentR(x_train.RowCount - elements);
 
 		x = x_train.SegmentR(0, x_train.RowCount - elements);
 		y = y_train.SegmentR(0, x_train.RowCount - elements);
+	} else {
+		x = x_train;
+		y = y_train;
 	}
-	return std::make_tuple(x, y, x_test, y_test);
+	return std::make_tuple(x, y, x_valid, y_valid);
 }
 
 
@@ -195,21 +220,29 @@ std::string NeuralNetwork::test_network(Matrix x, Matrix y, network_structure ne
 	x = x.Transpose();
 	test_results = forward_propogate(x, net, test_results);
 
-	switch (loss) {
+	switch (metric) {
 	case loss_metrics::mse:
 		out = "mse: ";
 		break;
 	case loss_metrics::mae:
 		out = "mae: ";
 		break;
+	case loss_metrics::accuracy:
+		out = "accuracy: ";
+		break;
 	}
-
+	
 	float total_error = 0.0f;
-	switch (loss) {
+
+	Matrix error = (this->*metric_function)(test_results.activation.back(), y);
+
+	switch (metric) {
 	case loss_metrics::mse:
 	case loss_metrics::mae:
-		Matrix error = (this->*loss_function)(test_results.activation.back(), y);
 		total_error = std::abs(error.RowSums()[0] / (float)error.ColumnCount);
+		break;
+	case loss_metrics::accuracy:
+		total_error = error(0, 0);
 		break;
 	}
 	out = out.append(std::to_string(total_error));
@@ -244,6 +277,23 @@ Matrix NeuralNetwork::mse_loss(Matrix final_activation, Matrix labels) {
 	return (final_activation - labels).Pow(2);
 }
 
+Matrix NeuralNetwork::one_hot(Matrix final_activation, Matrix labels) {
+	for (int c = 0; c < final_activation.ColumnCount; c++) {
+		final_activation(labels(0, c), c)--;
+	}
+	return final_activation;
+}
+
+Matrix NeuralNetwork::accuracy(Matrix final_activation, Matrix labels) {
+	int correct = 0;
+	for (int c = 0; c < final_activation.ColumnCount; c++) {
+		std::vector<float> col = final_activation.Column(c);
+		int max_idx = std::distance(col.begin(), std::max_element(col.begin(), col.end()));
+
+		correct = max_idx == labels(0, c) ? correct + 1 : correct;
+	}
+	return Matrix(1, 1, (float)correct / (float)final_activation.ColumnCount * 100.0f);
+}
 
 std::string NeuralNetwork::clean_time(double time) {
 	const double hour = 3600000.00;
