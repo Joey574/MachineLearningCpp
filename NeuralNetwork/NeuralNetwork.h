@@ -20,7 +20,8 @@ public:
 	struct training_history {
 		std::chrono::duration<double, std::milli> train_time;
 		std::chrono::duration<double, std::milli> epoch_time;
-		float best_score;
+		std::vector<float> metric_history;
+		std::vector<float> loss_history;
 	};
 
 	void Define(
@@ -58,6 +59,10 @@ public:
 
 	Matrix Predict(Matrix x_test);
 
+	void save(std::string filename);
+
+	void load(std::string filename);
+
 private:
 
 	// Network Structs
@@ -75,15 +80,20 @@ private:
 		std::vector<std::vector<float>> d_biases;
 	};
 
+	// Other structs
+	struct metric_data {
+		std::string name;
+		loss_metrics type;
+		Matrix(NeuralNetwork::* compute)(Matrix final_activation, Matrix labels);
+	};
+
 	// Function Pointers
 	Matrix(Matrix::* activation_function)() const;
 	Matrix(Matrix::* end_activation_function)() const;
 	Matrix(Matrix::* activation_function_derivative)() const;
 
-	Matrix(NeuralNetwork::* loss_function)(Matrix final_activation, Matrix labels);
-	Matrix(NeuralNetwork::* metric_function)(Matrix final_activation, Matrix labels);
-	loss_metrics loss;
-	loss_metrics metric;
+	metric_data loss;
+	metric_data metric;
 
 	// Network
 	network_structure current_network;
@@ -99,6 +109,9 @@ private:
 	result_matrices forward_propogate(Matrix x, network_structure net, result_matrices results);
 	network_structure backward_propogate(Matrix x, Matrix y, float learning_rate, network_structure net, result_matrices results, derivative_matrices deriv);
 	std::string test_network(Matrix x, Matrix y, network_structure net);
+
+	void intermediate_history(training_history& history);
+	void final_history(training_history& history, std::chrono::steady_clock::time_point start, std::chrono::steady_clock::time_point end, int epochs);
 
 	Matrix mse_loss(Matrix final_activation, Matrix labels);
 	Matrix mae_loss(Matrix final_activation, Matrix labels);

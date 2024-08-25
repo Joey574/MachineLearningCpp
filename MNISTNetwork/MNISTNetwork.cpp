@@ -8,7 +8,7 @@ int main()
 	srand(time(0));
 
 	// Model definitions
-	std::vector<int> dims = { 784, 32, 32, 10 };
+	std::vector<int> dims = { 784, 128, 10 };
 	std::unordered_set<int> res = {  };
 	std::unordered_set<int> batch_norm = {  };
 
@@ -23,7 +23,7 @@ int main()
 	Matrix y;
 	Matrix x_test;
 	Matrix y_test;
-	int batch_size = 500;
+	int batch_size = 150;
 	int epochs = 50;
 	float learning_rate = 0.1f;
 	float validation_split = 0.0f;
@@ -34,7 +34,7 @@ int main()
 	MNIST mnist;
 
 	int fourier = 0;
-	int taylor = 8;
+	int taylor = 0;
 	int chebyshev = 0;
 	int legendre = 0;
 	int laguarre = 0;
@@ -82,5 +82,6 @@ int main()
 	std::cout << "Training time: " << history.train_time.count() << std::endl;
 	std::cout << "Epoch time: " << history.epoch_time.count() << std::endl;
 
-	std::cout << model.Evaluate(x_test, y_test);
+	std::cout << "train_data: " << model.Evaluate(x, y) << std::endl;
+	std::cout << "test_data: " << model.Evaluate(x_test, y_test) << std::endl;
 }

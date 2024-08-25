@@ -19,7 +19,7 @@ void NeuralNetwork::Define(std::vector<int> dimensions, std::unordered_set<int> 
 	std::cout << "}\n\n";
 }
 
-void NeuralNetwork::Compile(loss_metrics loss, loss_metrics metrics, optimization_technique optimizer, Matrix::init weight_initialization) {
+void NeuralNetwork::Compile(loss_metrics l, loss_metrics m, optimization_technique optimizer, Matrix::init weight_initialization) {
 
 	// Initialization of network matrices
 	for (int i = 0; i < network_dimensions.size() - 1; i++) {
@@ -27,34 +27,39 @@ void NeuralNetwork::Compile(loss_metrics loss, loss_metrics metrics, optimizatio
 		current_network.biases.emplace_back(network_dimensions[i + 1], 0);
 	}
 
-	this->loss = loss;
-	this->metric = metrics;
-	switch (loss) {
+	loss.type = l;
+	switch (l) {
 	case loss_metrics::mse:
-		loss_function = &NeuralNetwork::mse_loss;
+		loss.name = "mse";
+		loss.compute = &NeuralNetwork::mse_loss;
 		break;
 	case loss_metrics::mae:
-		loss_function = &NeuralNetwork::mae_loss;
+		loss.name = "mae";
+		loss.compute = &NeuralNetwork::mae_loss;
 		break;
 	case loss_metrics::one_hot:
-		loss_function = &NeuralNetwork::one_hot;
+		loss.name = "one_hot";
+		loss.compute = &NeuralNetwork::one_hot;
 		break;
 	case loss_metrics::accuracy:
 		break;
 	}
 
-	switch (metric) {
+	metric.type = m;
+	switch (m) {
 	case loss_metrics::mse:
-		metric_function = &NeuralNetwork::mse_loss;
+		metric.name = "mse";
+		metric.compute = &NeuralNetwork::mse_loss;
 		break;
 	case loss_metrics::mae:
-		metric_function = &NeuralNetwork::mae_loss;
+		metric.name = "mae";
+		metric.compute = &NeuralNetwork::mae_loss;
 		break;
 	case loss_metrics::one_hot:
-
 		break;
 	case loss_metrics::accuracy:
-		metric_function = &NeuralNetwork::accuracy;
+		metric.name = "accuracy";
+		metric.compute = &NeuralNetwork::accuracy;
 		break;
 	}
 
@@ -107,11 +112,11 @@ NeuralNetwork::training_history NeuralNetwork::Fit(Matrix x_train, Matrix y_trai
 			time = std::chrono::high_resolution_clock::now() - epoch_start_time;
 			std::cout << "Epoch: " << e << " Time: " << clean_time(time.count()) << std::endl;
 		}
+		intermediate_history(history);
 	}
 	auto end_time = std::chrono::high_resolution_clock::now();
 
-	history.train_time = end_time - start_time;
-	history.epoch_time = (end_time - start_time) / epochs;
+	final_history(history, start_time, end_time, epochs);
 
 	std::cout << "Status: training_complete\n";
 
@@ -185,25 +190,37 @@ NeuralNetwork::result_matrices NeuralNetwork::forward_propogate(Matrix x, networ
 NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Matrix y, float learning_rate, network_structure net, result_matrices results, derivative_matrices deriv) {
 	
 	// Compute loss
-	deriv.d_total[deriv.d_total.size() - 1] = (this->*loss_function)(results.activation.back(), y.Transpose());
+	deriv.d_total[deriv.d_total.size() - 1] = (this->*loss.compute)(results.activation.back(), y.Transpose());
 
 	for (int i = deriv.d_total.size() - 1; i > 0; i--) {
 		deriv.d_total[i - 1] = net.weights[i].Transpose().dot_product(deriv.d_total[i]) * (results.total[i - 1].*activation_function_derivative)();
 	}
 
 	for (int i = 0; i < deriv.d_weights.size(); i++) {
-		deriv.d_weights[i] = deriv.d_total[i].dot_product(i == 0 ? x.Transpose() : results.activation[i - 1].Transpose()) * (1.0f / x.RowCount);
-		deriv.d_biases[i] = deriv.d_total[i].Multiply(1.0f / x.RowCount).ColumnSums();
+		//deriv.d_weights[i] = deriv.d_total[i].dot_product(i == 0 ? x.Transpose() : results.activation[i - 1].Transpose()) * (1.0f / x.RowCount);
+		//deriv.d_biases[i] = deriv.d_total[i].Multiply(1.0f / x.RowCount).ColumnSums();
+		deriv.d_weights[i] = deriv.d_total[i].dot_product(i == 0 ? x.Transpose() : results.activation[i - 1].Transpose());
+		deriv.d_biases[i] = deriv.d_total[i].ColumnSums();
 	}
 
 	for (int i = 0; i < net.weights.size(); i++) {
-		net.weights[i] -= deriv.d_weights[i].Multiply(learning_rate);
-		for (int idx_x = 0; idx_x < net.biases[i].size(); idx_x++) {
-			net.biases[i][idx_x] -= (deriv.d_biases[i][idx_x] * learning_rate);
+		net.weights[i] -= deriv.d_weights[i].Multiply(learning_rate / x.RowCount);
+		for (int k = 0; k < net.biases[i].size(); k++) {
+			net.biases[i][k] -= (deriv.d_biases[i][k] * learning_rate / x.RowCount);
 		}
 	}
 
 	return net;
+}
+
+
+void NeuralNetwork::intermediate_history(NeuralNetwork::training_history& history) {
+
+}
+
+void NeuralNetwork::final_history(NeuralNetwork::training_history& history, std::chrono::steady_clock::time_point start, std::chrono::steady_clock::time_point end, int epochs) {
+	history.epoch_time = (end - start) / epochs;
+	history.train_time = end - start;
 }
 
 
@@ -220,23 +237,13 @@ std::string NeuralNetwork::test_network(Matrix x, Matrix y, network_structure ne
 	x = x.Transpose();
 	test_results = forward_propogate(x, net, test_results);
 
-	switch (metric) {
-	case loss_metrics::mse:
-		out = "mse: ";
-		break;
-	case loss_metrics::mae:
-		out = "mae: ";
-		break;
-	case loss_metrics::accuracy:
-		out = "accuracy: ";
-		break;
-	}
+	out = metric.name + (": ");
 	
 	float total_error = 0.0f;
 
-	Matrix error = (this->*metric_function)(test_results.activation.back(), y);
+	Matrix error = (this->*metric.compute)(test_results.activation.back(), y);
 
-	switch (metric) {
+	switch (metric.type) {
 	case loss_metrics::mse:
 	case loss_metrics::mae:
 		total_error = std::abs(error.RowSums()[0] / (float)error.ColumnCount);
@@ -272,18 +279,15 @@ std::tuple<Matrix, Matrix> NeuralNetwork::Shuffle(Matrix x, Matrix y) {
 Matrix NeuralNetwork::mae_loss(Matrix final_activation, Matrix labels) {
 	return (final_activation - labels);
 }
-
 Matrix NeuralNetwork::mse_loss(Matrix final_activation, Matrix labels) {
 	return (final_activation - labels).Pow(2);
 }
-
 Matrix NeuralNetwork::one_hot(Matrix final_activation, Matrix labels) {
 	for (int c = 0; c < final_activation.ColumnCount; c++) {
 		final_activation(labels(0, c), c)--;
 	}
 	return final_activation;
 }
-
 Matrix NeuralNetwork::accuracy(Matrix final_activation, Matrix labels) {
 	int correct = 0;
 	for (int c = 0; c < final_activation.ColumnCount; c++) {
