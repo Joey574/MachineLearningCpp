@@ -76,8 +76,8 @@ std:memcpy(this->matrix, matrix, rows * columns * sizeof(float));
 Matrix::Matrix(const Matrix& other) : RowCount(other.RowCount), ColumnCount(other.ColumnCount), matrix((float*)malloc(RowCount * ColumnCount * sizeof(float))) {
 	std::memcpy(matrix, other.matrix, RowCount * ColumnCount * sizeof(float));
 }
-// Util
 
+// Util
 void Matrix::SetColumn(int index, const std::vector<float>& column) {
 	for (int i = 0; i < RowCount; i++) {
 		matrix[i * ColumnCount + index] = column[i];

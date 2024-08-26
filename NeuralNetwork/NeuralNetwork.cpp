@@ -79,7 +79,6 @@ NeuralNetwork::training_history NeuralNetwork::Fit(Matrix x_train, Matrix y_trai
 
 	// If validation data is provided, don't split training data
 	if (x_valid.matrix && y_valid.matrix) {
-		std::cout << "val provided\n";
 		validation_split = 0.0f;
 	}
 
@@ -181,13 +180,8 @@ std::tuple<Matrix, Matrix, Matrix, Matrix> NeuralNetwork::data_preprocessing(Mat
 
 
 NeuralNetwork::result_matrices NeuralNetwork::forward_propogate(Matrix x, network_structure net, result_matrices results) {
-
-	std::cout << "\nfp\n";
 	for (int i = 0; i < results.total.size(); i++) {
 		results.total[i] = (net.weights[i].dot_product(((i == 0) ? x : results.activation[i - 1])) + net.biases[i]);
-
-		std::cout << "total: " << results.total[i].contains_nan() << "  weight: " << net.weights[i].contains_nan() << std::endl;
-
 		results.activation[i] = i < results.total.size() - 1 ? (results.total[i].*activation_function)() : (results.total[i].*end_activation_function)();
 	}
 	return results;
@@ -203,8 +197,6 @@ NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Ma
 	}
 
 	for (int i = 0; i < deriv.d_weights.size(); i++) {
-		//deriv.d_weights[i] = deriv.d_total[i].dot_product(i == 0 ? x.Transpose() : results.activation[i - 1].Transpose()) * (1.0f / x.RowCount);
-		//deriv.d_biases[i] = deriv.d_total[i].Multiply(1.0f / x.RowCount).ColumnSums();
 		deriv.d_weights[i] = deriv.d_total[i].dot_product(i == 0 ? x.Transpose() : results.activation[i - 1].Transpose());
 		deriv.d_biases[i] = deriv.d_total[i].ColumnSums();
 	}
@@ -248,11 +240,6 @@ std::string NeuralNetwork::test_network(Matrix x, Matrix y, network_structure ne
 	float total_error = 0.0f;
 
 	Matrix error = (this->*metric.compute)(test_results.activation.back(), y.Transpose());
-
-	std::cout << "X: " << x.contains_nan() << std::endl;
-	std::cout << "Y: " << y.contains_nan() << std::endl;
-	std::cout << "res: " << test_results.activation.back().contains_nan() << std::endl;
-	std::cout << "err: " << error.contains_nan() << std::endl;
 
 	switch (metric.type) {
 	case loss_metrics::mse:

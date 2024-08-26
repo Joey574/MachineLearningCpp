@@ -103,6 +103,7 @@ private:
 	std::unordered_set<int> res_net_layers;
 	std::unordered_set<int> batch_norm_layers;
 
+	// Function Prototypes
 	std::tuple<result_matrices, derivative_matrices> initialize_result_matrices(int batch_size);
 	std::tuple<Matrix, Matrix, Matrix, Matrix> data_preprocessing(Matrix x_train, Matrix y_train, Matrix x_valid, Matrix y_valid, bool shuffle, float validation_split);
 
