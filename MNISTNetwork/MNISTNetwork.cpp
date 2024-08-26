@@ -8,7 +8,7 @@ int main()
 	srand(time(0));
 
 	// Model definitions
-	std::vector<int> dims = { 784, 128, 10 };
+	std::vector<int> dims = { 784, 32, 10 };
 	std::unordered_set<int> res = {  };
 	std::unordered_set<int> batch_norm = {  };
 
@@ -23,7 +23,7 @@ int main()
 	Matrix y;
 	Matrix x_test;
 	Matrix y_test;
-	int batch_size = 150;
+	int batch_size = 500;
 	int epochs = 50;
 	float learning_rate = 0.1f;
 	float validation_split = 0.0f;

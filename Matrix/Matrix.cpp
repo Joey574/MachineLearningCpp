@@ -304,6 +304,7 @@ Matrix Matrix::laguerre_series(int n) const noexcept {
 Matrix Matrix::dot_product(const Matrix& element) const {
 	Matrix mat(RowCount, element.ColumnCount);
 
+	// error handling -> for losers
 	if (ColumnCount != element.RowCount) {
 		std::cout << "size mismatch\n";
 	}

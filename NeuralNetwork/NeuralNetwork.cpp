@@ -79,6 +79,7 @@ NeuralNetwork::training_history NeuralNetwork::Fit(Matrix x_train, Matrix y_trai
 
 	// If validation data is provided, don't split training data
 	if (x_valid.matrix && y_valid.matrix) {
+		std::cout << "val provided\n";
 		validation_split = 0.0f;
 	}
 
@@ -180,8 +181,13 @@ std::tuple<Matrix, Matrix, Matrix, Matrix> NeuralNetwork::data_preprocessing(Mat
 
 
 NeuralNetwork::result_matrices NeuralNetwork::forward_propogate(Matrix x, network_structure net, result_matrices results) {
+
+	std::cout << "\nfp\n";
 	for (int i = 0; i < results.total.size(); i++) {
 		results.total[i] = (net.weights[i].dot_product(((i == 0) ? x : results.activation[i - 1])) + net.biases[i]);
+
+		std::cout << "total: " << results.total[i].contains_nan() << "  weight: " << net.weights[i].contains_nan() << std::endl;
+
 		results.activation[i] = i < results.total.size() - 1 ? (results.total[i].*activation_function)() : (results.total[i].*end_activation_function)();
 	}
 	return results;
@@ -241,12 +247,17 @@ std::string NeuralNetwork::test_network(Matrix x, Matrix y, network_structure ne
 	
 	float total_error = 0.0f;
 
-	Matrix error = (this->*metric.compute)(test_results.activation.back(), y);
+	Matrix error = (this->*metric.compute)(test_results.activation.back(), y.Transpose());
+
+	std::cout << "X: " << x.contains_nan() << std::endl;
+	std::cout << "Y: " << y.contains_nan() << std::endl;
+	std::cout << "res: " << test_results.activation.back().contains_nan() << std::endl;
+	std::cout << "err: " << error.contains_nan() << std::endl;
 
 	switch (metric.type) {
 	case loss_metrics::mse:
 	case loss_metrics::mae:
-		total_error = std::abs(error.RowSums()[0] / (float)error.ColumnCount);
+		total_error = std::abs(std::accumulate(error.matrix, error.matrix + (error.RowCount * error.ColumnCount), 0.0f) / (float)(error.RowCount * error.ColumnCount));
 		break;
 	case loss_metrics::accuracy:
 		total_error = error(0, 0);
@@ -275,6 +286,18 @@ std::tuple<Matrix, Matrix> NeuralNetwork::Shuffle(Matrix x, Matrix y) {
 	return std::make_tuple(x, y);
 }
 
+void NeuralNetwork::save(std::string filename) {
+	//std::ofstream file_writer(filename, std::ios::binary);
+
+	//size_t w_size = current_network.weights.size();
+	//file_writer.write(reinterpret_cast<const char*>(&w_size), sizeof(w_size));
+
+
+}
+
+void NeuralNetwork::load(std::string filename) {
+
+}
 
 Matrix NeuralNetwork::mae_loss(Matrix final_activation, Matrix labels) {
 	return (final_activation - labels);
