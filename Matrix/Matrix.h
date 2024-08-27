@@ -8,7 +8,6 @@
 #include <random>
 #include <immintrin.h> 
 #include <string>
-#include <cmath>
 #include <utility>
 
 class Matrix
@@ -118,34 +117,34 @@ public:
 	std::vector<float> log_sum_exp() const noexcept;
 
 	// Basic Math
-	Matrix Negative() const;
+	inline Matrix Negative() const;
 	Matrix Abs() const;
 
-	Matrix Add(float scalar) const;
-	Matrix Add(const std::vector<float>& scalar) const;
-	Matrix Add(const Matrix& element) const;
+	inline Matrix Add(float scalar) const;
+	inline Matrix Add(const std::vector<float>& scalar) const;
+	inline Matrix Add(const Matrix& element) const;
 
-	Matrix Subtract(float scalar) const;
-	Matrix Subtract(const std::vector<float>& scalar) const;
-	Matrix Subtract(const Matrix& element) const;
+	inline Matrix Subtract(float scalar) const;
+	inline Matrix Subtract(const std::vector<float>& scalar) const;
+	inline Matrix Subtract(const Matrix& element) const;
 
-	Matrix Multiply(float scalar) const;
-	Matrix Multiply(const std::vector<float>& scalar) const;
-	Matrix Multiply(const Matrix& element) const;
+	inline Matrix Multiply(float scalar) const;
+	inline Matrix Multiply(const std::vector<float>& scalar) const;
+	inline Matrix Multiply(const Matrix& element) const;
 
-	Matrix Divide(float scalar) const;
-	Matrix Divide(const std::vector<float>& scalar) const;
-	Matrix Divide(const Matrix& element) const;
+	inline Matrix Divide(float scalar) const;
+	inline Matrix Divide(const std::vector<float>& scalar) const;
+	inline Matrix Divide(const Matrix& element) const;
 
-	Matrix Pow(float scalar) const;
-	Matrix Pow(const std::vector<float>& scalar) const;
-	Matrix Pow(const Matrix& element) const;
+	inline Matrix Pow(float scalar) const;
+	inline Matrix Pow(const std::vector<float>& scalar) const;
+	inline Matrix Pow(const Matrix& element) const;
 
-	Matrix Exp(float base = std::exp(1.0)) const;
-	Matrix Exp(const std::vector<float>& base) const;
-	Matrix Exp(const Matrix& base) const;
+	inline Matrix Exp(float base = std::exp(1.0)) const;
+	inline Matrix Exp(const std::vector<float>& base) const;
+	inline Matrix Exp(const Matrix& base) const;
 
-	Matrix Log() const;
+	inline Matrix Log() const;
 
 	// Trig
 	Matrix Cos() const;
@@ -200,106 +199,92 @@ public:
 	}
 
 	inline Matrix operator + (float scalar) const noexcept {
-		return this->Add(scalar);
+		return single_float_operation(&Matrix::SIMDAdd, &Matrix::RemainderAdd, scalar);
 	}
 	inline Matrix operator + (const std::vector<float>& scalar) const noexcept {
-		return this->Add(scalar);
+		return vector_float_operation(&Matrix::SIMDAdd, &Matrix::RemainderAdd, scalar);
 	}
 	inline Matrix operator + (const Matrix& element) const noexcept {
-		return this->Add(element);
+		return matrix_float_operation(&Matrix::SIMDAdd, &Matrix::RemainderAdd, element);
 	}
 
 	inline Matrix operator - (float scalar) const noexcept {
-		return this->Subtract(scalar);
+		return single_float_operation(&Matrix::SIMDSub, &Matrix::RemainderSub, scalar);
 	}
 	inline Matrix operator - (const std::vector<float>& scalar) const noexcept {
-		return this->Subtract(scalar);
+		return vector_float_operation(&Matrix::SIMDSub, &Matrix::RemainderSub, scalar);
 	}
 	inline Matrix operator - (const Matrix& element) const noexcept {
-		return this->Subtract(element);
+		return matrix_float_operation(&Matrix::SIMDSub, &Matrix::RemainderSub, element);
 	}
 
 	inline Matrix operator * (float scalar) const noexcept {
-		return this->Multiply(scalar);
+		return single_float_operation(&Matrix::SIMDMul, &Matrix::RemainderMul, scalar);
 	}
 	inline Matrix operator * (const std::vector<float>& scalar) const noexcept {
-		return this->Multiply(scalar);
+		return vector_float_operation(&Matrix::SIMDMul, &Matrix::RemainderMul, scalar);
 	}
 	inline Matrix operator * (const Matrix& element) const noexcept {
-		return this->Multiply(element);
+		return matrix_float_operation(&Matrix::SIMDMul, &Matrix::RemainderMul, element);
 	}
 
 	inline Matrix operator / (float scalar) const noexcept {
-		return this->Divide(scalar);
+		return single_float_operation(&Matrix::SIMDDiv, &Matrix::RemainderDiv, scalar);
 	}
 	inline Matrix operator / (const std::vector<float>& scalar) const noexcept {
-		return this->Divide(scalar);
+		return vector_float_operation(&Matrix::SIMDDiv, &Matrix::RemainderDiv, scalar);
 	}
 	inline Matrix operator / (const Matrix& element) const noexcept {
-		return this->Divide(element);
+		return matrix_float_operation(&Matrix::SIMDDiv, &Matrix::RemainderDiv, element);
 	}
 
 
-	inline Matrix& operator += (float scalar) noexcept {
-		*this = this->Add(scalar);
-		return *this;
+	inline void operator += (float scalar) noexcept {
+		single_float_operation_in_place(&Matrix::SIMDAdd, &Matrix::RemainderAdd, scalar);
 	}
-	inline Matrix& operator += (const std::vector<float>& scalar) noexcept {
-		*this = this->Add(scalar);
-		return *this;
+	inline void operator += (const std::vector<float>& scalar) noexcept {
+		vector_float_operation_in_place(&Matrix::SIMDAdd, &Matrix::RemainderAdd, scalar);
 	}
-	inline Matrix& operator += (const Matrix& element) noexcept {
-		*this = this->Add(element);
-		return *this;
+	inline void operator += (const Matrix& element) noexcept {
+		matrix_float_operation_in_place(&Matrix::SIMDAdd, &Matrix::RemainderAdd, element);
 	}
 
-	inline Matrix& operator -= (float scalar) noexcept {
-		*this = this->Subtract(scalar);
-		return *this;
+	inline void operator -= (float scalar) noexcept {
+		single_float_operation_in_place(&Matrix::SIMDSub, &Matrix::RemainderSub, scalar);
 	}
-	inline Matrix& operator -= (const std::vector<float>& scalar) noexcept {
-		*this = this->Subtract(scalar);
-		return *this;
+	inline void operator -= (const std::vector<float>& scalar) noexcept {
+		vector_float_operation_in_place(&Matrix::SIMDSub, &Matrix::RemainderSub, scalar);
 	}
-	inline Matrix& operator -= (const Matrix& element) noexcept {
-		*this = this->Subtract(element);
-		return *this;
+	inline void operator -= (const Matrix& element) noexcept {
+		matrix_float_operation_in_place(&Matrix::SIMDSub, &Matrix::RemainderSub, element);
 	}
 
-	inline Matrix& operator *= (float scalar) noexcept {
-		*this = this->Multiply(scalar);
-		return *this;
+	inline void operator *= (float scalar) noexcept {
+		single_float_operation_in_place(&Matrix::SIMDMul, &Matrix::RemainderMul, scalar);
 	}
-	inline Matrix& operator *= (const std::vector<float>& scalar) noexcept {
-		*this = this->Multiply(scalar);
-		return *this;
+	inline void operator *= (const std::vector<float>& scalar) noexcept {
+		vector_float_operation_in_place(&Matrix::SIMDMul, &Matrix::RemainderMul, scalar);
 	}
-	inline Matrix& operator *= (const Matrix& element) noexcept {
-		*this = this->Multiply(element);
-		return *this;
+	inline void operator *= (const Matrix& element) noexcept {
+		matrix_float_operation_in_place(&Matrix::SIMDMul, &Matrix::RemainderMul, element);
 	}
 
-	inline Matrix& operator /= (float scalar) noexcept {
-		*this = this->Divide(scalar);
-		return *this;
+	inline void operator /= (float scalar) noexcept {
+		single_float_operation_in_place(&Matrix::SIMDDiv, &Matrix::RemainderDiv, scalar);
 	}
-	inline Matrix& operator /= (const std::vector<float>& scalar) noexcept {
-		*this = this->Divide(scalar);
-		return *this;
+	inline void operator /= (const std::vector<float>& scalar) noexcept {
+		vector_float_operation_in_place(&Matrix::SIMDDiv, &Matrix::RemainderDiv, scalar);
 	}
-	inline Matrix& operator /= (const Matrix& element) noexcept {
-		*this = this->Divide(element);
-		return *this;
+	inline void operator /= (const Matrix& element) noexcept {
+		matrix_float_operation_in_place(&Matrix::SIMDDiv, &Matrix::RemainderDiv, element);
 	}
 
 	inline Matrix& operator = (const Matrix& other) noexcept {
+
 		RowCount = other.RowCount;
 		ColumnCount = other.ColumnCount;
 
-		if (matrix) {
-			free(matrix);
-		}
-
+		free(matrix);
 		matrix = (float*)malloc(RowCount * ColumnCount * sizeof(float));
 
 		std::memcpy(matrix, other.matrix, RowCount * ColumnCount * sizeof(float));
@@ -309,7 +294,7 @@ public:
 	float* matrix;
 
 	~Matrix() {
-		if (matrix != nullptr) {
+		if (matrix) {
 			free(matrix);
 		}
 	}
@@ -317,18 +302,18 @@ public:
 
 private:
 
-	Matrix SingleFloatOperation(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo) const noexcept,
+	Matrix single_float_operation(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo) const noexcept,
 		float (Matrix::* remainderOperation)(float a, float b) const noexcept, float scalar) const;
-	Matrix VectorFloatOperation(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo) const noexcept,
+	Matrix vector_float_operation(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo) const noexcept,
 		float (Matrix::* remainderOperation)(float a, float b) const noexcept, const std::vector<float>& scalar) const;
-	Matrix MatrixFloatOperation(__m256 (Matrix::* operation) (__m256 opOne, __m256 opTwo) const noexcept,
+	Matrix matrix_float_operation(__m256 (Matrix::* operation) (__m256 opOne, __m256 opTwo) const noexcept,
 		float (Matrix::* remainderOperation)(float a, float b) const noexcept, const Matrix& element) const;
 
-	Matrix single_float_operation_in_place(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo) const,
+	void single_float_operation_in_place(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo) const,
 		float (Matrix::* remainderOperation)(float a, float b) const, float scalar);
-	Matrix vector_float_operation_in_place(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo) const,
+	void vector_float_operation_in_place(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo) const,
 		float (Matrix::* remainderOperation)(float a, float b) const, const std::vector<float>& scalar);
-	Matrix matrix_float_operation_in_place(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo) const,
+	void matrix_float_operation_in_place(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo) const,
 		float (Matrix::* remainderOperation)(float a, float b) const, const Matrix& element);
 
 	inline __m256 SIMDAdd(__m256 opOne, __m256 opTwo) const noexcept;
@@ -342,12 +327,12 @@ private:
 	inline __m256 SIMDAbs(__m256 opOne, __m256 opTwo) const noexcept;
 
 	// SIMD Trig
-	__m256 SIMDSin(__m256 opOne, __m256 opTwo) const noexcept;
-	__m256 SIMDCos(__m256 opOne, __m256 opTwo) const noexcept;
-	__m256 SIMDSec(__m256 opOne, __m256 opTwo) const noexcept;
-	__m256 SIMDCsc(__m256 opOne, __m256 opTwo) const noexcept;
-	__m256 SIMDAcos(__m256 opOne, __m256 opTwo) const noexcept;
-	__m256 SIMDAsin(__m256 opOne, __m256 opTwo) const noexcept;
+	inline __m256 SIMDSin(__m256 opOne, __m256 opTwo) const noexcept;
+	inline __m256 SIMDCos(__m256 opOne, __m256 opTwo) const noexcept;
+	inline __m256 SIMDSec(__m256 opOne, __m256 opTwo) const noexcept;
+	inline __m256 SIMDCsc(__m256 opOne, __m256 opTwo) const noexcept;
+	inline __m256 SIMDAcos(__m256 opOne, __m256 opTwo) const noexcept;
+	inline __m256 SIMDAsin(__m256 opOne, __m256 opTwo) const noexcept;
 
 	inline float RemainderAdd(float a, float b) const noexcept;
 	inline float RemainderSub(float a, float b) const noexcept;
@@ -360,10 +345,10 @@ private:
 	inline float RemainderAbs(float a, float b) const noexcept;
 
 	// SIMD Trig
-	float RemainderSin(float a, float b) const noexcept;
-	float RemainderCos(float a, float b) const noexcept;
-	float RemainderSec(float a, float b) const noexcept;
-	float RemainderCsc(float a, float b) const noexcept;
-	float RemainderAcos(float a, float b) const noexcept;
-	float RemainderAsin(float a, float b) const noexcept;
+	inline float RemainderSin(float a, float b) const noexcept;
+	inline float RemainderCos(float a, float b) const noexcept;
+	inline float RemainderSec(float a, float b) const noexcept;
+	inline float RemainderCsc(float a, float b) const noexcept;
+	inline float RemainderAcos(float a, float b) const noexcept;
+	inline float RemainderAsin(float a, float b) const noexcept;
 };

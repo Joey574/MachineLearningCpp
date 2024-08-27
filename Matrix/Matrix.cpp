@@ -309,56 +309,23 @@ Matrix Matrix::dot_product(const Matrix& element) const {
 		std::cout << "size mismatch\n";
 	}
 
-	/*for (int i = 0; i < RowCount; i++) {
-		mat.SetRow(i, element.Multiply(this->Row(i)).ColumnSums());
-	}*/
-
-	/*for (int c = 0; c < element.ColumnCount; c++) {
-		std::vector<float> column = element.Column(c);
-
-		for (int r = 0; r < RowCount; r++) {
-			__m256 sum = _mm256_setzero_ps();
-
-
-			int k = 0;
-			for (; k + 8 <= ColumnCount; k += 8) {
-				__m256 loaded_a = _mm256_load_ps(&matrix[r * ColumnCount + k]);
-				__m256 loaded_b = _mm256_load_ps(&column[k]);
-
-				sum = _mm256_fmadd_ps(loaded_a, loaded_b, sum);
-			}
-
-			float result[4];
-
-			__m128 _a = _mm256_extractf128_ps(sum, 0);
-			__m128 _b = _mm256_extractf128_ps(sum, 1);
-
-			_a = _mm_hadd_ps(_a, _a);
-			_b = _mm_hadd_ps(_b, _b);
-
-			_a = _mm_hadd_ps(_a, _b);
-
-			_mm_store_ps(result, _a);
-
-			for (; k < ColumnCount; k++) {
-				result[0] += matrix[r * ColumnCount + k] * element.matrix[k * element.ColumnCount + c];
-			}
-
-			mat.matrix[r * mat.ColumnCount + c] = result[0];
-		}
-	}*/
-
 	for (int r = 0; r < RowCount; r++) {
-
 		for (int k = 0; k < element.RowCount; k++) {
 			__m256 scalar = _mm256_set1_ps(matrix[r * ColumnCount + k]);
 
 			int c = 0;
-			for (; c + 8 <= element.ColumnCount; c += 8) {
+			for (; c + 16 <= element.ColumnCount; c += 8) {
 
 				_mm256_store_ps(&mat.matrix[r * element.ColumnCount + c], 
 					_mm256_fmadd_ps(_mm256_load_ps(
 						&element.matrix[k * element.ColumnCount + c]), 
+						scalar,
+						_mm256_load_ps(&mat.matrix[r * element.ColumnCount + c])));
+
+				c += 8;
+				_mm256_store_ps(&mat.matrix[r * element.ColumnCount + c],
+					_mm256_fmadd_ps(_mm256_load_ps(
+						&element.matrix[k * element.ColumnCount + c]),
 						scalar,
 						_mm256_load_ps(&mat.matrix[r * element.ColumnCount + c])));
 			}
@@ -392,89 +359,89 @@ std::vector<float> Matrix::log_sum_exp() const noexcept {
 }
 
 // Basic Math
-Matrix Matrix::Negative() const {
-	return SingleFloatOperation(&Matrix::SIMDMul, &Matrix::RemainderMul, -1);
+inline Matrix Matrix::Negative() const {
+	return single_float_operation(&Matrix::SIMDMul, &Matrix::RemainderMul, -1);
 }
 Matrix Matrix::Abs() const {
-	return SingleFloatOperation(&Matrix::SIMDAbs, &Matrix::RemainderAbs, 0);
+	return single_float_operation(&Matrix::SIMDAbs, &Matrix::RemainderAbs, 0);
 }
 
-Matrix Matrix::Add(float scalar) const {
-	return SingleFloatOperation(&Matrix::SIMDAdd, &Matrix::RemainderAdd, scalar);
+inline Matrix Matrix::Add(float scalar) const {
+	return single_float_operation(&Matrix::SIMDAdd, &Matrix::RemainderAdd, scalar);
 }
-Matrix Matrix::Add(const std::vector<float>& scalar) const {
-	return VectorFloatOperation(&Matrix::SIMDAdd, &Matrix::RemainderAdd, scalar);
+inline Matrix Matrix::Add(const std::vector<float>& scalar) const {
+	return vector_float_operation(&Matrix::SIMDAdd, &Matrix::RemainderAdd, scalar);
 }
-Matrix Matrix::Add(const Matrix& element) const {
-	return MatrixFloatOperation(&Matrix::SIMDAdd, &Matrix::RemainderAdd, element);
-}
-
-Matrix Matrix::Subtract(float scalar) const {
-	return SingleFloatOperation(&Matrix::SIMDSub, &Matrix::RemainderSub, scalar);
-}
-Matrix Matrix::Subtract(const std::vector<float>& scalar) const {
-	return VectorFloatOperation(&Matrix::SIMDSub, &Matrix::RemainderSub, scalar);
-}
-Matrix Matrix::Subtract(const Matrix& element) const {
-	return MatrixFloatOperation(&Matrix::SIMDSub, &Matrix::RemainderSub, element);
+inline Matrix Matrix::Add(const Matrix& element) const {
+	return matrix_float_operation(&Matrix::SIMDAdd, &Matrix::RemainderAdd, element);
 }
 
-Matrix Matrix::Multiply(float scalar) const {
-	return SingleFloatOperation(&Matrix::SIMDMul, &Matrix::RemainderMul, scalar);
+inline Matrix Matrix::Subtract(float scalar) const {
+	return single_float_operation(&Matrix::SIMDSub, &Matrix::RemainderSub, scalar);
 }
-Matrix Matrix::Multiply(const std::vector<float>& scalar) const {
-	return VectorFloatOperation(&Matrix::SIMDMul, &Matrix::RemainderMul, scalar);
+inline Matrix Matrix::Subtract(const std::vector<float>& scalar) const {
+	return vector_float_operation(&Matrix::SIMDSub, &Matrix::RemainderSub, scalar);
 }
-Matrix Matrix::Multiply(const Matrix& element) const {
-	return MatrixFloatOperation(&Matrix::SIMDMul, &Matrix::RemainderMul, element);
-}
-
-Matrix Matrix::Divide(float scalar) const {
-	return SingleFloatOperation(&Matrix::SIMDDiv, &Matrix::RemainderDiv, scalar);
-}
-Matrix Matrix::Divide(const std::vector<float>& scalar) const {
-	return VectorFloatOperation(&Matrix::SIMDDiv, &Matrix::RemainderDiv, scalar);
-}
-Matrix Matrix::Divide(const Matrix& element) const {
-	return MatrixFloatOperation(&Matrix::SIMDDiv, &Matrix::RemainderDiv, element);
+inline Matrix Matrix::Subtract(const Matrix& element) const {
+	return matrix_float_operation(&Matrix::SIMDSub, &Matrix::RemainderSub, element);
 }
 
-Matrix Matrix::Pow(float scalar) const {
-	return SingleFloatOperation(&Matrix::SIMDPow, &Matrix::RemainderPow, scalar);
+inline Matrix Matrix::Multiply(float scalar) const {
+	return single_float_operation(&Matrix::SIMDMul, &Matrix::RemainderMul, scalar);
 }
-Matrix Matrix::Pow(const std::vector<float>& scalar) const {
-	return VectorFloatOperation(&Matrix::SIMDPow, &Matrix::RemainderPow, scalar);
+inline Matrix Matrix::Multiply(const std::vector<float>& scalar) const {
+	return vector_float_operation(&Matrix::SIMDMul, &Matrix::RemainderMul, scalar);
 }
-Matrix Matrix::Pow(const Matrix& element) const {
-	return MatrixFloatOperation(&Matrix::SIMDPow, &Matrix::RemainderPow, element);
-}
-
-Matrix Matrix::Exp(float base) const {
-	return SingleFloatOperation(&Matrix::SIMDExp, &Matrix::RemainderExp, base);
-}
-Matrix Matrix::Exp(const std::vector<float>& base) const {
-	return VectorFloatOperation(&Matrix::SIMDExp, &Matrix::RemainderExp, base);
-}
-Matrix Matrix::Exp(const Matrix& base) const {
-	return MatrixFloatOperation(&Matrix::SIMDExp, &Matrix::RemainderExp, base);
+inline Matrix Matrix::Multiply(const Matrix& element) const {
+	return matrix_float_operation(&Matrix::SIMDMul, &Matrix::RemainderMul, element);
 }
 
-Matrix Matrix::Log() const {
-	return SingleFloatOperation(&Matrix::SIMDLog, &Matrix::RemainderLog, 0);
+inline Matrix Matrix::Divide(float scalar) const {
+	return single_float_operation(&Matrix::SIMDDiv, &Matrix::RemainderDiv, scalar);
+}
+inline Matrix Matrix::Divide(const std::vector<float>& scalar) const {
+	return vector_float_operation(&Matrix::SIMDDiv, &Matrix::RemainderDiv, scalar);
+}
+inline Matrix Matrix::Divide(const Matrix& element) const {
+	return matrix_float_operation(&Matrix::SIMDDiv, &Matrix::RemainderDiv, element);
+}
+
+inline Matrix Matrix::Pow(float scalar) const {
+	return single_float_operation(&Matrix::SIMDPow, &Matrix::RemainderPow, scalar);
+}
+inline Matrix Matrix::Pow(const std::vector<float>& scalar) const {
+	return vector_float_operation(&Matrix::SIMDPow, &Matrix::RemainderPow, scalar);
+}
+inline Matrix Matrix::Pow(const Matrix& element) const {
+	return matrix_float_operation(&Matrix::SIMDPow, &Matrix::RemainderPow, element);
+}
+
+inline Matrix Matrix::Exp(float base) const {
+	return single_float_operation(&Matrix::SIMDExp, &Matrix::RemainderExp, base);
+}
+inline Matrix Matrix::Exp(const std::vector<float>& base) const {
+	return vector_float_operation(&Matrix::SIMDExp, &Matrix::RemainderExp, base);
+}
+inline Matrix Matrix::Exp(const Matrix& base) const {
+	return matrix_float_operation(&Matrix::SIMDExp, &Matrix::RemainderExp, base);
+}
+
+inline Matrix Matrix::Log() const {
+	return single_float_operation(&Matrix::SIMDLog, &Matrix::RemainderLog, 0);
 }
 
 // Trig
 Matrix Matrix::Cos() const {
-	return this->SingleFloatOperation(&Matrix::SIMDCos, &Matrix::RemainderCos, 0);
+	return this->single_float_operation(&Matrix::SIMDCos, &Matrix::RemainderCos, 0);
 }
 Matrix Matrix::Sin() const {
-	return this->SingleFloatOperation(&Matrix::SIMDSin, &Matrix::RemainderSin, 0);
+	return this->single_float_operation(&Matrix::SIMDSin, &Matrix::RemainderSin, 0);
 }
 Matrix Matrix::Acos() const {
-	return this->SingleFloatOperation(&Matrix::SIMDAcos, &Matrix::RemainderAcos, 0);
+	return this->single_float_operation(&Matrix::SIMDAcos, &Matrix::RemainderAcos, 0);
 }
 Matrix Matrix::Asin() const {
-	return this->SingleFloatOperation(&Matrix::SIMDAsin, &Matrix::RemainderAsin, 0);
+	return this->single_float_operation(&Matrix::SIMDAsin, &Matrix::RemainderAsin, 0);
 }
 
 // Activation Functions
@@ -483,10 +450,10 @@ Matrix Matrix::Sigmoid() const {
 	return one / (this->Negative().Exp() + 1);
 }
 Matrix Matrix::ReLU() const {
-	return SingleFloatOperation(&Matrix::SIMDMax, &Matrix::RemainderMax, 0);
+	return single_float_operation(&Matrix::SIMDMax, &Matrix::RemainderMax, 0);
 }
 Matrix Matrix::LeakyReLU(float alpha) const {
-	return MatrixFloatOperation(&Matrix::SIMDMax, &Matrix::RemainderMax, this->Multiply(alpha));
+	return matrix_float_operation(&Matrix::SIMDMax, &Matrix::RemainderMax, this->Multiply(alpha));
 }
 Matrix Matrix::_LeakyReLU() const {
 	return LeakyReLU();
@@ -573,17 +540,15 @@ Matrix Matrix::SiLUDerivative() const {
 }
 
 // SIMD Implementation new object
-Matrix Matrix::SingleFloatOperation(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo) const noexcept,
+Matrix Matrix::single_float_operation(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo) const noexcept,
 	float (Matrix::* remainderOperation)(float a, float b) const noexcept, float scalar) const {
 	Matrix mat = *this;
 
 	__m256 _scalar = _mm256_set1_ps(scalar);
 
 	int i = 0;
-	for (; i + 8 <= (mat.RowCount * mat.ColumnCount); i += 8) {
-		__m256 loaded_a = _mm256_load_ps(&mat.matrix[i]);
-		loaded_a = (this->*operation)(loaded_a, _scalar);
-		_mm256_store_ps(&mat.matrix[i], loaded_a);
+	for (; i + 8 <= RowCount * ColumnCount; i += 8) {
+		_mm256_store_ps(&mat.matrix[i], (this->*operation)(_mm256_load_ps(&mat.matrix[i]), _scalar));
 	}
 
 	for (; i < (mat.RowCount * mat.ColumnCount); i++) {
@@ -593,40 +558,35 @@ Matrix Matrix::SingleFloatOperation(__m256 (Matrix::* operation)(__m256 opOne, _
 	return mat;
 }
 
-Matrix Matrix::VectorFloatOperation(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo) const noexcept,
+Matrix Matrix::vector_float_operation(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo) const noexcept,
 	float (Matrix::* remainderOperation)(float a, float b) const noexcept, const std::vector<float>& scalar) const {
 
 	Matrix mat = *this;
-	const int alignedN = mat.ColumnCount - (mat.ColumnCount % 8);
 
 	if (scalar.size() == ColumnCount) {
-		for (int r = 0; r < mat.RowCount; r++) {
+		for (int r = 0; r < RowCount; r++) {
 
-			for (int i = 0; i < alignedN; i += 8) {
-				__m256 loaded_a = _mm256_load_ps(&mat(r, i));
-				__m256 loaded_b = _mm256_load_ps(&scalar[i]);
-
-				_mm256_store_ps(&mat(r, i), (this->*operation)(loaded_a, loaded_b));
+			int c = 0;
+			for (; c + 8 < ColumnCount; c += 8) {
+				_mm256_store_ps(&mat.matrix[r * ColumnCount + c], (this->*operation)(_mm256_load_ps(&mat.matrix[r * ColumnCount + c]), _mm256_load_ps(&scalar[c])));
 			}
 
-			for (int i = alignedN; i < mat.ColumnCount; i++) {
-				mat(r, i) = (this->*remainderOperation)(mat(r, i), scalar[i]);
+			for (; c < ColumnCount; c++) {
+				mat.matrix[r * ColumnCount + c] = (this->*remainderOperation)(mat.matrix[r * ColumnCount + c], scalar[c]);
 			}
 		}
-	}
-	else if (scalar.size() == RowCount) {
+	} else if (scalar.size() == RowCount) {
 		for (int r = 0; r < mat.RowCount; r++) {
 
 			__m256 loaded_b = _mm256_set1_ps(scalar[r]);
 
-			for (int i = 0; i < alignedN; i += 8) {
-				__m256 loaded_a = _mm256_load_ps(&mat(r, i));
-
-				_mm256_store_ps(&mat(r, i), (this->*operation)(loaded_a, loaded_b));
+			int c = 0;
+			for (; c + 8 < ColumnCount; c += 8) {
+				_mm256_store_ps(&mat(r, c), (this->*operation)(_mm256_load_ps(&mat(r, c)), loaded_b));
 			}
 
-			for (int i = alignedN; i < mat.ColumnCount; i++) {
-				mat(r, i) = (this->*remainderOperation)(mat(r, i), scalar[r]);
+			for (; c < ColumnCount; c++) {
+				mat(r, c) = (this->*remainderOperation)(mat(r, c), scalar[r]);
 			}
 		}
 	}
@@ -634,17 +594,13 @@ Matrix Matrix::VectorFloatOperation(__m256 (Matrix::* operation)(__m256 opOne, _
 	return mat;
 }
 
-Matrix Matrix::MatrixFloatOperation(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo) const noexcept,
+Matrix Matrix::matrix_float_operation(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo) const noexcept,
 	float (Matrix::* remainderOperation)(float a, float b) const noexcept, const Matrix& element) const {
 	Matrix mat = element;
 
 	int i = 0;
-	for (; i + 8 <= (mat.RowCount * mat.ColumnCount); i += 8) {
-		__m256 loaded_a = _mm256_load_ps(&matrix[i]);
-		__m256 loaded_b = _mm256_load_ps(&mat.matrix[i]);
-
-		loaded_a = (this->*operation)(loaded_a, loaded_b);
-		_mm256_store_ps(&mat.matrix[i], loaded_a);
+	for (; i + 8 <= RowCount * ColumnCount; i += 8) {
+		_mm256_store_ps(&mat.matrix[i], (this->*operation)(_mm256_load_ps(&matrix[i]), _mm256_load_ps(&mat.matrix[i])));
 	}
 
 	for (; i < (mat.RowCount * mat.ColumnCount); i++) {
@@ -656,8 +612,64 @@ Matrix Matrix::MatrixFloatOperation(__m256 (Matrix::* operation)(__m256 opOne, _
 
 
 // SIMD Implementation in place
-Matrix Matrix::single_float_operation_in_place(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo) const,
+void Matrix::single_float_operation_in_place(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo) const,
 	float (Matrix::* remainderOperation)(float a, float b) const, float scalar) {
+
+	__m256 _scalar = _mm256_set1_ps(scalar);
+
+	int i = 0;
+	for (; i + 8 <= RowCount * ColumnCount; i += 8) {
+		_mm256_store_ps(&matrix[i], (this->*operation)(_mm256_load_ps(&matrix[i]), _scalar));
+	}
+
+	for (; i < (RowCount * ColumnCount); i++) {
+		matrix[i] = (this->*remainderOperation)(matrix[i], scalar);
+	}
+}
+
+void Matrix::vector_float_operation_in_place(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo) const,
+	float (Matrix::* remainderOperation)(float a, float b) const, const std::vector<float>& scalar) {
+
+	if (scalar.size() == ColumnCount) {
+		for (int r = 0; r < RowCount; r++) {
+
+			int c = 0;
+			for (; c + 8 < ColumnCount; c += 8) {
+				_mm256_store_ps(&matrix[r * ColumnCount + c], (this->*operation)(_mm256_load_ps(&matrix[r * ColumnCount + c]), _mm256_load_ps(&scalar[c])));
+			}
+
+			for (; c < ColumnCount; c++) {
+				matrix[r * ColumnCount + c] = (this->*remainderOperation)(matrix[r * ColumnCount + c], scalar[c]);
+			}
+		}
+	} else if (scalar.size() == RowCount) {
+		for (int r = 0; r < RowCount; r++) {
+			__m256 loaded_b = _mm256_set1_ps(scalar[r]);
+
+			int c = 0;
+			for (; c + 8 < ColumnCount; c += 8) {
+				_mm256_store_ps(&matrix[r * ColumnCount + c], (this->*operation)(_mm256_load_ps(&matrix[r * ColumnCount + c]), loaded_b));
+			}
+
+			for (; c < ColumnCount; c++) {
+				matrix[r * ColumnCount + c] = (this->*remainderOperation)(matrix[r * ColumnCount + c], scalar[r]);
+			}
+		}
+	}
+
+}
+
+void Matrix::matrix_float_operation_in_place(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo) const,
+	float (Matrix::* remainderOperation)(float a, float b) const, const Matrix& element) {
+
+	int i = 0;
+	for (; i + 8 <= RowCount * ColumnCount; i += 8) {
+		_mm256_store_ps(&matrix[i], (this->*operation)(_mm256_load_ps(&matrix[i]), _mm256_load_ps(&element.matrix[i])));
+	}
+
+	for (; i < RowCount * ColumnCount; i++) {
+		matrix[i] = (this->*remainderOperation)(matrix[i], element.matrix[i]);
+	}
 
 }
 
@@ -694,22 +706,22 @@ inline __m256 Matrix::SIMDAbs(__m256 opOne, __m256 opTwo) const noexcept {
 }
 
 // SIMD Trig
-__m256 Matrix::SIMDSin(__m256 opOne, __m256 opTwo) const noexcept {
+inline __m256 Matrix::SIMDSin(__m256 opOne, __m256 opTwo) const noexcept {
 	return _mm256_sin_ps(opOne);
 }
-__m256 Matrix::SIMDCos(__m256 opOne, __m256 opTwo) const noexcept {
+inline __m256 Matrix::SIMDCos(__m256 opOne, __m256 opTwo) const noexcept {
 	return _mm256_cos_ps(opOne);
 }
-__m256 Matrix::SIMDSec(__m256 opOne, __m256 opTwo) const noexcept {
+inline __m256 Matrix::SIMDSec(__m256 opOne, __m256 opTwo) const noexcept {
 	return _mm256_div_ps(_mm256_set1_ps(1.0f), _mm256_cos_ps(opOne));
 }
-__m256 Matrix::SIMDCsc(__m256 opOne, __m256 opTwo) const noexcept {
+inline __m256 Matrix::SIMDCsc(__m256 opOne, __m256 opTwo) const noexcept {
 	return _mm256_div_ps(_mm256_set1_ps(1.0f), _mm256_sin_ps(opOne));
 }
-__m256 Matrix::SIMDAcos(__m256 opOne, __m256 opTwo) const noexcept {
+inline __m256 Matrix::SIMDAcos(__m256 opOne, __m256 opTwo) const noexcept {
 	return _mm256_acos_ps(opOne);
 }
-__m256 Matrix::SIMDAsin(__m256 opOne, __m256 opTwo) const noexcept {
+inline __m256 Matrix::SIMDAsin(__m256 opOne, __m256 opTwo) const noexcept {
 	return _mm256_asin_ps(opOne);
 }
 
@@ -743,22 +755,22 @@ inline float Matrix::RemainderAbs(float a, float b) const noexcept {
 }
 
 // Remainder Trig
-float Matrix::RemainderSin(float a, float b) const noexcept {
+inline float Matrix::RemainderSin(float a, float b) const noexcept {
 	return std::sin(a);
 }
-float Matrix::RemainderCos(float a, float b) const noexcept {
+inline float Matrix::RemainderCos(float a, float b) const noexcept {
 	return std::cos(a);
 }
-float Matrix::RemainderSec(float a, float b) const noexcept {
+inline float Matrix::RemainderSec(float a, float b) const noexcept {
 	return 1.0f / std::cos(a);
 }
-float Matrix::RemainderCsc(float a, float b) const noexcept {
+inline float Matrix::RemainderCsc(float a, float b) const noexcept {
 	return 1.0f / std::sin(a);
 }
-float Matrix::RemainderAcos(float a, float b) const noexcept {
+inline float Matrix::RemainderAcos(float a, float b) const noexcept {
 	return std::acos(a);
 }
-float Matrix::RemainderAsin(float a, float b) const noexcept {
+inline float Matrix::RemainderAsin(float a, float b) const noexcept {
 	return std::asin(a);
 }
 
@@ -780,45 +792,36 @@ std::string Matrix::Size() const {
 }
 
 Matrix Matrix::Combine(Matrix element) {
-	float* a = (float*)malloc((RowCount + element.RowCount) * ColumnCount * sizeof(float));
+	Matrix a(RowCount + element.RowCount, ColumnCount);
 
-	std::memcpy(a, matrix, RowCount * ColumnCount * sizeof(float));
-	std::memcpy(a + (RowCount * ColumnCount), element.matrix, element.RowCount * element.ColumnCount * sizeof(float));
+	std::memcpy(a.matrix, matrix, RowCount * ColumnCount * sizeof(float));
+	std::memcpy(a.matrix + (RowCount * ColumnCount), element.matrix, element.RowCount * element.ColumnCount * sizeof(float));
 
-	Matrix total = Matrix(a, RowCount + element.RowCount, ColumnCount);
-	free(a);
-
-	return total;
+	return a;
 }
 
 Matrix Matrix::Join(Matrix element) {
-	float* a = (float*)malloc(RowCount * (ColumnCount + element.ColumnCount) * sizeof(float));
+	Matrix a(RowCount, ColumnCount + element.ColumnCount);
 
 	for (int r = 0; r < RowCount; r++) {
 		for (int c = 0; c < ColumnCount + element.ColumnCount; c++) {
-			a[r * ColumnCount + c] = (c < ColumnCount ? (matrix[r * ColumnCount + c]) : (element(r, c - ColumnCount)));
+			a.matrix[r * ColumnCount + c] = (c < ColumnCount ? (matrix[r * ColumnCount + c]) : (element(r, c - ColumnCount)));
 		}
 	}
 
-	Matrix total = Matrix(a, RowCount, ColumnCount + element.ColumnCount);
-	free(a);
-
-	return total;
+	return a;
 }
 
 Matrix Matrix::Transpose() const {
-	float* a = (float*)malloc(RowCount * ColumnCount * sizeof(float));
+	Matrix a(ColumnCount, RowCount);
 
 	for (int r = 0; r < RowCount; r++) {
 		for (int c = 0; c < ColumnCount; c++) {
-			a[c * RowCount + r] = matrix[r * ColumnCount + c];
+			a.matrix[c * RowCount + r] = matrix[r * ColumnCount + c];
 		}
 	}
 
-	Matrix transpose(a, ColumnCount, RowCount);
-	free(a);
-
-	return transpose;
+	return a;
 }
 
 bool Matrix::contains_nan() const {

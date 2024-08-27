@@ -8,7 +8,7 @@ int main()
 	srand(time(0));
 
 	// Model definitions
-	std::vector<int> dims = { 784, 32, 10 };
+	std::vector<int> dims = { 784, 128, 128, 128, 10 };
 	std::unordered_set<int> res = {  };
 	std::unordered_set<int> batch_norm = {  };
 
@@ -24,8 +24,8 @@ int main()
 	Matrix x_test;
 	Matrix y_test;
 	int batch_size = 500;
-	int epochs = 50;
-	float learning_rate = 30.0f;
+	int epochs = 10;
+	float learning_rate = 0.1f;
 	float validation_split = 0.0f;
 	bool shuffle = true;
 	int validation_freq = 1;
@@ -84,4 +84,5 @@ int main()
 
 	std::cout << "train_data: " << model.Evaluate(x, y) << std::endl;
 	std::cout << "test_data: " << model.Evaluate(x_test, y_test) << std::endl;
+
 }

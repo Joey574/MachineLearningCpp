@@ -4,6 +4,7 @@
 #include <fstream>
 
 #include "Matrix.h"
+#include "Biases.h"
 
 class NeuralNetwork
 {
@@ -69,7 +70,7 @@ private:
 	// Network Structs
 	struct network_structure {
 		std::vector<Matrix> weights;
-		std::vector<std::vector<float>> biases;
+		Biases biases;
 	};
 	struct result_matrices {
 		std::vector<Matrix> total;
@@ -78,7 +79,7 @@ private:
 	struct derivative_matrices {
 		std::vector<Matrix> d_total;
 		std::vector<Matrix> d_weights;
-		std::vector<std::vector<float>> d_biases;
+		Biases d_biases;
 	};
 
 	// Other structs
@@ -105,7 +106,7 @@ private:
 	std::unordered_set<int> batch_norm_layers;
 
 	// Function Prototypes
-	std::tuple<result_matrices, derivative_matrices> initialize_result_matrices(int batch_size);
+	void initialize_result_matrices(int batch_size, result_matrices &results, derivative_matrices &derivs);
 	std::tuple<Matrix, Matrix, Matrix, Matrix> data_preprocessing(Matrix x_train, Matrix y_train, Matrix x_valid, Matrix y_valid, bool shuffle, float validation_split);
 
 	result_matrices forward_propogate(Matrix x, network_structure net, result_matrices results);

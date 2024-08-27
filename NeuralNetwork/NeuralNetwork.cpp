@@ -24,8 +24,8 @@ void NeuralNetwork::Compile(loss_metrics l, loss_metrics m, optimization_techniq
 	// Initialization of network matrices
 	for (int i = 0; i < network_dimensions.size() - 1; i++) {
 		current_network.weights.emplace_back(network_dimensions[i + 1], network_dimensions[i], weight_initialization);
-		current_network.biases.emplace_back(network_dimensions[i + 1], 0);
 	}
+	current_network.biases = Biases(network_dimensions);
 
 	loss.type = l;
 	switch (l) {
@@ -82,7 +82,7 @@ NeuralNetwork::training_history NeuralNetwork::Fit(Matrix x_train, Matrix y_trai
 		validation_split = 0.0f;
 	}
 
-	std::tie(current_results, current_derivs) = initialize_result_matrices(batch_size);
+	initialize_result_matrices(batch_size, current_results, current_derivs);
 
 	std::tie(x_train, y_train, x_valid, y_valid) = data_preprocessing(x_train, y_train, x_valid, y_valid, shuffle, validation_split);
 
@@ -141,18 +141,13 @@ std::string NeuralNetwork::Evaluate(Matrix x_test, Matrix y_test) {
 	return test_network(x_test, y_test, current_network);
 }
 
-std::tuple<NeuralNetwork::result_matrices, NeuralNetwork::derivative_matrices> NeuralNetwork::initialize_result_matrices(int batch_size) {
-	result_matrices results;
-	derivative_matrices derivs;
-
+void NeuralNetwork::initialize_result_matrices(int batch_size, result_matrices &results, derivative_matrices &derivs) {
 	results.total = std::vector<Matrix>(current_network.weights.size());
 	results.activation = std::vector<Matrix>(current_network.weights.size());
 
 	derivs.d_total = std::vector<Matrix>(current_network.weights.size());
 	derivs.d_weights = std::vector<Matrix>(current_network.weights.size());
-	derivs.d_biases = std::vector<std::vector<float>>(current_network.weights.size());
-
-	return std::make_tuple(results, derivs);
+	derivs.d_biases = Biases(network_dimensions);
 }
 
 std::tuple<Matrix, Matrix, Matrix, Matrix> NeuralNetwork::data_preprocessing(Matrix x_train, Matrix y_train, Matrix x_valid, Matrix y_valid, bool shuffle, float validation_split) {
@@ -200,17 +195,14 @@ NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Ma
 
 	for (int i = 0; i < deriv.d_weights.size(); i++) {
 		deriv.d_weights[i] = deriv.d_total[i].dot_product(i == 0 ? x.Transpose() : results.activation[i - 1].Transpose()) * (1.0f / half_batch);
-		deriv.d_biases[i] = deriv.d_total[i].Multiply(1.0f / half_batch).ColumnSums();
+		deriv.d_biases.assign(i, deriv.d_total[i].Multiply(1.0f / half_batch).RowSums());
 	}
 
 
 	for (int i = 0; i < net.weights.size(); i++) {
 		net.weights[i] -= deriv.d_weights[i].Multiply(learning_rate / half_batch);
-
-		for (int k = 0; k < net.biases[i].size(); k++) {
-			net.biases[i][k] -= (deriv.d_biases[i][k] * (learning_rate / half_batch));
-		}
 	}
+	net.biases.update(deriv.d_biases, learning_rate / (float)half_batch);
 
 	return net;
 }
@@ -286,17 +278,15 @@ void NeuralNetwork::save(std::string filename) {
 	file_writer.write(reinterpret_cast<const char*>(&dims), sizeof(int));
 
 	// write network dimensions
-	file_writer.write(reinterpret_cast<const char*>(&network_dimensions), dims * sizeof(int));
+	file_writer.write(reinterpret_cast<const char*>(network_dimensions.data()), dims * sizeof(int));
 
 	// write weights
 	for (const auto &weight : current_network.weights) {
-		file_writer.write(reinterpret_cast<const char*>(&weight.matrix), (weight.RowCount * weight.ColumnCount) * sizeof(float));
+		file_writer.write(reinterpret_cast<const char*>(&weight.matrix), weight.RowCount * weight.ColumnCount * sizeof(float));
 	}
 
 	// write biases
-	for (const auto& bias : current_network.biases) {
-		file_writer.write(reinterpret_cast<const char*>(&bias), bias.size() * sizeof(float));
-	}
+	file_writer.write(reinterpret_cast<const char*>(&current_network.biases.bias), current_network.biases.size() * sizeof(float));
 }
 
 void NeuralNetwork::load(std::string filename) {
@@ -306,15 +296,18 @@ void NeuralNetwork::load(std::string filename) {
 
 	// read dims size
 	file_reader.read(reinterpret_cast<char*>(&dims), sizeof(int));
+	std::cout << dims << std::endl;
 
 	network_dimensions = std::vector<int>(dims);
 
 	// read network dimensions
-	file_reader.read(reinterpret_cast<char*>(&network_dimensions), dims * sizeof(int));
+	file_reader.read(reinterpret_cast<char*>(network_dimensions.data()), dims * sizeof(int));
 
-	for (int i = 0; i < dims; i++) {
-		std::cout << network_dimensions[i] << " ";
-	}
+	// read weights
+
+
+	// read biases
+
 }
 
 Matrix NeuralNetwork::mae_loss(Matrix final_activation, Matrix labels) {

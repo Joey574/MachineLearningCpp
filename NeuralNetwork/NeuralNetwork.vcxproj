@@ -201,6 +201,7 @@
     <ClCompile Include="NeuralNetwork.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Biases.h" />
     <ClInclude Include="NeuralNetwork.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
