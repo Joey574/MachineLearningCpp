@@ -1,10 +1,17 @@
 #include <tuple>
 #include <complex>
+#include <atlimage.h>
+
 
 #include "Matrix.h"
 
 class Mandlebrot {
 public:
+
+    static enum class gradient_type {
+        red_secondary, blue_secondary, green_secondary, random_secondary, no_secondary,
+        cyclic, heatmap, sunset, ocean, fire, greyscale, diagonal
+    };
 
 	/// <summary>
 	/// Returns a dataset such that each row is a different random point in the mandlebrot set
@@ -91,6 +98,85 @@ public:
 
         return image;
     }
+
+     static std::vector<float> gradient(int x, int y, float value, float conf_thresh, gradient_type type) {
+
+         switch (type) {
+         case gradient_type::red_secondary:
+             return { value * 255.0f, value > conf_thresh ? 255.0f : 0.0f, value > conf_thresh ? 255.0f : value };
+             break;
+         case gradient_type::blue_secondary:
+             return {value > conf_thresh ? 255.0f : 0.0f, value > conf_thresh ? 255.0f : value, value * 255.0f };
+             break;
+         case gradient_type::green_secondary:
+             return { value > conf_thresh ? 255.0f : 0.0f, value * 255.0f, value > conf_thresh ? 255.0f : value };
+             break;
+         case gradient_type::random_secondary: {
+                  std::vector<float> c = {
+                value > conf_thresh ? 255.0f : 0,
+                value > conf_thresh ? 255.0f : 0,
+                value > conf_thresh ? 255.0f : 0
+             };
+
+             c[rand() % 3] = value * 255.0f;
+             return c;
+         }
+             break;
+         case gradient_type::no_secondary:
+             return std::vector<float>(3, (value * 255.0f));
+             break;
+         case gradient_type::cyclic:
+             return {
+                 127.5f * (1 + std::sin(value * 6.28318f)),
+                 127.5f * (1 + std::sin(value * 6.28318f + 2.09439f)),
+                 127.5f * (1 + std::sin(value * 6.28318f + 4.18879f))
+             };
+             break;
+         case gradient_type::heatmap:
+             return {
+                 value > conf_thresh ? 255.0f : value * 255.0f,
+                 value > conf_thresh ? 0.0f : (1.0f - value) * 255.0f,
+                 value > conf_thresh ? 0.0f : (1.0f - value) * 255.0f
+             };
+             break;
+         case gradient_type::sunset:
+             return {
+                 value * 255.0f,
+                 (1.0f - value) * 64.0f,
+                 (1.0f - value) * 128.0f
+             };
+             break;
+         case gradient_type::ocean:
+             return {
+                 0.0f,
+                 value * 255.0f,
+                 (1.0f - value) * 255.0f
+             };
+             break;
+         case gradient_type::fire:
+             return {
+                 value * 255.0f,
+                 value * 128.0f,
+                 0.0f
+             };
+             break;
+         case gradient_type::greyscale:
+             return {
+                 (value * 127.5f) + 127.5f,
+                 (value * 127.5f) + 127.5f,
+                 (value * 127.5f) + 127.5f
+             };
+             break;
+         case gradient_type::diagonal:
+             return {
+                 fmod((x + y * 255.0f), 256.0f) * value,
+                 fmod((x - y * 255.0f + 256.0f), 256.0f) * 0.0f,
+                 fmod((x * y * 255.0f), 256.0f) * value
+             };
+             break;
+         }
+         
+     }
 
 private:
     float xMin = -2.5f;

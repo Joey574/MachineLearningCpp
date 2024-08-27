@@ -189,6 +189,8 @@ NeuralNetwork::result_matrices NeuralNetwork::forward_propogate(Matrix x, networ
 
 NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Matrix y, float learning_rate, network_structure net, result_matrices results, derivative_matrices deriv) {
 	
+	const int half_batch = x.ColumnCount / 2;
+
 	// Compute loss
 	deriv.d_total[deriv.d_total.size() - 1] = (this->*loss.compute)(results.activation.back(), y.Transpose());
 
@@ -197,14 +199,16 @@ NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Ma
 	}
 
 	for (int i = 0; i < deriv.d_weights.size(); i++) {
-		deriv.d_weights[i] = deriv.d_total[i].dot_product(i == 0 ? x.Transpose() : results.activation[i - 1].Transpose());
-		deriv.d_biases[i] = deriv.d_total[i].ColumnSums();
+		deriv.d_weights[i] = deriv.d_total[i].dot_product(i == 0 ? x.Transpose() : results.activation[i - 1].Transpose()) * (1.0f / half_batch);
+		deriv.d_biases[i] = deriv.d_total[i].Multiply(1.0f / half_batch).ColumnSums();
 	}
 
+
 	for (int i = 0; i < net.weights.size(); i++) {
-		net.weights[i] -= deriv.d_weights[i].Multiply(learning_rate / x.RowCount);
+		net.weights[i] -= deriv.d_weights[i].Multiply(learning_rate / half_batch);
+
 		for (int k = 0; k < net.biases[i].size(); k++) {
-			net.biases[i][k] -= (deriv.d_biases[i][k] * learning_rate / x.RowCount);
+			net.biases[i][k] -= (deriv.d_biases[i][k] * (learning_rate / half_batch));
 		}
 	}
 
@@ -274,16 +278,43 @@ std::tuple<Matrix, Matrix> NeuralNetwork::Shuffle(Matrix x, Matrix y) {
 }
 
 void NeuralNetwork::save(std::string filename) {
-	//std::ofstream file_writer(filename, std::ios::binary);
+	std::ofstream file_writer(filename, std::ios::binary);
 
-	//size_t w_size = current_network.weights.size();
-	//file_writer.write(reinterpret_cast<const char*>(&w_size), sizeof(w_size));
+	int dims = network_dimensions.size();
 
+	// write size of network_dimensions
+	file_writer.write(reinterpret_cast<const char*>(&dims), sizeof(int));
 
+	// write network dimensions
+	file_writer.write(reinterpret_cast<const char*>(&network_dimensions), dims * sizeof(int));
+
+	// write weights
+	for (const auto &weight : current_network.weights) {
+		file_writer.write(reinterpret_cast<const char*>(&weight.matrix), (weight.RowCount * weight.ColumnCount) * sizeof(float));
+	}
+
+	// write biases
+	for (const auto& bias : current_network.biases) {
+		file_writer.write(reinterpret_cast<const char*>(&bias), bias.size() * sizeof(float));
+	}
 }
 
 void NeuralNetwork::load(std::string filename) {
+	std::ifstream file_reader(filename, std::ios::binary);
 
+	int dims;
+
+	// read dims size
+	file_reader.read(reinterpret_cast<char*>(&dims), sizeof(int));
+
+	network_dimensions = std::vector<int>(dims);
+
+	// read network dimensions
+	file_reader.read(reinterpret_cast<char*>(&network_dimensions), dims * sizeof(int));
+
+	for (int i = 0; i < dims; i++) {
+		std::cout << network_dimensions[i] << " ";
+	}
 }
 
 Matrix NeuralNetwork::mae_loss(Matrix final_activation, Matrix labels) {

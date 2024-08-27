@@ -12,7 +12,7 @@ int main()
 	srand(time(0));
 
 	// Model definitions
-	std::vector<int> dims = { 2, 128, 1 };
+	std::vector<int> dims = { 2, 128, 128, 128, 1 };
 	std::unordered_set<int> res = {  };
 	std::unordered_set<int> batch_norm = {  };
 
@@ -26,9 +26,9 @@ int main()
 	Matrix x;
 	Matrix y;
 	int batch_size = 500;
-	int epochs = 25;
-	float learning_rate = 0.05f;
-	float validation_split = 0.05f;
+	int epochs = 5;
+	float learning_rate = 1.0f;
+	float validation_split = 0.1f;
 	bool shuffle = true;
 	int validation_freq = 1;
 
@@ -44,8 +44,8 @@ int main()
 	float lower_norm = 0.0f;
 	float upper_norm = 1.0f;
 
-	int width = 160;
-	int height = 90;
+	int width = 800;
+	int height = 450;
 
 	// Temp dataset just to get dimensions
 	std::tie(x, y) = mandlebrot.make_dataset(1, 1, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
@@ -71,7 +71,7 @@ int main()
 		weight_init
 	);
 
-	for (int i = 0; i < 40; i++) {
+	for (int i = 0; i < 20; i++) {
 
 		// Actual dataset, create new one each training session
 		std::tie(x, y) = mandlebrot.make_dataset(200000, 250, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
@@ -84,7 +84,7 @@ int main()
 			(Matrix()),
 			batch_size,
 			epochs,
-			learning_rate * (1.0f / (float)i),
+			learning_rate,
 			validation_split,
 			shuffle,
 			validation_freq
@@ -102,6 +102,8 @@ int main()
 
 void make_bmp(std::string filename, int width, int height, float confidence_threshold, NeuralNetwork model, Matrix image_data) {
 
+	auto start = std::chrono::high_resolution_clock::now();
+
 	// Convert std::string to wstring with black magic
 	int wideStrLength = MultiByteToWideChar(CP_UTF8, 0, filename.c_str(), -1, nullptr, 0);
 	std::wstring wideStr(wideStrLength, L'\0');
@@ -110,18 +112,21 @@ void make_bmp(std::string filename, int width, int height, float confidence_thre
 	CImage image;
 	image.Create(width, height, 24);
 
-	Matrix pixel_data = model.Predict(image_data);
-
 	for (int y = 0; y < height; y++) {
+		Matrix pixel_data = model.Predict(image_data.SegmentR((y * width), (y * width) + width));
+
 		for (int x = 0; x < width; x++) {
 
-			float color = pixel_data(0, (y * width) + x) * 255.0f;
-			float other = pixel_data(0, (y * width) + x) > confidence_threshold ? 255.0f : 0;
+			std::vector<float> color = Mandlebrot::gradient(x, y, pixel_data(0, x), confidence_threshold, Mandlebrot::gradient_type::diagonal);
 
-			image.SetPixel(x, y, RGB(color, other, other));
+			image.SetPixel(x, y, RGB(color[0], color[1], color[2]));
 		}
 	}
-
+	
 	image.Save(wideStr.c_str(), Gdiplus::ImageFormatBMP);
 	image.Destroy();
+
+	std::chrono::duration<double, std::milli> time = std::chrono::high_resolution_clock::now() - start;
+
+	std::cout << "image_made: " << (time.count() / 1000.0) << " seconds\n";
 }

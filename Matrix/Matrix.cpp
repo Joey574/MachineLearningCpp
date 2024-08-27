@@ -356,10 +356,11 @@ Matrix Matrix::dot_product(const Matrix& element) const {
 			int c = 0;
 			for (; c + 8 <= element.ColumnCount; c += 8) {
 
-				__m256 loaded_a = _mm256_load_ps(&element.matrix[k * element.ColumnCount + c]);
-				__m256 loaded_b = _mm256_load_ps(&mat.matrix[r * element.ColumnCount + c]);
-
-				_mm256_store_ps(&mat.matrix[r * element.ColumnCount + c], _mm256_fmadd_ps(loaded_a, scalar, loaded_b));
+				_mm256_store_ps(&mat.matrix[r * element.ColumnCount + c], 
+					_mm256_fmadd_ps(_mm256_load_ps(
+						&element.matrix[k * element.ColumnCount + c]), 
+						scalar,
+						_mm256_load_ps(&mat.matrix[r * element.ColumnCount + c])));
 			}
 
 			for (; c < element.ColumnCount; c++) {
