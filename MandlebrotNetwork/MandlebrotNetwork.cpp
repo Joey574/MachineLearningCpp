@@ -35,7 +35,7 @@ int main()
 	// Feature engineering and dataset processing
 	Mandlebrot mandlebrot;
 
-	int fourier = 64;
+	int fourier = 86;
 	int taylor = 0;
 	int chebyshev = 0;
 	int legendre = 0;
@@ -44,8 +44,8 @@ int main()
 	float lower_norm = 0.0f;
 	float upper_norm = 1.0f;
 
-	int width = 800;
-	int height = 450;
+	int width = 160;
+	int height = 90;
 
 	// Temp dataset just to get dimensions
 	std::tie(x, y) = mandlebrot.make_dataset(1, 1, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
@@ -58,9 +58,8 @@ int main()
 		dims,
 		res,
 		batch_norm,
-		&Matrix::_ELU,
-		&Matrix::_ELUDerivative,
-		&Matrix::Sigmoid
+		{ &Matrix::_ELU, &Matrix::_ELU, &Matrix::_ELU, &Matrix::Sigmoid},
+		{ &Matrix::_ELUDerivative, &Matrix::_ELUDerivative, &Matrix::_ELUDerivative }
 	);
 
 	// Compile the model
@@ -71,7 +70,7 @@ int main()
 		weight_init
 	);
 
-	for (int i = 0; i < 20; i++) {
+	for (int i = 0; i < 10; i++) {
 
 		// Actual dataset, create new one each training session
 		std::tie(x, y) = mandlebrot.make_dataset(200000, 250, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
@@ -94,8 +93,8 @@ int main()
 		make_bmp("NetworkImages/test_" + std::to_string(i).append(".bmp"), width, height, 0.95f, model, mandlebrot.create_image_features(width, height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
 	}
 
-	int f_width = 1920;
-	int f_height = 1200;
+	int f_width = 800;
+	int f_height = 450;
 
 	make_bmp("NetworkImages/final.bmp", f_width, f_height, 0.95f, model, mandlebrot.create_image_features(f_width, f_height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
 }

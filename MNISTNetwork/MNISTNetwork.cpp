@@ -1,4 +1,5 @@
 #include <iostream>
+#include <Windows.h>
 
 #include "NeuralNetwork.h"
 #include "MNIST.cpp"
@@ -7,8 +8,13 @@ int main()
 {
 	srand(time(0));
 
+	SYSTEM_INFO si;
+	GetSystemInfo(&si);
+
+	std::cout << "page size: " << si.dwPageSize << std::endl;
+
 	// Model definitions
-	std::vector<int> dims = { 784, 784, 784, 784, 784, 784, 10 };
+	std::vector<int> dims = { 784, 128, 128, 128, 10 };
 	std::unordered_set<int> res = {  };
 	std::unordered_set<int> batch_norm = {  };
 
@@ -24,7 +30,7 @@ int main()
 	Matrix x_test;
 	Matrix y_test;
 	int batch_size = 500;
-	int epochs = 100;
+	int epochs = 10;
 	float learning_rate = 0.1f;
 	float validation_split = 0.0f;
 	bool shuffle = true;
@@ -53,9 +59,8 @@ int main()
 		dims,
 		res,
 		batch_norm,
-		&Matrix::_ELU,
-		&Matrix::_ELUDerivative,
-		&Matrix::SoftMax
+		{ &Matrix::_ELU,  &Matrix::_ELU,  &Matrix::_ELU, &Matrix::SoftMax },
+		{ &Matrix::_ELUDerivative, &Matrix::_ELUDerivative, &Matrix::_ELUDerivative }
 	);
 
 	// Compile the model
@@ -85,7 +90,4 @@ int main()
 
 	std::cout << "train_data: " << model.Evaluate(x, y) << std::endl;
 	std::cout << "test_data: " << model.Evaluate(x_test, y_test) << std::endl;
-
-	model.save("Networks/784_5.txt");
-
 }

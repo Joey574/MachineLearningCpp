@@ -308,7 +308,6 @@ Matrix Matrix::dot_product(const Matrix& element) const {
 	if (ColumnCount != element.RowCount) {
 		std::cout << "size mismatch\n";
 	}
-
 	for (int r = 0; r < RowCount; r++) {
 		for (int k = 0; k < element.RowCount; k++) {
 			__m256 scalar = _mm256_set1_ps(matrix[r * ColumnCount + k]);
@@ -815,6 +814,7 @@ Matrix Matrix::Join(Matrix element) {
 Matrix Matrix::Transpose() const {
 	Matrix a(ColumnCount, RowCount);
 
+	#pragma unroll(8)
 	for (int r = 0; r < RowCount; r++) {
 		for (int c = 0; c < ColumnCount; c++) {
 			a.matrix[c * RowCount + r] = matrix[r * ColumnCount + c];

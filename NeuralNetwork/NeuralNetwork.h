@@ -30,9 +30,8 @@ public:
 		std::vector<int> dimensions,
 		std::unordered_set<int> res_net,
 		std::unordered_set<int> batch_normalization,
-		Matrix(Matrix::* activation_function)() const,
-		Matrix(Matrix::* activation_function_derivative)() const,
-		Matrix(Matrix::* end_activation_function)() const
+		std::vector<Matrix(Matrix::*)() const> activation_functions,
+		std::vector<Matrix(Matrix::*)() const> derivative_functions
 	);
 
 	void Compile(
@@ -65,6 +64,8 @@ public:
 
 	void load(std::string filename);
 
+	std::string summary();
+
 private:
 
 	// Network Structs
@@ -90,20 +91,20 @@ private:
 	};
 
 	// Function Pointers
-	Matrix(Matrix::* activation_function)() const;
-	Matrix(Matrix::* end_activation_function)() const;
-	Matrix(Matrix::* activation_function_derivative)() const;
 
-	metric_data loss;
-	metric_data metric;
+	std::vector<Matrix(Matrix::*)() const>  _activation_functions;
+	std::vector<Matrix(Matrix::*)() const>  _derivative_functions;
+
+	metric_data _loss;
+	metric_data _metric;
 
 	// Network
-	network_structure current_network;
+	network_structure _network;
 
-	std::vector<int> network_dimensions;
+	std::vector<int> _dimensions;
 
-	std::unordered_set<int> res_net_layers;
-	std::unordered_set<int> batch_norm_layers;
+	std::unordered_set<int> _res_net;
+	std::unordered_set<int> _batch_norm;
 
 	// Function Prototypes
 	void initialize_result_matrices(int batch_size, result_matrices &results, derivative_matrices &derivs);
