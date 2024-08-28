@@ -27,41 +27,8 @@ void NeuralNetwork::Compile(loss_metrics l, loss_metrics m, optimization_techniq
 	}
 	current_network.biases = Biases(network_dimensions);
 
-	loss.type = l;
-	switch (l) {
-	case loss_metrics::mse:
-		loss.name = "mse";
-		loss.compute = &NeuralNetwork::mse_loss;
-		break;
-	case loss_metrics::mae:
-		loss.name = "mae";
-		loss.compute = &NeuralNetwork::mae_loss;
-		break;
-	case loss_metrics::one_hot:
-		loss.name = "one_hot";
-		loss.compute = &NeuralNetwork::one_hot;
-		break;
-	case loss_metrics::accuracy:
-		break;
-	}
-
-	metric.type = m;
-	switch (m) {
-	case loss_metrics::mse:
-		metric.name = "mse";
-		metric.compute = &NeuralNetwork::mse_loss;
-		break;
-	case loss_metrics::mae:
-		metric.name = "mae";
-		metric.compute = &NeuralNetwork::mae_loss;
-		break;
-	case loss_metrics::one_hot:
-		break;
-	case loss_metrics::accuracy:
-		metric.name = "accuracy";
-		metric.compute = &NeuralNetwork::accuracy;
-		break;
-	}
+	loss = compile_metric_data(l);
+	metric = compile_metric_data(m);
 
 	std::cout << "Status: network_compiled\n";
 }
@@ -272,42 +239,81 @@ std::tuple<Matrix, Matrix> NeuralNetwork::Shuffle(Matrix x, Matrix y) {
 void NeuralNetwork::save(std::string filename) {
 	std::ofstream file_writer(filename, std::ios::binary);
 
-	int dims = network_dimensions.size();
-
 	// write size of network_dimensions
+	int dims = network_dimensions.size();
 	file_writer.write(reinterpret_cast<const char*>(&dims), sizeof(int));
+
+	// Write loss and metric enums
+	file_writer.write(reinterpret_cast<const char*>(&loss.type), sizeof(loss_metrics));
+	file_writer.write(reinterpret_cast<const char*>(&metric.type), sizeof(loss_metrics));
 
 	// write network dimensions
 	file_writer.write(reinterpret_cast<const char*>(network_dimensions.data()), dims * sizeof(int));
 
 	// write weights
 	for (const auto &weight : current_network.weights) {
-		file_writer.write(reinterpret_cast<const char*>(&weight.matrix), weight.RowCount * weight.ColumnCount * sizeof(float));
+		file_writer.write(reinterpret_cast<const char*>(weight.matrix), weight.RowCount * weight.ColumnCount * sizeof(float));
 	}
 
 	// write biases
-	file_writer.write(reinterpret_cast<const char*>(&current_network.biases.bias), current_network.biases.size() * sizeof(float));
+	file_writer.write(reinterpret_cast<const char*>(current_network.biases.bias), current_network.biases.size() * sizeof(float));
 }
 
 void NeuralNetwork::load(std::string filename) {
 	std::ifstream file_reader(filename, std::ios::binary);
 
-	int dims;
-
 	// read dims size
+	int dims;
 	file_reader.read(reinterpret_cast<char*>(&dims), sizeof(int));
-	std::cout << dims << std::endl;
-
 	network_dimensions = std::vector<int>(dims);
+
+	// read loss and metric data
+	loss_metrics l;
+	loss_metrics m;
+
+	file_reader.read(reinterpret_cast<char*>(&l), sizeof(loss_metrics));
+	file_reader.read(reinterpret_cast<char*>(&m), sizeof(loss_metrics));
+
+	loss = compile_metric_data(l);
+	metric = compile_metric_data(m);
 
 	// read network dimensions
 	file_reader.read(reinterpret_cast<char*>(network_dimensions.data()), dims * sizeof(int));
 
 	// read weights
-
+	current_network.weights = std::vector<Matrix>(dims - 1);
+	for (int i = 0; i < network_dimensions.size() - 1; i++) {
+		current_network.weights[i] = Matrix(network_dimensions[i + 1], network_dimensions[i]);
+		file_reader.read(reinterpret_cast<char*>(&current_network.weights[i].matrix[0]), network_dimensions[i] * network_dimensions[i + 1] * sizeof(float));
+	}
 
 	// read biases
+	current_network.biases = Biases(network_dimensions);
+	file_reader.read(reinterpret_cast<char*>(&current_network.biases.bias[0]), std::accumulate(network_dimensions.begin() + 1, network_dimensions.end(), 0) * sizeof(float));
+}
 
+NeuralNetwork::metric_data NeuralNetwork::compile_metric_data(loss_metrics type) {
+	metric_data me;
+	me.type = type;
+	switch (type) {
+	case loss_metrics::mse:
+		me.name = "mse";
+		me.compute = &NeuralNetwork::mse_loss;
+		break;
+	case loss_metrics::mae:
+		me.name = "mae";
+		me.compute = &NeuralNetwork::mae_loss;
+		break;
+	case loss_metrics::one_hot:
+		me.name = "one_hot";
+		me.compute = &NeuralNetwork::one_hot;
+		break;
+	case loss_metrics::accuracy:
+		me.name = "accuracy";
+		me.compute = &NeuralNetwork::accuracy;
+		break;
+	}
+	return me;
 }
 
 Matrix NeuralNetwork::mae_loss(Matrix final_activation, Matrix labels) {

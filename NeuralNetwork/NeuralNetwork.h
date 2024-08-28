@@ -116,6 +116,8 @@ private:
 	void intermediate_history(training_history& history);
 	void final_history(training_history& history, std::chrono::steady_clock::time_point start, std::chrono::steady_clock::time_point end, int epochs);
 
+	metric_data compile_metric_data(loss_metrics type);
+
 	Matrix mse_loss(Matrix final_activation, Matrix labels);
 	Matrix mae_loss(Matrix final_activation, Matrix labels);
 	Matrix one_hot(Matrix final_activation, Matrix labels);

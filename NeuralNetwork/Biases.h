@@ -7,7 +7,6 @@
 #include <immintrin.h> 
 #include <string>
 #include <utility>
-#include <iostream>
 
 class Biases
 {
