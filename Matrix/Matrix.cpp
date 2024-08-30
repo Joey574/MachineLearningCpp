@@ -338,6 +338,58 @@ Matrix Matrix::dot_product(const Matrix& element) const {
 	return mat;
 }
 
+Matrix Matrix::dot_product_add(const Matrix& element, const std::vector<float>& bias) const {
+	Matrix mat(RowCount, element.ColumnCount);
+
+	if (bias.size() == RowCount) {
+		int i = 0;
+		for (; i + 8 <= mat.RowCount * mat.ColumnCount; i += 8) {
+			_mm256_store_ps(&mat.matrix[i], _mm256_set1_ps(bias[i / mat.ColumnCount]));
+		}
+
+		for (; i < mat.RowCount * mat.ColumnCount; i++) {
+			mat.matrix[i] = bias[i / element.ColumnCount];
+		}
+
+	} else {
+		std::cout << "problem\n";
+	}
+
+	// error handling -> for losers
+	if (ColumnCount != element.RowCount) {
+		std::cout << "size mismatch\n";
+	}
+
+	for (int r = 0; r < RowCount; r++) {
+		for (int k = 0; k < element.RowCount; k++) {
+			__m256 scalar = _mm256_set1_ps(matrix[r * ColumnCount + k]);
+
+			int c = 0;
+			for (; c + 16 <= element.ColumnCount; c += 8) {
+
+				_mm256_store_ps(&mat.matrix[r * element.ColumnCount + c],
+					_mm256_fmadd_ps(_mm256_load_ps(
+						&element.matrix[k * element.ColumnCount + c]),
+						scalar,
+						_mm256_load_ps(&mat.matrix[r * element.ColumnCount + c])));
+
+				c += 8;
+				_mm256_store_ps(&mat.matrix[r * element.ColumnCount + c],
+					_mm256_fmadd_ps(_mm256_load_ps(
+						&element.matrix[k * element.ColumnCount + c]),
+						scalar,
+						_mm256_load_ps(&mat.matrix[r * element.ColumnCount + c])));
+			}
+
+			for (; c < element.ColumnCount; c++) {
+				mat.matrix[r * element.ColumnCount + c] += matrix[r * ColumnCount + k] * element.matrix[k * element.ColumnCount + c];
+			}
+		}
+	}
+
+	return mat;
+}
+
 std::vector<float> Matrix::log_sum_exp() const noexcept {
 
 	std::vector<float> logSum(ColumnCount);

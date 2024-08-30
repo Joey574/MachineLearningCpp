@@ -11,8 +11,11 @@ class NeuralNetwork
 public:
 
 	// Network Enums
-	static enum class loss_metrics {
-		none, mse, mae, one_hot, accuracy
+	static enum class loss_metric {
+		none, mse, mae, cross_entropy, accuracy
+	};
+	static enum class activation_function {
+		Sigmoid, ReLU, leakyReLU, ELU, tanH, Softplus, SiLU, Softmax
 	};
 	static enum class optimization_technique {
 		none
@@ -35,8 +38,8 @@ public:
 	);
 
 	void Compile(
-		loss_metrics loss = loss_metrics::none,
-		loss_metrics metrics = loss_metrics::none,
+		loss_metric loss = loss_metric::none,
+		loss_metric metrics = loss_metric::none,
 		optimization_technique optimizer = optimization_technique::none,
 		Matrix::init weight_initialization = Matrix::init::Random
 	);
@@ -49,6 +52,7 @@ public:
 		int batch_size,
 		int epochs,
 		float learning_rate,
+		float weight_decay = 0.0f,
 		float validation_split = 0.0f,
 		bool shuffle = true,
 		int validation_freq = 1
@@ -86,15 +90,22 @@ private:
 	// Other structs
 	struct metric_data {
 		std::string name;
-		loss_metrics type;
-		Matrix(NeuralNetwork::* compute)(Matrix final_activation, Matrix labels);
+		loss_metric type;
+		Matrix(NeuralNetwork::* derivative)(Matrix final_activation, Matrix labels);
+		float(NeuralNetwork::* total)(Matrix final_activation, Matrix labels);
+	};
+
+	struct activation_function_data {
+		activation_function type;
+		Matrix(Matrix::* activation)() const;
+		Matrix(Matrix::* derivative)() const;
 	};
 
 	// Function Pointers
-
 	std::vector<Matrix(Matrix::*)() const>  _activation_functions;
 	std::vector<Matrix(Matrix::*)() const>  _derivative_functions;
 
+	// Cost functions / metrics
 	metric_data _loss;
 	metric_data _metric;
 
@@ -111,18 +122,23 @@ private:
 	std::tuple<Matrix, Matrix, Matrix, Matrix> data_preprocessing(Matrix x_train, Matrix y_train, Matrix x_valid, Matrix y_valid, bool shuffle, float validation_split);
 
 	result_matrices forward_propogate(Matrix x, network_structure net, result_matrices results);
-	network_structure backward_propogate(Matrix x, Matrix y, float learning_rate, network_structure net, result_matrices results, derivative_matrices deriv);
+	network_structure backward_propogate(Matrix x, Matrix y, float learning_rate, float weight_decay, network_structure net, result_matrices results, derivative_matrices deriv);
 	std::string test_network(Matrix x, Matrix y, network_structure net);
 
 	void intermediate_history(training_history& history);
 	void final_history(training_history& history, std::chrono::steady_clock::time_point start, std::chrono::steady_clock::time_point end, int epochs);
 
-	metric_data compile_metric_data(loss_metrics type);
+	metric_data compile_metric_data(loss_metric type);
+	activation_function_data compile_activation_function(activation_function type);
 
 	Matrix mse_loss(Matrix final_activation, Matrix labels);
+	float mse_total(Matrix final_activation, Matrix labels);
+
 	Matrix mae_loss(Matrix final_activation, Matrix labels);
-	Matrix one_hot(Matrix final_activation, Matrix labels);
-	Matrix accuracy(Matrix final_activation, Matrix labels);
+	float mae_total(Matrix final_activation, Matrix labels);
+
+	Matrix cross_entropy(Matrix final_activation, Matrix labels);
+	float accuracy(Matrix final_activation, Matrix labels);
 
 	std::string clean_time(double time);
 };

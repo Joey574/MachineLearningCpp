@@ -109,6 +109,13 @@ public:
 	/// <param name="element"></param>
 	/// <returns></returns>
 	Matrix dot_product(const Matrix& element) const;
+	/// <summary>
+	/// Computes the dot prod between host and element, but adds bias values on top of sums
+	/// </summary>
+	/// <param name="element"></param>
+	/// <param name="bias"></param>
+	/// <returns></returns>
+	Matrix dot_product_add(const Matrix& element, const std::vector<float>& bias) const;
 
 	/// <summary>
 	/// Log sum exp trick on each column, 

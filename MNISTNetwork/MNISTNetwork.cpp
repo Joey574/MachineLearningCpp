@@ -19,8 +19,8 @@ int main()
 	std::unordered_set<int> batch_norm = {  };
 
 	// Model compilation parameters
-	NeuralNetwork::loss_metrics loss = NeuralNetwork::loss_metrics::one_hot;
-	NeuralNetwork::loss_metrics metrics = NeuralNetwork::loss_metrics::accuracy;
+	NeuralNetwork::loss_metric loss = NeuralNetwork::loss_metric::cross_entropy;
+	NeuralNetwork::loss_metric metrics = NeuralNetwork::loss_metric::accuracy;
 	NeuralNetwork::optimization_technique optimizer = NeuralNetwork::optimization_technique::none;
 	Matrix::init weight_init = Matrix::init::He;
 
@@ -29,9 +29,10 @@ int main()
 	Matrix y;
 	Matrix x_test;
 	Matrix y_test;
-	int batch_size = 500;
-	int epochs = 10;
+	int batch_size = 320;
+	int epochs = 20;
 	float learning_rate = 0.1f;
+	float weight_decay = 0.0f;
 	float validation_split = 0.0f;
 	bool shuffle = true;
 	int validation_freq = 1;
@@ -54,12 +55,11 @@ int main()
 	// Define the model
 	NeuralNetwork model;
 
-
 	model.Define(
 		dims,
 		res,
 		batch_norm,
-		{ &Matrix::_ELU,  &Matrix::_ELU,  &Matrix::_ELU, &Matrix::SoftMax },
+		{ &Matrix::_ELU,  &Matrix::_ELU, &Matrix::_ELU, &Matrix::SoftMax },
 		{ &Matrix::_ELUDerivative, &Matrix::_ELUDerivative, &Matrix::_ELUDerivative }
 	);
 
@@ -71,7 +71,6 @@ int main()
 		weight_init
 	);
 
-
 	// Fit model to training data
 	NeuralNetwork::training_history history = model.Fit(
 		x,
@@ -81,13 +80,17 @@ int main()
 		batch_size,
 		epochs,
 		learning_rate,
+		weight_decay,
 		validation_split,
 		shuffle,
 		validation_freq
-	);
+	);		
+	
 	std::cout << "Training time: " << history.train_time.count() << std::endl;
 	std::cout << "Epoch time: " << history.epoch_time.count() << std::endl;
 
 	std::cout << "train_data: " << model.Evaluate(x, y) << std::endl;
 	std::cout << "test_data: " << model.Evaluate(x_test, y_test) << std::endl;
+
+	//model.save("Networks/784_4.txt");
 }
