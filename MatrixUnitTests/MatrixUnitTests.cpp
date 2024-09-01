@@ -39,21 +39,6 @@ int main()
 
     const double precision = 0.000001;
 
-    Matrix w(16, 16, Matrix::init::He);
-
-    Matrix f(16, 16, Matrix::init::He);
-
-    Matrix r(16, 16);
-    Matrix r_2(16, 16);
-
-    r = w.dot_product_add(f, { 2, 5 });
-    r_2 = w.dot_product(f) + std::vector<float>{2, 5};
-    std::cout << "dot_product_add:\n" << r.ToString() << std::endl;
-    std::cout << "dot_product +:\n" << r_2.ToString() << std::endl << std::endl;
-    std::cout << "test / actual:\n" << (r / r_2).ToString() << std::endl << std::endl;
-
-    return 0;
-
     Matrix a = Matrix({
         {5.0f, 3.0f, 6.0f, 1.0f, 7.0f, 1.0f, 9.0f, 2.0f, 1.0f, 10.0f},
         {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f},
@@ -84,6 +69,10 @@ int main()
         {0.5f, -0.5f},
         {0.25f, -0.25f},
         });
+
+    std::cout << "x:\n" << "pad: " << (8 - ((x.RowCount * x.ColumnCount) % 8)) << "\nsize: " << x.RowCount << " :: " << x.ColumnCount << std::endl;
+    std::cout << "\na:\n" << "pad: " << (8 - ((a.RowCount * a.ColumnCount) % 8)) << "\nsize: " << a.RowCount << " :: " << a.ColumnCount << std::endl;
+    std::cout << "\nb:\n" << "pad: " << (8 - ((b.RowCount * b.ColumnCount) % 8)) << "\nsize: " << b.RowCount << " :: " << b.ColumnCount << std::endl;
 
     bool matrix_basic_math_test = run_test(&matrix_basic_math_check, "Matrix basic math test: ", iterations, percent_checks, a, b, precision);
     bool matrix_trig_test = run_test(&matrix_trig_check, "Matrix trig test: ", iterations, percent_checks, x, a, precision);
@@ -196,6 +185,9 @@ bool matrix_basic_math_check(Matrix a, Matrix b, double precision) {
             }
         }
     }
+
+    std::cout << "pad: " << ((result.RowCount * result.ColumnCount) % 8) << std::endl;
+    std::cout << "size: " << result.RowCount << " :: " << result.ColumnCount << std::endl;
 
     // Element-wise subtraction check between 2 matrices
     result = a - b;

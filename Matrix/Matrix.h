@@ -9,6 +9,7 @@
 #include <immintrin.h> 
 #include <string>
 #include <utility>
+#include <iostream>
 
 class Matrix
 {
@@ -286,13 +287,13 @@ public:
 		matrix_float_operation_in_place(&Matrix::SIMDDiv, &Matrix::RemainderDiv, element);
 	}
 
-	inline Matrix& operator = (const Matrix& other) noexcept {
+	inline Matrix& operator = (const Matrix& other) {
 
 		RowCount = other.RowCount;
 		ColumnCount = other.ColumnCount;
 
 		free(matrix);
-		matrix = (float*)malloc(RowCount * ColumnCount * sizeof(float));
+		matrix = (float*)malloc((RowCount * ColumnCount + (8 - ((RowCount * ColumnCount) % 8))) * sizeof(float));
 
 		std::memcpy(matrix, other.matrix, RowCount * ColumnCount * sizeof(float));
 		return *this;
@@ -315,9 +316,7 @@ public:
 	float* matrix;
 
 	~Matrix() {
-		if (matrix) {
-			free(matrix);
-		}
+		if (matrix) { free(matrix); }
 	}
 
 
