@@ -293,7 +293,7 @@ public:
 		ColumnCount = other.ColumnCount;
 
 		free(matrix);
-		matrix = (float*)malloc((RowCount * ColumnCount + (8 - ((RowCount * ColumnCount) % 8))) * sizeof(float));
+		matrix = m_init();
 
 		std::memcpy(matrix, other.matrix, RowCount * ColumnCount * sizeof(float));
 		return *this;
@@ -371,4 +371,14 @@ private:
 	inline float RemainderCsc(float a, float b) const noexcept;
 	inline float RemainderAcos(float a, float b) const noexcept;
 	inline float RemainderAsin(float a, float b) const noexcept;
+
+	inline float* m_init() {
+		int pad = RowCount * ColumnCount % 8 == 0 ? 0 : 8 - (RowCount * ColumnCount % 8);
+		return (float*)malloc((RowCount * ColumnCount + pad) * sizeof(float));
+	}
+
+	inline float* c_init() {
+		int pad = RowCount * ColumnCount % 8 == 0 ? 0 : 8 - (RowCount * ColumnCount % 8);
+		return (float*)calloc((RowCount * ColumnCount + pad), sizeof(float));
+	}
 };

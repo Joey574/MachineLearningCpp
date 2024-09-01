@@ -6,6 +6,8 @@
 
 int main()
 {
+	SetPriorityClass(GetStdHandle, REALTIME_PRIORITY_CLASS);
+
 	srand(time(0));
 
 	SYSTEM_INFO si;

@@ -70,10 +70,6 @@ int main()
         {0.25f, -0.25f},
         });
 
-    std::cout << "x:\n" << "pad: " << (8 - ((x.RowCount * x.ColumnCount) % 8)) << "\nsize: " << x.RowCount << " :: " << x.ColumnCount << std::endl;
-    std::cout << "\na:\n" << "pad: " << (8 - ((a.RowCount * a.ColumnCount) % 8)) << "\nsize: " << a.RowCount << " :: " << a.ColumnCount << std::endl;
-    std::cout << "\nb:\n" << "pad: " << (8 - ((b.RowCount * b.ColumnCount) % 8)) << "\nsize: " << b.RowCount << " :: " << b.ColumnCount << std::endl;
-
     bool matrix_basic_math_test = run_test(&matrix_basic_math_check, "Matrix basic math test: ", iterations, percent_checks, a, b, precision);
     bool matrix_trig_test = run_test(&matrix_trig_check, "Matrix trig test: ", iterations, percent_checks, x, a, precision);
     bool matrix_activation_test = run_test(&matrix_activation_function_check, "Matrix activation function test: ", iterations, percent_checks, x, b, precision);
@@ -185,9 +181,6 @@ bool matrix_basic_math_check(Matrix a, Matrix b, double precision) {
             }
         }
     }
-
-    std::cout << "pad: " << ((result.RowCount * result.ColumnCount) % 8) << std::endl;
-    std::cout << "size: " << result.RowCount << " :: " << result.ColumnCount << std::endl;
 
     // Element-wise subtraction check between 2 matrices
     result = a - b;
@@ -430,6 +423,7 @@ bool matrix_vector_float_math_check(Matrix a, Matrix b, double precision) {
     for (int r = 0; r < a.RowCount; r++) {
         for (int c = 0; c < a.ColumnCount; c++) {
             if (result(r, c) != a(r, c) + x[c]) {
+                std::cout << r << " :: " << c << std::endl << "res: " << result(r, c) << "\noriginal: " << a(r, c) << "\nvalue: " << x[c] << std::endl << std::endl;
                 return false;
             }
         }

@@ -1,11 +1,11 @@
 #include "Matrix.h"
 
 // Constructors
-Matrix::Matrix(size_t rows, size_t columns) : RowCount(rows), ColumnCount(columns), matrix((float*)calloc(rows * columns + (8 - ((rows * columns) % 8)), sizeof(float))) {}
-Matrix::Matrix(size_t rows, size_t columns, float value) : RowCount(rows), ColumnCount(columns), matrix((float*)malloc((rows * columns + (8 - ((rows * columns) % 8))) * sizeof(float))) {
+Matrix::Matrix(size_t rows, size_t columns) : RowCount(rows), ColumnCount(columns), matrix(c_init()) {}
+Matrix::Matrix(size_t rows, size_t columns, float value) : RowCount(rows), ColumnCount(columns), matrix(m_init()) {
 	std::fill(matrix, matrix + (RowCount * ColumnCount), value);
 }
-Matrix::Matrix(size_t rows, size_t columns, init initType) : RowCount(rows), ColumnCount(columns), matrix((float*)malloc((rows * columns + (8 - ((rows * columns) % 8))) * sizeof(float))) {
+Matrix::Matrix(size_t rows, size_t columns, init initType) : RowCount(rows), ColumnCount(columns), matrix(m_init()) {
 	float lowerRand = -0.5f;
 	float upperRand = 0.5f;
 
@@ -58,17 +58,17 @@ Matrix::Matrix(size_t rows, size_t columns, init initType) : RowCount(rows), Col
 	}
 	}
 }
-Matrix::Matrix(const std::vector<std::vector<float>>& matrix) : RowCount(matrix.size()), ColumnCount(matrix[0].size()), matrix((float*)malloc((matrix.size() * matrix[0].size() + (8 - ((matrix.size() * matrix[0].size()) % 8))) * sizeof(float))) {
+Matrix::Matrix(const std::vector<std::vector<float>>& matrix) : RowCount(matrix.size()), ColumnCount(matrix[0].size()), matrix(m_init()) {
 	for (int r = 0; r < RowCount; r++) {
 		for (int c = 0; c < ColumnCount; c++) {
 			this->matrix[r * ColumnCount + c] = matrix[r][c];
 		}
 	}
 }
-Matrix::Matrix(const float* matrix, size_t rows, size_t columns) : RowCount(rows), ColumnCount(columns), matrix((float*)malloc((rows * columns + (8 - ((rows * columns) % 8))) * sizeof(float))) {
+Matrix::Matrix(const float* matrix, size_t rows, size_t columns) : RowCount(rows), ColumnCount(columns), matrix(m_init()) {
 std:memcpy(this->matrix, matrix, rows * columns * sizeof(float));
 }
-Matrix::Matrix(const Matrix& other) : RowCount(other.RowCount), ColumnCount(other.ColumnCount), matrix((float*)malloc((other.RowCount * other.ColumnCount + (8 - ((other.RowCount * other.ColumnCount) % 8)) * sizeof(float)))) {
+Matrix::Matrix(const Matrix& other) : RowCount(other.RowCount), ColumnCount(other.ColumnCount), matrix(m_init()) {
 	std::memcpy(matrix, other.matrix, RowCount * ColumnCount * sizeof(float));
 }
 
@@ -592,9 +592,7 @@ Matrix Matrix::single_float_operation(__m256 (Matrix::* operation)(__m256 opOne,
 	Matrix mat = *this;
 
 	__m256 _scalar = _mm256_set1_ps(scalar);
-
-	int i = 0;
-	for (; i < RowCount * ColumnCount; i += 8) {
+	for (int i = 0; i < RowCount * ColumnCount; i += 8) {
 		_mm256_store_ps(&mat.matrix[i], (this->*operation)(_mm256_load_ps(&mat.matrix[i]), _scalar));
 	}
 
@@ -610,17 +608,25 @@ Matrix Matrix::vector_float_operation(__m256 (Matrix::* operation)(__m256 opOne,
 		for (int r = 0; r < RowCount; r++) {
 
 			int c = 0;
-			for (; c < ColumnCount; c += 8) {
+			for (; c + 8 < ColumnCount; c += 8) {
 				_mm256_store_ps(&mat.matrix[r * ColumnCount + c], (this->*operation)(_mm256_load_ps(&mat.matrix[r * ColumnCount + c]), _mm256_load_ps(&scalar[c])));
+			}
+
+			for (; c < ColumnCount; c++) {
+				mat.matrix[r * ColumnCount + c] = (this->*remainderOperation)(mat.matrix[r * ColumnCount + c], scalar[c]);
 			}
 		}
 	} else if (scalar.size() == RowCount) {
-		for (int r = 0; r < mat.RowCount; r++) {
-			__m256 loaded_b = _mm256_set1_ps(scalar[r]);
+		for (int r = 0; r < RowCount; r++) {
+			__m256 _scalar = _mm256_set1_ps(scalar[r]);
 
 			int c = 0;
-			for (; c < ColumnCount; c += 8) {
-				_mm256_store_ps(&mat(r, c), (this->*operation)(_mm256_load_ps(&mat(r, c)), loaded_b));
+			for (; c + 8 < ColumnCount; c += 8) {
+				_mm256_store_ps(&mat.matrix[r * ColumnCount + c], (this->*operation)(_mm256_load_ps(&mat.matrix[r * ColumnCount + c]), _scalar));
+			}
+
+			for (; c < ColumnCount; c++) {
+				mat.matrix[r * ColumnCount + c] = (this->*remainderOperation)(mat.matrix[r * ColumnCount + c], scalar[r]);
 			}
 		}
 	}
@@ -632,8 +638,7 @@ Matrix Matrix::matrix_float_operation(__m256 (Matrix::* operation)(__m256 opOne,
 	float (Matrix::* remainderOperation)(float a, float b) const noexcept, const Matrix& element) const {
 	Matrix mat = element;
 
-	int i = 0;
-	for (; i < RowCount * ColumnCount; i += 8) {
+	for (int i = 0; i < RowCount * ColumnCount; i += 8) {
 		_mm256_store_ps(&mat.matrix[i], (this->*operation)(_mm256_load_ps(&matrix[i]), _mm256_load_ps(&mat.matrix[i])));
 	}
 
@@ -646,14 +651,8 @@ void Matrix::single_float_operation_in_place(__m256 (Matrix::* operation)(__m256
 	float (Matrix::* remainderOperation)(float a, float b) const, float scalar) {
 
 	__m256 _scalar = _mm256_set1_ps(scalar);
-
-	int i = 0;
-	for (; i + 8 <= RowCount * ColumnCount; i += 8) {
+	for (int i = 0; i < RowCount * ColumnCount; i += 8) {
 		_mm256_store_ps(&matrix[i], (this->*operation)(_mm256_load_ps(&matrix[i]), _scalar));
-	}
-
-	for (; i < (RowCount * ColumnCount); i++) {
-		matrix[i] = (this->*remainderOperation)(matrix[i], scalar);
 	}
 }
 
@@ -692,15 +691,9 @@ void Matrix::vector_float_operation_in_place(__m256 (Matrix::* operation)(__m256
 void Matrix::matrix_float_operation_in_place(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo) const,
 	float (Matrix::* remainderOperation)(float a, float b) const, const Matrix& element) {
 
-	int i = 0;
-	for (; i + 8 <= RowCount * ColumnCount; i += 8) {
+	for (int i = 0; i < RowCount * ColumnCount; i += 8) {
 		_mm256_store_ps(&matrix[i], (this->*operation)(_mm256_load_ps(&matrix[i]), _mm256_load_ps(&element.matrix[i])));
 	}
-
-	for (; i < RowCount * ColumnCount; i++) {
-		matrix[i] = (this->*remainderOperation)(matrix[i], element.matrix[i]);
-	}
-
 }
 
 
