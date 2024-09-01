@@ -39,19 +39,24 @@ int main()
 
     const double precision = 0.000001;
 
-    Matrix w = Matrix({
-        {0, 0, 1, 2},
-        {1, 1, 0, 3}
-        });
+    Matrix w(16, 16, Matrix::init::He);
 
-    Matrix f = Matrix({
-        {1, 0, 3, 2},
-        {2, 1, 0, 1},
-        {3, 4, 1, 0},
-        {1, 0, 1, 1}
-        });
+    Matrix f(16, 16, Matrix::init::He);
 
-    std::cout << w.dot_product_add(f, { 2, 5 }).ToString();
+    Matrix r(16, 16);
+    Matrix r_2(16, 16);
+
+    r = w.dot_product_add(f, { 2, 5 });
+    r_2 = w.dot_product(f) + std::vector<float>{2, 5};
+    std::cout << "dot_product_add:\n" << r.ToString() << std::endl;
+    std::cout << "dot_product +:\n" << r_2.ToString() << std::endl << std::endl;
+    std::cout << "test / actual:\n" << (r / r_2).ToString() << std::endl << std::endl;
+
+    r = w.dot_product_mul(f, 5);
+    r_2 = w.dot_product(f) * 5;
+    std::cout << "dot_product_mul:\n" << r.ToString() << std::endl;
+    std::cout << "dot_product *:\n" << r_2.ToString() << std::endl << std::endl;
+    std::cout << "test / actual:\n" << (r / r_2).ToString() << std::endl << std::endl;
     return 0;
 
     Matrix a = Matrix({

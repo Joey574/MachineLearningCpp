@@ -110,7 +110,7 @@ public:
 	/// <returns></returns>
 	Matrix dot_product(const Matrix& element) const;
 	/// <summary>
-	/// Computes the dot prod between host and element, but adds bias values on top of sums
+	/// Computes the dot prod between host and element, however adds bias value on top of the result
 	/// </summary>
 	/// <param name="element"></param>
 	/// <param name="bias"></param>
@@ -124,34 +124,34 @@ public:
 	std::vector<float> log_sum_exp() const noexcept;
 
 	// Basic Math
-	inline Matrix Negative() const;
+	Matrix Negative() const;
 	Matrix Abs() const;
 
-	inline Matrix Add(float scalar) const;
-	inline Matrix Add(const std::vector<float>& scalar) const;
-	inline Matrix Add(const Matrix& element) const;
+	Matrix Add(float scalar) const;
+	Matrix Add(const std::vector<float>& scalar) const;
+	Matrix Add(const Matrix& element) const;
 
-	inline Matrix Subtract(float scalar) const;
-	inline Matrix Subtract(const std::vector<float>& scalar) const;
-	inline Matrix Subtract(const Matrix& element) const;
+	Matrix Subtract(float scalar) const;
+	Matrix Subtract(const std::vector<float>& scalar) const;
+	Matrix Subtract(const Matrix& element) const;
 
-	inline Matrix Multiply(float scalar) const;
-	inline Matrix Multiply(const std::vector<float>& scalar) const;
-	inline Matrix Multiply(const Matrix& element) const;
+	Matrix Multiply(float scalar) const;
+	Matrix Multiply(const std::vector<float>& scalar) const;
+	Matrix Multiply(const Matrix& element) const;
 
-	inline Matrix Divide(float scalar) const;
-	inline Matrix Divide(const std::vector<float>& scalar) const;
-	inline Matrix Divide(const Matrix& element) const;
+	Matrix Divide(float scalar) const;
+	Matrix Divide(const std::vector<float>& scalar) const;
+	Matrix Divide(const Matrix& element) const;
 
-	inline Matrix Pow(float scalar) const;
-	inline Matrix Pow(const std::vector<float>& scalar) const;
-	inline Matrix Pow(const Matrix& element) const;
+	Matrix Pow(float scalar) const;
+	Matrix Pow(const std::vector<float>& scalar) const;
+	Matrix Pow(const Matrix& element) const;
 
-	inline Matrix Exp(float base = std::exp(1.0)) const;
-	inline Matrix Exp(const std::vector<float>& base) const;
-	inline Matrix Exp(const Matrix& base) const;
+	Matrix Exp(float base = std::exp(1.0)) const;
+	Matrix Exp(const std::vector<float>& base) const;
+	Matrix Exp(const Matrix& base) const;
 
-	inline Matrix Log() const;
+	Matrix Log() const;
 
 	// Trig
 	Matrix Cos() const;
@@ -296,6 +296,20 @@ public:
 
 		std::memcpy(matrix, other.matrix, RowCount * ColumnCount * sizeof(float));
 		return *this;
+	}
+
+	inline bool operator == (const Matrix& other) {
+		if (RowCount != other.RowCount || ColumnCount != other.ColumnCount) {
+			return false;
+		}
+
+		for (int i = 0; i < RowCount * ColumnCount; i++) {
+			if (matrix[i] != other.matrix[i]) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	float* matrix;

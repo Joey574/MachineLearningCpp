@@ -337,7 +337,6 @@ Matrix Matrix::dot_product(const Matrix& element) const {
 
 	return mat;
 }
-
 Matrix Matrix::dot_product_add(const Matrix& element, const std::vector<float>& bias) const {
 	Matrix mat(RowCount, element.ColumnCount);
 
@@ -351,8 +350,10 @@ Matrix Matrix::dot_product_add(const Matrix& element, const std::vector<float>& 
 			mat.matrix[i] = bias[i / element.ColumnCount];
 		}
 
-	} else {
-		std::cout << "problem\n";
+	} else if (bias.size() == ColumnCount) {
+		for (int i = 0; i < RowCount; i++) {
+			std::memcpy(&matrix[i * ColumnCount], bias.data(), ColumnCount * sizeof(float));
+		}
 	}
 
 	// error handling -> for losers
@@ -410,74 +411,74 @@ std::vector<float> Matrix::log_sum_exp() const noexcept {
 }
 
 // Basic Math
-inline Matrix Matrix::Negative() const {
+Matrix Matrix::Negative() const {
 	return single_float_operation(&Matrix::SIMDMul, &Matrix::RemainderMul, -1);
 }
 Matrix Matrix::Abs() const {
 	return single_float_operation(&Matrix::SIMDAbs, &Matrix::RemainderAbs, 0);
 }
 
-inline Matrix Matrix::Add(float scalar) const {
+Matrix Matrix::Add(float scalar) const {
 	return single_float_operation(&Matrix::SIMDAdd, &Matrix::RemainderAdd, scalar);
 }
-inline Matrix Matrix::Add(const std::vector<float>& scalar) const {
+Matrix Matrix::Add(const std::vector<float>& scalar) const {
 	return vector_float_operation(&Matrix::SIMDAdd, &Matrix::RemainderAdd, scalar);
 }
-inline Matrix Matrix::Add(const Matrix& element) const {
+Matrix Matrix::Add(const Matrix& element) const {
 	return matrix_float_operation(&Matrix::SIMDAdd, &Matrix::RemainderAdd, element);
 }
 
-inline Matrix Matrix::Subtract(float scalar) const {
+Matrix Matrix::Subtract(float scalar) const {
 	return single_float_operation(&Matrix::SIMDSub, &Matrix::RemainderSub, scalar);
 }
-inline Matrix Matrix::Subtract(const std::vector<float>& scalar) const {
+Matrix Matrix::Subtract(const std::vector<float>& scalar) const {
 	return vector_float_operation(&Matrix::SIMDSub, &Matrix::RemainderSub, scalar);
 }
-inline Matrix Matrix::Subtract(const Matrix& element) const {
+Matrix Matrix::Subtract(const Matrix& element) const {
 	return matrix_float_operation(&Matrix::SIMDSub, &Matrix::RemainderSub, element);
 }
 
-inline Matrix Matrix::Multiply(float scalar) const {
+Matrix Matrix::Multiply(float scalar) const {
 	return single_float_operation(&Matrix::SIMDMul, &Matrix::RemainderMul, scalar);
 }
-inline Matrix Matrix::Multiply(const std::vector<float>& scalar) const {
+Matrix Matrix::Multiply(const std::vector<float>& scalar) const {
 	return vector_float_operation(&Matrix::SIMDMul, &Matrix::RemainderMul, scalar);
 }
-inline Matrix Matrix::Multiply(const Matrix& element) const {
+Matrix Matrix::Multiply(const Matrix& element) const {
 	return matrix_float_operation(&Matrix::SIMDMul, &Matrix::RemainderMul, element);
 }
 
-inline Matrix Matrix::Divide(float scalar) const {
+Matrix Matrix::Divide(float scalar) const {
 	return single_float_operation(&Matrix::SIMDDiv, &Matrix::RemainderDiv, scalar);
 }
-inline Matrix Matrix::Divide(const std::vector<float>& scalar) const {
+Matrix Matrix::Divide(const std::vector<float>& scalar) const {
 	return vector_float_operation(&Matrix::SIMDDiv, &Matrix::RemainderDiv, scalar);
 }
-inline Matrix Matrix::Divide(const Matrix& element) const {
+Matrix Matrix::Divide(const Matrix& element) const {
 	return matrix_float_operation(&Matrix::SIMDDiv, &Matrix::RemainderDiv, element);
 }
 
-inline Matrix Matrix::Pow(float scalar) const {
+ Matrix Matrix::Pow(float scalar) const {
 	return single_float_operation(&Matrix::SIMDPow, &Matrix::RemainderPow, scalar);
 }
-inline Matrix Matrix::Pow(const std::vector<float>& scalar) const {
+ Matrix Matrix::Pow(const std::vector<float>& scalar) const {
 	return vector_float_operation(&Matrix::SIMDPow, &Matrix::RemainderPow, scalar);
 }
-inline Matrix Matrix::Pow(const Matrix& element) const {
+ Matrix Matrix::Pow(const Matrix& element) const {
 	return matrix_float_operation(&Matrix::SIMDPow, &Matrix::RemainderPow, element);
 }
 
-inline Matrix Matrix::Exp(float base) const {
+ Matrix Matrix::Exp(float base) const {
 	return single_float_operation(&Matrix::SIMDExp, &Matrix::RemainderExp, base);
 }
-inline Matrix Matrix::Exp(const std::vector<float>& base) const {
+ Matrix Matrix::Exp(const std::vector<float>& base) const {
 	return vector_float_operation(&Matrix::SIMDExp, &Matrix::RemainderExp, base);
 }
-inline Matrix Matrix::Exp(const Matrix& base) const {
+ Matrix Matrix::Exp(const Matrix& base) const {
 	return matrix_float_operation(&Matrix::SIMDExp, &Matrix::RemainderExp, base);
 }
 
-inline Matrix Matrix::Log() const {
+ Matrix Matrix::Log() const {
 	return single_float_operation(&Matrix::SIMDLog, &Matrix::RemainderLog, 0);
 }
 

@@ -142,7 +142,6 @@ std::tuple<Matrix, Matrix, Matrix, Matrix> NeuralNetwork::data_preprocessing(Mat
 NeuralNetwork::result_matrices NeuralNetwork::forward_propogate(Matrix x, network_structure net, result_matrices results) {
 	for (int i = 0; i < results.total.size(); i++) {
 		results.total[i] = net.weights[i].dot_product_add(((i == 0) ? x : results.activation[i - 1]), net.biases[i]);
-		//results.total[i] = net.weights[i].dot_product(((i == 0) ? x : results.activation[i - 1])) + net.biases[i];
 		results.activation[i] = (results.total[i].*_activation_functions[i])();
 	}
 	return results;
@@ -151,7 +150,7 @@ NeuralNetwork::result_matrices NeuralNetwork::forward_propogate(Matrix x, networ
 NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Matrix y, float learning_rate, float weight_decay, network_structure net, result_matrices results, derivative_matrices deriv) {
 	
 	const float s_batch = std::sqrt((float)x.ColumnCount);
-	const float factor = weight_decay ? (1.0f - learning_rate * (5.0f / s_batch)) : 1.0f;
+	const float factor = weight_decay ? (1.0f - learning_rate * (weight_decay / s_batch)) : 1.0f;
 
 	// Compute loss
 	deriv.d_total[deriv.d_total.size() - 1] = (this->*_loss.derivative)(results.activation.back(), y.Transpose());
@@ -161,12 +160,14 @@ NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Ma
 	}
 
 	for (int i = 0; i < deriv.d_weights.size(); i++) {
-		deriv.d_weights[i] = deriv.d_total[i].dot_product(i == 0 ? x.Transpose() : results.activation[i - 1].Transpose()) * ((1.0f / s_batch) * factor);
+		//deriv.d_weights[i] = deriv.d_total[i].dot_product(i == 0 ? x.Transpose() : results.activation[i - 1].Transpose()) * ((1.0f / s_batch) * factor);
+		deriv.d_weights[i] = deriv.d_total[i].dot_product(i == 0 ? x.Transpose() : results.activation[i - 1].Transpose()) * ((1.0f / s_batch));
 		deriv.d_biases.assign(i, deriv.d_total[i].Multiply(1.0f / s_batch).RowSums());
 	}
 
 	for (int i = 0; i < net.weights.size(); i++) {
-		net.weights[i] -= deriv.d_weights[i].Multiply((learning_rate / s_batch) * factor);
+		//net.weights[i] -= deriv.d_weights[i].Multiply((learning_rate / s_batch) * factor);
+		net.weights[i] = net.weights[i] * (1.0f - learning_rate * (weight_decay / x.ColumnCount)) - deriv.d_weights[i].Multiply(learning_rate / s_batch);
 	}
 	net.biases.update(deriv.d_biases, learning_rate / s_batch);
 
