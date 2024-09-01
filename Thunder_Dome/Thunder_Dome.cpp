@@ -24,22 +24,22 @@ int main()
     }
 
     for (int i = 0; i < warmup; i++) {
-        res = a.dot_product_mul(b, 5);
+        res = a.dot_product_add(b, bias);
     }
     auto s_time = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < iterations; i++) {
-        res = a.dot_product_mul(b, 5);
+        res = a.dot_product_add(b, bias);
     }
     time = std::chrono::high_resolution_clock::now() - s_time;
-    std::cout << "dot_product_mul time: " << time.count() << " ms\n";
+    std::cout << "dot_product_add time: " << time.count() << " ms\n";
 
     for (int i = 0; i < warmup; i++) {
-        res = a.dot_product(b) * 5;
+        res = a.dot_product(b) + bias;
     }
     s_time = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < iterations; i++) {
-        res = a.dot_product(b) * 5;
+        res = a.dot_product(b) + bias;
     }
     time = std::chrono::high_resolution_clock::now() - s_time;
-    std::cout << "dot_product * scalar time: " << time.count() << " ms\n";
+    std::cout << "dot_product + bias time: " << time.count() << " ms\n";
 }

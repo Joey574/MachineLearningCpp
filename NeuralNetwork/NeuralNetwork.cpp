@@ -146,7 +146,6 @@ NeuralNetwork::result_matrices NeuralNetwork::forward_propogate(Matrix x, networ
 	}
 	return results;
 }
-
 NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Matrix y, float learning_rate, float weight_decay, network_structure net, result_matrices results, derivative_matrices deriv) {
 	
 	const float s_batch = std::sqrt((float)x.ColumnCount);
@@ -172,6 +171,24 @@ NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Ma
 	net.biases.update(deriv.d_biases, learning_rate / s_batch);
 
 	return net;
+}
+
+NeuralNetwork::result_matrices NeuralNetwork::forward_propogate_optimized(Matrix x, network_structure net, result_matrices results) {
+	for (int i = 0; i < results.total.size(); i++) {
+
+		int x = 0;
+		for (; x + 8 < results.total[x].RowCount * results.total[x].ColumnCount; x += 8) {
+			_mm256_store_ps(&results.total[i].matrix[x], _mm256_set1_ps(net.biases[i][x / results.total[i].ColumnCount]));
+		}
+		for (; x < results.total[x].RowCount * results.total[x].ColumnCount; x++) {
+			results.total[i].matrix[x] = net.biases[i][x / results.total[i].ColumnCount];
+		}
+
+
+	}
+}
+NeuralNetwork::network_structure NeuralNetwork::backward_propogate_optimized(Matrix x, Matrix y, float learning_rate, float weight_decay, network_structure net, result_matrices results, derivative_matrices deriv) {
+
 }
 
 

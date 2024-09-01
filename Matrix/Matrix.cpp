@@ -352,7 +352,7 @@ Matrix Matrix::dot_product_add(const Matrix& element, const std::vector<float>& 
 
 	} else if (bias.size() == ColumnCount) {
 		for (int i = 0; i < RowCount; i++) {
-			std::memcpy(&matrix[i * ColumnCount], bias.data(), ColumnCount * sizeof(float));
+			std::fill(&matrix[i * ColumnCount], &matrix[i * ColumnCount + ColumnCount], bias[i]);
 		}
 	}
 

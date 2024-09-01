@@ -125,6 +125,10 @@ private:
 	network_structure backward_propogate(Matrix x, Matrix y, float learning_rate, float weight_decay, network_structure net, result_matrices results, derivative_matrices deriv);
 	std::string test_network(Matrix x, Matrix y, network_structure net);
 
+	result_matrices forward_propogate_optimized(Matrix x, network_structure net, result_matrices results);
+	network_structure backward_propogate_optimized(Matrix x, Matrix y, float learning_rate, float weight_decay, network_structure net, result_matrices results, derivative_matrices deriv);
+
+
 	void intermediate_history(training_history& history);
 	void final_history(training_history& history, std::chrono::steady_clock::time_point start, std::chrono::steady_clock::time_point end, int epochs);
 

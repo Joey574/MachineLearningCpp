@@ -52,11 +52,6 @@ int main()
     std::cout << "dot_product +:\n" << r_2.ToString() << std::endl << std::endl;
     std::cout << "test / actual:\n" << (r / r_2).ToString() << std::endl << std::endl;
 
-    r = w.dot_product_mul(f, 5);
-    r_2 = w.dot_product(f) * 5;
-    std::cout << "dot_product_mul:\n" << r.ToString() << std::endl;
-    std::cout << "dot_product *:\n" << r_2.ToString() << std::endl << std::endl;
-    std::cout << "test / actual:\n" << (r / r_2).ToString() << std::endl << std::endl;
     return 0;
 
     Matrix a = Matrix({
