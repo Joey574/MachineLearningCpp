@@ -19,40 +19,32 @@ Matrix::Matrix(size_t rows, size_t columns, init initType) : RowCount(rows), Col
 
 		std::uniform_real_distribution<float> dist_x(lowerRand, upperRand);
 
-		for (int r = 0; r < RowCount; r++) {
-			for (int c = 0; c < ColumnCount; c++) {
-				matrix[r * ColumnCount + c] = dist_x(gen);
-			}
+		for (int i = 0; i < RowCount * ColumnCount; i++) {
+			matrix[i] = dist_x(gen);
 		}
 		break;
 	}
 	case Matrix::init::He: {
 		std::normal_distribution<float> dist_h(0.0, std::sqrt(2.0f / RowCount));
 
-		for (int r = 0; r < RowCount; r++) {
-			for (int c = 0; c < ColumnCount; c++) {
-				matrix[r * ColumnCount + c] = dist_h(gen);
-			}
+		for (int i = 0; i < RowCount * ColumnCount; i++) {
+			matrix[i] = dist_h(gen);
 		}
 		break;
 	}
 	case Matrix::init::Normalize: {
 		std::uniform_real_distribution<float> dist_n(lowerRand, upperRand);
 
-		for (int r = 0; r < RowCount; r++) {
-			for (int c = 0; c < ColumnCount; c++) {
-				matrix[r * ColumnCount + c] = dist_n(gen) * std::sqrt(1.0f / ColumnCount);
-			}
+		for (int i = 0; i < RowCount * ColumnCount; i++) {
+			matrix[i] = dist_n(gen) * std::sqrt(1.0f / ColumnCount);
 		}
 		break;
 	}
 	case Matrix::init::Random: {
 		std::uniform_real_distribution<float> dist_r(lowerRand, upperRand);
 
-		for (int r = 0; r < RowCount; r++) {
-			for (int c = 0; c < ColumnCount; c++) {
-				matrix[r * ColumnCount + c] = dist_r(gen);
-			}
+		for (int i = 0; i < RowCount * ColumnCount; i++) {
+			matrix[i] = dist_r(gen);
 		}
 		break;
 	}
@@ -300,7 +292,7 @@ Matrix Matrix::dot_product(const Matrix& element) const {
 	Matrix mat(RowCount, element.ColumnCount);
 
 	// error handling -> for losers
-	if (ColumnCount != element.RowCount) {
+		if (ColumnCount != element.RowCount) {
 		std::cout << "size mismatch\n";
 	}
 	for (int r = 0; r < RowCount; r++) {

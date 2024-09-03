@@ -1,18 +1,20 @@
 #include "NeuralNetwork.h"
 
 void NeuralNetwork::Define(std::vector<int> dimensions, std::unordered_set<int> res_net, std::unordered_set<int> batch_normalization,
-	std::vector<Matrix(Matrix::*)() const> activation_functions, std::vector<Matrix(Matrix::*)() const> derivative_functions) {
+	std::vector<activations> activation_type) {
 
 	this->_res_net = res_net;
 	this->_batch_norm = batch_normalization;
 	this->_dimensions = dimensions;
 
-	if (activation_functions.size() != dimensions.size() - 1 || derivative_functions.size() != dimensions.size() - 2) {
+	if (activation_type.size() != dimensions.size() - 1) {
 		std::cout << "activation functions passed do not match required size\n";
 	}
 	
-	this->_activation_functions = activation_functions;
-	this->_derivative_functions = derivative_functions;
+	_activation_functions = std::vector<activation_data>(activation_type.size());
+	for (int i = 0; i < activation_type.size(); i++) {
+		_activation_functions[i] = compile_activation_function(activation_type[i]);
+	}
 
 	std::cout << this->summary();
 }
@@ -144,28 +146,54 @@ NeuralNetwork::result_matrices NeuralNetwork::forward_propogate(Matrix x, networ
 	for (int i = 0; i < results.total.size(); i++) {
 		//results.total[i] = net.weights[i].dot_product_add(((i == 0) ? x : results.activation[i - 1]), net.biases[i]);
 		results.total[i] = net.weights[i].dot_product((i == 0) ? x : results.activation[i - 1]) + net.biases[i];
-		results.activation[i] = (results.total[i].*_activation_functions[i])();
+		results.activation[i] = (results.total[i].*_activation_functions[i].activation)();
+
+		if (results.total[i].contains_nan()) {
+			std::cout << "total[" << i << "]: contains nan\n";
+
+		}
+		if (results.activation[i].contains_nan()) {
+			std::cout << "activation[" << i << "]: contains nan\n";
+		}
+		if (net.weights[i].contains_nan()) {
+			std::cout << "weights[" << i << "]: contains nan\n";
+		}
 	}
 	return results;
 }
 NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Matrix y, float learning_rate, float weight_decay, network_structure net, result_matrices results, derivative_matrices deriv) {
 	
-	const float l1_reg = 0;
+	//const float l1_reg = 0;
 	const float l2_reg = weight_decay ? (1.0f - learning_rate * (weight_decay / x.ColumnCount)) : 1.0f;
 	const float s_factor = std::sqrt(learning_rate) / std::sqrt(float(x.ColumnCount));
+
+	//std::cout << "l2: " << l2_reg << std::endl;
 
 	// Compute loss
 	deriv.d_total[deriv.d_total.size() - 1] = (this->*_loss.derivative)(results.activation.back(), y.Transpose());
 
+	if (deriv.d_total.back().contains_nan()) {
+		std::cout << "last d_total: contains nan\n";
+	}
+
 	for (int i = deriv.d_total.size() - 1; i > 0; i--) {
-		deriv.d_total[i - 1] = net.weights[i].Transpose().dot_product(deriv.d_total[i]) * (results.total[i - 1].*_derivative_functions[i - 1])();
+		deriv.d_total[i - 1] = net.weights[i].Transpose().dot_product(deriv.d_total[i]) * (results.total[i - 1].*_activation_functions[i - 1].derivative)();
+
+		if (deriv.d_total[i - 1].contains_nan()) {
+			std::cout << "d_total[" << i - 1 << "]: contains nan\n";
+		}
 	}
 
 	for (int i = 0; i < deriv.d_weights.size(); i++) {
 		deriv.d_weights[i] = deriv.d_total[i].dot_product(i == 0 ? x.Transpose() : results.activation[i - 1].Transpose()) * s_factor;
 		deriv.d_biases.assign(i, deriv.d_total[i].Multiply(s_factor).RowSums());
+
+		if (deriv.d_weights[i].contains_nan()) {
+			std::cout << "d_weights[" << i << "]: contains nan\n";
+		}
 	}
 
+	// net.weights[i].matrix[idx] := (net.weights[i].matrix[idx] * l2_reg) - (deriv.d_weights[i].matrix[idx] * s_factor)
 	for (int i = 0; i < net.weights.size(); i++) {
 		int size = net.weights[i].RowCount * net.weights[i].ColumnCount;
 
@@ -340,39 +368,39 @@ NeuralNetwork::metric_data NeuralNetwork::compile_metric_data(loss_metric type) 
 	}
 	return metric;
 }
-NeuralNetwork::activation_function_data NeuralNetwork::compile_activation_function(activation_function type) {
-	activation_function_data function;
+NeuralNetwork::activation_data NeuralNetwork::compile_activation_function(activations type) {
+	activation_data function;
 	function.type = type;
 	switch (type) {
-	case activation_function::Sigmoid:
+	case activations::Sigmoid:
 		function.activation = &Matrix::Sigmoid;
 		function.derivative = &Matrix::SigmoidDerivative;
 		break;
-	case activation_function::ReLU:
+	case activations::ReLU:
 		function.activation = &Matrix::ReLU;
 		function.derivative = &Matrix::ReLUDerivative;
 		break;
-	case activation_function::leakyReLU:
+	case activations::leakyReLU:
 		function.activation = &Matrix::_LeakyReLU;
 		function.derivative = &Matrix::_LeakyReLUDerivative;
 		break;
-	case activation_function::ELU:
+	case activations::ELU:
 		function.activation = &Matrix::_ELU;
 		function.derivative = &Matrix::_ELUDerivative;
 		break;
-	case activation_function::tanH:
+	case activations::tanH:
 		function.activation = &Matrix::Tanh;
 		function.derivative = &Matrix::TanhDerivative;
 		break;
-	case activation_function::Softplus:
+	case activations::Softplus:
 		function.activation = &Matrix::Softplus;
 		function.derivative = &Matrix::SoftplusDerivative;
 		break;
-	case activation_function::SiLU:
+	case activations::SiLU:
 		function.activation = &Matrix::SiLU;
 		function.derivative = &Matrix::SiLUDerivative;
 		break;
-	case activation_function::Softmax:
+	case activations::Softmax:
 		function.activation = &Matrix::SoftMax;
 		function.derivative = &Matrix::SigmoidDerivative;
 		break;

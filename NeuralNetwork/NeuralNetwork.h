@@ -14,7 +14,7 @@ public:
 	static enum class loss_metric {
 		none, mse, mae, cross_entropy, accuracy
 	};
-	static enum class activation_function {
+	static enum class activations {
 		Sigmoid, ReLU, leakyReLU, ELU, tanH, Softplus, SiLU, Softmax
 	};
 	static enum class optimization_technique {
@@ -33,8 +33,7 @@ public:
 		std::vector<int> dimensions,
 		std::unordered_set<int> res_net,
 		std::unordered_set<int> batch_normalization,
-		std::vector<Matrix(Matrix::*)() const> activation_functions,
-		std::vector<Matrix(Matrix::*)() const> derivative_functions
+		std::vector<activations> activation_type
 	);
 
 	void Compile(
@@ -95,15 +94,14 @@ private:
 		float(NeuralNetwork::* total)(Matrix final_activation, Matrix labels);
 	};
 
-	struct activation_function_data {
-		activation_function type;
+	struct activation_data {
+		activations type;
 		Matrix(Matrix::* activation)() const;
 		Matrix(Matrix::* derivative)() const;
 	};
 
-	// Function Pointers
-	std::vector<Matrix(Matrix::*)() const>  _activation_functions;
-	std::vector<Matrix(Matrix::*)() const>  _derivative_functions;
+	// Activation data
+	std::vector<activation_data> _activation_functions;
 
 	// Cost functions / metrics
 	metric_data _loss;
@@ -129,7 +127,7 @@ private:
 	void final_history(training_history& history, std::chrono::steady_clock::time_point start, std::chrono::steady_clock::time_point end, int epochs);
 
 	metric_data compile_metric_data(loss_metric type);
-	activation_function_data compile_activation_function(activation_function type);
+	activation_data compile_activation_function(activations type);
 
 	Matrix mse_loss(Matrix final_activation, Matrix labels);
 	float mse_total(Matrix final_activation, Matrix labels);

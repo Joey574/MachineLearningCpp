@@ -6,6 +6,7 @@
 
 int main()
 {
+	system("CLS");
 	SetPriorityClass(GetStdHandle, REALTIME_PRIORITY_CLASS);
 
 	srand(time(0));
@@ -34,7 +35,7 @@ int main()
 	int batch_size = 320;
 	int epochs = 20;
 	float learning_rate = 0.1f;
-	float weight_decay = 2.0f;
+	float weight_decay = 0.0f;
 	float validation_split = 0.0f;
 	bool shuffle = true;
 	int validation_freq = 1;
@@ -61,8 +62,7 @@ int main()
 		dims,
 		res,
 		batch_norm,
-		{ &Matrix::_ELU, &Matrix::_ELU, &Matrix::_ELU, &Matrix::SoftMax },
-		{ &Matrix::_ELUDerivative, &Matrix::_ELUDerivative, &Matrix::_ELUDerivative }
+		{ NeuralNetwork::activations::ELU, NeuralNetwork::activations::ELU , NeuralNetwork::activations::ELU , NeuralNetwork::activations::Softmax }
 	);
 
 	// Compile the model
