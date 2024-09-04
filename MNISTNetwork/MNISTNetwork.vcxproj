@@ -128,6 +128,8 @@
       <StringPooling>true</StringPooling>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
       <OmitFramePointers>true</OmitFramePointers>
+      <OpenMPSupport>true</OpenMPSupport>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

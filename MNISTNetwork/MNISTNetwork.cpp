@@ -17,7 +17,7 @@ int main()
 	std::cout << "page size: " << si.dwPageSize << std::endl;
 
 	// Model definitions
-	std::vector<int> dims = { 784, 128, 128, 128, 10 };
+	std::vector<int> dims = { 784, 512, 512, 512, 10 };
 	std::unordered_set<int> res = {  };
 	std::unordered_set<int> batch_norm = {  };
 
@@ -33,9 +33,9 @@ int main()
 	Matrix x_test;
 	Matrix y_test;
 	int batch_size = 320;
-	int epochs = 20;
-	float learning_rate = 0.1f;
-	float weight_decay = 0.0f;
+	int epochs = 150;
+	float learning_rate = 0.02f;
+	float weight_decay = 0.5f;
 	float validation_split = 0.0f;
 	bool shuffle = true;
 	int validation_freq = 1;

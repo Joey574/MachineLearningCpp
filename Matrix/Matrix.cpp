@@ -292,9 +292,12 @@ Matrix Matrix::dot_product(const Matrix& element) const {
 	Matrix mat(RowCount, element.ColumnCount);
 
 	// error handling -> for losers
-		if (ColumnCount != element.RowCount) {
+	if (ColumnCount != element.RowCount) {
 		std::cout << "size mismatch\n";
 	}
+
+
+	#pragma omp parallel for
 	for (int r = 0; r < RowCount; r++) {
 		for (int k = 0; k < element.RowCount; k++) {
 			__m256 scalar = _mm256_set1_ps(matrix[r * ColumnCount + k]);
@@ -329,6 +332,7 @@ Matrix Matrix::dot_product_add(const Matrix& element, const std::vector<float>& 
 
 	if (bias.size() == RowCount) {
 		int i = 0;
+
 		for (; i + 8 <= mat.RowCount * mat.ColumnCount; i += 8) {
 			_mm256_store_ps(&mat.matrix[i], _mm256_set1_ps(bias[i / mat.ColumnCount]));
 		}
@@ -348,6 +352,7 @@ Matrix Matrix::dot_product_add(const Matrix& element, const std::vector<float>& 
 		std::cout << "size mismatch\n";
 	}
 
+	#pragma omp parallel for
 	for (int r = 0; r < RowCount; r++) {
 		for (int k = 0; k < element.RowCount; k++) {
 			__m256 scalar = _mm256_set1_ps(matrix[r * ColumnCount + k]);
@@ -584,6 +589,8 @@ Matrix Matrix::single_float_operation(__m256 (Matrix::* operation)(__m256 opOne,
 	Matrix mat = *this;
 
 	__m256 _scalar = _mm256_set1_ps(scalar);
+
+	#pragma omp parallel for
 	for (int i = 0; i < RowCount * ColumnCount; i += 8) {
 		_mm256_store_ps(&mat.matrix[i], (this->*operation)(_mm256_load_ps(&mat.matrix[i]), _scalar));
 	}
@@ -597,6 +604,7 @@ Matrix Matrix::vector_float_operation(__m256 (Matrix::* operation)(__m256 opOne,
 	Matrix mat = *this;
 
 	if (scalar.size() == ColumnCount) {
+		#pragma omp parallel for
 		for (int r = 0; r < RowCount; r++) {
 
 			int c = 0;
@@ -609,6 +617,7 @@ Matrix Matrix::vector_float_operation(__m256 (Matrix::* operation)(__m256 opOne,
 			}
 		}
 	} else if (scalar.size() == RowCount) {
+		#pragma omp parallel for
 		for (int r = 0; r < RowCount; r++) {
 			__m256 _scalar = _mm256_set1_ps(scalar[r]);
 
@@ -630,6 +639,7 @@ Matrix Matrix::matrix_float_operation(__m256 (Matrix::* operation)(__m256 opOne,
 	float (Matrix::* remainderOperation)(float a, float b) const noexcept, const Matrix& element) const {
 	Matrix mat = element;
 
+	#pragma omp parallel for
 	for (int i = 0; i < RowCount * ColumnCount; i += 8) {
 		_mm256_store_ps(&mat.matrix[i], (this->*operation)(_mm256_load_ps(&matrix[i]), _mm256_load_ps(&mat.matrix[i])));
 	}
@@ -643,6 +653,8 @@ void Matrix::single_float_operation_in_place(__m256 (Matrix::* operation)(__m256
 	float (Matrix::* remainderOperation)(float a, float b) const, float scalar) {
 
 	__m256 _scalar = _mm256_set1_ps(scalar);
+
+	#pragma omp parallel for
 	for (int i = 0; i < RowCount * ColumnCount; i += 8) {
 		_mm256_store_ps(&matrix[i], (this->*operation)(_mm256_load_ps(&matrix[i]), _scalar));
 	}
@@ -652,6 +664,8 @@ void Matrix::vector_float_operation_in_place(__m256 (Matrix::* operation)(__m256
 	float (Matrix::* remainderOperation)(float a, float b) const, const std::vector<float>& scalar) {
 
 	if (scalar.size() == ColumnCount) {
+
+		#pragma omp parallel for
 		for (int r = 0; r < RowCount; r++) {
 
 			int c = 0;
@@ -664,6 +678,8 @@ void Matrix::vector_float_operation_in_place(__m256 (Matrix::* operation)(__m256
 			}
 		}
 	} else if (scalar.size() == RowCount) {
+
+		#pragma omp parallel for
 		for (int r = 0; r < RowCount; r++) {
 			__m256 loaded_b = _mm256_set1_ps(scalar[r]);
 
@@ -683,6 +699,7 @@ void Matrix::vector_float_operation_in_place(__m256 (Matrix::* operation)(__m256
 void Matrix::matrix_float_operation_in_place(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo) const,
 	float (Matrix::* remainderOperation)(float a, float b) const, const Matrix& element) {
 
+	#pragma omp parallel for
 	for (int i = 0; i < RowCount * ColumnCount; i += 8) {
 		_mm256_store_ps(&matrix[i], (this->*operation)(_mm256_load_ps(&matrix[i]), _mm256_load_ps(&element.matrix[i])));
 	}

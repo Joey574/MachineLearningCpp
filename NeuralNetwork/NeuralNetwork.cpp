@@ -144,20 +144,9 @@ std::tuple<Matrix, Matrix, Matrix, Matrix> NeuralNetwork::data_preprocessing(Mat
 NeuralNetwork::result_matrices NeuralNetwork::forward_propogate(Matrix x, network_structure net, result_matrices results) {
 
 	for (int i = 0; i < results.total.size(); i++) {
-		//results.total[i] = net.weights[i].dot_product_add(((i == 0) ? x : results.activation[i - 1]), net.biases[i]);
-		results.total[i] = net.weights[i].dot_product((i == 0) ? x : results.activation[i - 1]) + net.biases[i];
+		results.total[i] = net.weights[i].dot_product_add(((i == 0) ? x : results.activation[i - 1]), net.biases[i]);
+		//results.total[i] = net.weights[i].dot_product((i == 0) ? x : results.activation[i - 1]) + net.biases[i];
 		results.activation[i] = (results.total[i].*_activation_functions[i].activation)();
-
-		if (results.total[i].contains_nan()) {
-			std::cout << "total[" << i << "]: contains nan\n";
-
-		}
-		if (results.activation[i].contains_nan()) {
-			std::cout << "activation[" << i << "]: contains nan\n";
-		}
-		if (net.weights[i].contains_nan()) {
-			std::cout << "weights[" << i << "]: contains nan\n";
-		}
 	}
 	return results;
 }
@@ -167,38 +156,25 @@ NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Ma
 	const float l2_reg = weight_decay ? (1.0f - learning_rate * (weight_decay / x.ColumnCount)) : 1.0f;
 	const float s_factor = std::sqrt(learning_rate) / std::sqrt(float(x.ColumnCount));
 
-	//std::cout << "l2: " << l2_reg << std::endl;
-
 	// Compute loss
-	deriv.d_total[deriv.d_total.size() - 1] = (this->*_loss.derivative)(results.activation.back(), y.Transpose());
-
-	if (deriv.d_total.back().contains_nan()) {
-		std::cout << "last d_total: contains nan\n";
-	}
+	deriv.d_total.back() = (this->*_loss.derivative)(results.activation.back(), y.Transpose());
 
 	for (int i = deriv.d_total.size() - 1; i > 0; i--) {
 		deriv.d_total[i - 1] = net.weights[i].Transpose().dot_product(deriv.d_total[i]) * (results.total[i - 1].*_activation_functions[i - 1].derivative)();
-
-		if (deriv.d_total[i - 1].contains_nan()) {
-			std::cout << "d_total[" << i - 1 << "]: contains nan\n";
-		}
 	}
 
 	for (int i = 0; i < deriv.d_weights.size(); i++) {
 		deriv.d_weights[i] = deriv.d_total[i].dot_product(i == 0 ? x.Transpose() : results.activation[i - 1].Transpose()) * s_factor;
 		deriv.d_biases.assign(i, deriv.d_total[i].Multiply(s_factor).RowSums());
-
-		if (deriv.d_weights[i].contains_nan()) {
-			std::cout << "d_weights[" << i << "]: contains nan\n";
-		}
 	}
 
 	// net.weights[i].matrix[idx] := (net.weights[i].matrix[idx] * l2_reg) - (deriv.d_weights[i].matrix[idx] * s_factor)
+	#pragma omp parallel for
 	for (int i = 0; i < net.weights.size(); i++) {
 		int size = net.weights[i].RowCount * net.weights[i].ColumnCount;
 
 		int idx = 0;
-		for (; idx + 16 < size; idx += 8) {
+		for (; idx + 16 <= size; idx += 8) {
 			_mm256_store_ps(&net.weights[i].matrix[idx],
 				_mm256_fmsub_ps(
 					_mm256_load_ps(&net.weights[i].matrix[idx]),
