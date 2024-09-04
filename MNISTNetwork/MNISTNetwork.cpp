@@ -8,18 +8,10 @@ int main()
 {
 	system("CLS");
 	SetPriorityClass(GetStdHandle, REALTIME_PRIORITY_CLASS);
-
 	srand(time(0));
 
-	SYSTEM_INFO si;
-	GetSystemInfo(&si);
-
-	std::cout << "page size: " << si.dwPageSize << std::endl;
-
 	// Model definitions
-	std::vector<int> dims = { 784, 512, 512, 512, 10 };
-	std::unordered_set<int> res = {  };
-	std::unordered_set<int> batch_norm = {  };
+	std::vector<int> dims = { 784, 128, 128, 128, 10 };
 
 	// Model compilation parameters
 	NeuralNetwork::loss_metric loss = NeuralNetwork::loss_metric::cross_entropy;
@@ -33,9 +25,9 @@ int main()
 	Matrix x_test;
 	Matrix y_test;
 	int batch_size = 320;
-	int epochs = 150;
-	float learning_rate = 0.02f;
-	float weight_decay = 0.5f;
+	int epochs = 75;
+	float learning_rate = 0.05f;
+	float weight_decay = 0.0f;
 	float validation_split = 0.0f;
 	bool shuffle = true;
 	int validation_freq = 1;
@@ -60,8 +52,6 @@ int main()
 
 	model.Define(
 		dims,
-		res,
-		batch_norm,
 		{ NeuralNetwork::activations::ELU, NeuralNetwork::activations::ELU , NeuralNetwork::activations::ELU , NeuralNetwork::activations::Softmax }
 	);
 
@@ -74,7 +64,7 @@ int main()
 	);
 
 	// Fit model to training data
-	NeuralNetwork::training_history history = model.Fit(
+	auto history = model.Fit(
 		x,
 		y,
 		x_test,
@@ -86,8 +76,8 @@ int main()
 		validation_split,
 		shuffle,
 		validation_freq
-	);		
-	
+	);
+
 	std::cout << "Training time: " << history.train_time.count() << std::endl;
 	std::cout << "Epoch time: " << history.epoch_time.count() << std::endl;
 

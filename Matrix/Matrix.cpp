@@ -296,7 +296,6 @@ Matrix Matrix::dot_product(const Matrix& element) const {
 		std::cout << "size mismatch\n";
 	}
 
-
 	#pragma omp parallel for
 	for (int r = 0; r < RowCount; r++) {
 		for (int k = 0; k < element.RowCount; k++) {
@@ -496,23 +495,17 @@ Matrix Matrix::Sigmoid() const {
 Matrix Matrix::ReLU() const {
 	return single_float_operation(&Matrix::SIMDMax, &Matrix::RemainderMax, 0);
 }
-Matrix Matrix::LeakyReLU(float alpha) const {
-	return matrix_float_operation(&Matrix::SIMDMax, &Matrix::RemainderMax, this->Multiply(alpha));
+Matrix Matrix::LeakyReLU() const {
+	return matrix_float_operation(&Matrix::SIMDMax, &Matrix::RemainderMax, this->Multiply(0.1f));
 }
-Matrix Matrix::_LeakyReLU() const {
-	return LeakyReLU();
-}
-Matrix Matrix::ELU(float alpha) const {
+Matrix Matrix::ELU() const {
 	Matrix a = *this;
 	for (int r = 0; r < RowCount; r++) {
 		for (int c = 0; c < ColumnCount; c++) {
-			a(r, c) = matrix[r * ColumnCount + c] < 0.0f ? alpha * (std::exp(matrix[r * ColumnCount + c]) - 1) : matrix[r * ColumnCount + c];
+			a(r, c) = matrix[r * ColumnCount + c] < 0.0f ? (std::exp(matrix[r * ColumnCount + c]) - 1) : matrix[r * ColumnCount + c];
 		}
 	}
 	return a;
-}
-Matrix Matrix::_ELU() const {
-	return ELU();
 }
 Matrix Matrix::Tanh() const {
 	Matrix a = this->Exp();
@@ -546,30 +539,24 @@ Matrix Matrix::ReLUDerivative() const {
 	}
 	return a;
 }
-Matrix Matrix::LeakyReLUDerivative(float alpha) const {
+Matrix Matrix::LeakyReLUDerivative() const {
 	Matrix deriv = *this;
 	for (int c = 0; c < ColumnCount; c++) {
 		for (int r = 0; r < RowCount; r++) {
-			deriv(r, c) = deriv(r, c) > 0.0f ? 1.0f : alpha;
+			deriv(r, c) = deriv(r, c) > 0.0f ? 1.0f : 0.1f;
 		}
 	}
 	return deriv;
 }
-Matrix Matrix::_LeakyReLUDerivative() const {
-	return LeakyReLUDerivative();
-}
-Matrix Matrix::ELUDerivative(float alpha) const {
+Matrix Matrix::ELUDerivative() const {
 	Matrix a = *this;
 
 	for (int r = 0; r < this->RowCount; r++) {
 		for (int c = 0; c < this->ColumnCount; c++) {
-			a(r, c) = matrix[r * ColumnCount + c] > 0.0f ? 1.0f : alpha * std::exp(matrix[r * ColumnCount + c]);
+			a(r, c) = matrix[r * ColumnCount + c] > 0.0f ? 1.0f : std::exp(matrix[r * ColumnCount + c]);
 		}
 	}
 	return a;
-}
-Matrix Matrix::_ELUDerivative() const {
-	return ELUDerivative();
 }
 Matrix Matrix::TanhDerivative() const {
 	Matrix one = Matrix(this->RowCount, this->ColumnCount, 1);

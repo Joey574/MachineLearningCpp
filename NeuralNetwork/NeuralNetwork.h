@@ -31,8 +31,6 @@ public:
 
 	void Define(
 		std::vector<int> dimensions,
-		std::unordered_set<int> res_net,
-		std::unordered_set<int> batch_normalization,
 		std::vector<activations> activation_type
 	);
 
@@ -121,6 +119,12 @@ private:
 
 	result_matrices forward_propogate(Matrix x, network_structure net, result_matrices results);
 	network_structure backward_propogate(Matrix x, Matrix y, float learning_rate, float weight_decay, network_structure net, result_matrices results, derivative_matrices deriv);
+	
+	void base_weight_update();
+	void l1_weight_update();
+	void l2_weight_update();
+	void momentum_weight_update();
+
 	std::string test_network(Matrix x, Matrix y, network_structure net);
 
 	void intermediate_history(training_history& history);

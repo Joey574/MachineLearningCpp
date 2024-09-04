@@ -21,30 +21,30 @@ public:
 	};
 
 	Matrix() : RowCount(0), ColumnCount(0), matrix(nullptr) {}
-	Matrix(size_t rows, size_t columns);
-	Matrix(size_t rows, size_t columns, init initType);
-	Matrix(size_t rows, size_t columns, float value);
-	Matrix(const std::vector<std::vector<float>>& matrix);
-	Matrix(const float* matrix, size_t rows, size_t columns);
-	Matrix(const Matrix& other);
+	Matrix(size_t, size_t);
+	Matrix(size_t, size_t, init);
+	Matrix(size_t, size_t, float);
+	Matrix(const std::vector<std::vector<float>>&);
+	Matrix(const float*, size_t, size_t);
+	Matrix(const Matrix&);
 
-	std::vector<float> Column(int index) const;
-	std::vector<float> Row(int index) const;
+	std::vector<float> Column(int) const;
+	std::vector<float> Row(int) const;
 
-	void SetColumn(int index, const std::vector<float>& column);
-	void SetColumn(int index, const std::vector<int>& column);
-	void SetRow(int index, const std::vector<float>& row);
-	void SetRow(int index, const std::vector<int>& row);
+	void SetColumn(int, const std::vector<float>&);
+	void SetColumn(int, const std::vector<int>&);
+	void SetRow(int, const std::vector<float>&);
+	void SetRow(int, const std::vector<int>&);
 
 	void add_row(float* row);
-	void add_row(const std::vector<float>& row);
-	void add_row(const std::vector<int>& row);
+	void add_row(const std::vector<float>&);
+	void add_row(const std::vector<int>&);
 
-	Matrix SegmentR(int startRow, int endRow) const;
-	Matrix SegmentR(int startRow) const;
+	Matrix SegmentR(int, int) const;
+	Matrix SegmentR(int) const;
 
-	Matrix SegmentC(int startColumn, int endColumn) const;
-	Matrix SegmentC(int startColumn) const;
+	Matrix SegmentC(int, int) const;
+	Matrix SegmentC(int) const;
 
 	std::vector<float> ColumnSums() const;
 	std::vector<float> RowSums() const;
@@ -63,7 +63,7 @@ public:
 	/// <param name="lowerNormal"></param>
 	/// <param name="upperNormal"></param>
 	/// <returns></returns>
-	Matrix extract_features(int fourier, int taylor, int chebyshev, int legendre, int laguerre, float lowerNormal, float upperNormal) const;
+	Matrix extract_features(int, int, int, int, int, float, float) const;
 
 	/// <summary>
 	/// Normalizes values by the global min and max
@@ -71,52 +71,52 @@ public:
 	/// <param name="lowerRange"></param>
 	/// <param name="upperRange"></param>
 	/// <returns></returns>
-	Matrix normalized(float lowerRange, float upperRange) const noexcept;
+	Matrix normalized(float, float) const noexcept;
 
 	/// <summary>
 	/// Computes sin(nx) and cos(nx)
 	/// </summary>
 	/// <param name="n"></param>
 	/// <returns></returns>
-	Matrix fourier_series(int n) const noexcept;
+	Matrix fourier_series(int) const noexcept;
 	/// <summary>
 	/// Computes x^n
 	/// </summary>
 	/// <param name="n"></param>
 	/// <returns></returns>
-	Matrix taylor_series(int n) const noexcept;
+	Matrix taylor_series(int) const noexcept;
 	/// <summary>
 	/// Computes cos(n*acos(x))
 	/// </summary>
 	/// <param name="n"></param>
 	/// <returns></returns>
-	Matrix chebyshev_series(int n) const noexcept;
+	Matrix chebyshev_series(int) const noexcept;
 	/// <summary>
 	/// Computes (x^2 - 1)^n
 	/// </summary>
 	/// <param name="n"></param>
 	/// <returns></returns>
-	Matrix legendre_series(int n) const noexcept;
+	Matrix legendre_series(int) const noexcept;
 	/// <summary>
 	/// Computes x^n * e^-x
 	/// </summary>
 	/// <param name="n"></param>
 	/// <returns></returns>
-	Matrix laguerre_series(int n) const noexcept;
+	Matrix laguerre_series(int) const noexcept;
 
 	/// <summary>
 	/// Computes the dot product between two matrices, columncount of host must match rowcount of "element", returned matrix is host rowcount by element columncount
 	/// </summary>
 	/// <param name="element"></param>
 	/// <returns></returns>
-	Matrix dot_product(const Matrix& element) const;
+	Matrix dot_product(const Matrix&) const;
 	/// <summary>
 	/// Computes the dot prod between host and element, however adds bias value on top of the result
 	/// </summary>
 	/// <param name="element"></param>
 	/// <param name="bias"></param>
 	/// <returns></returns>
-	Matrix dot_product_add(const Matrix& element, const std::vector<float>& bias) const;
+	Matrix dot_product_add(const Matrix&, const std::vector<float>&) const;
 
 	/// <summary>
 	/// Log sum exp trick on each column, 
@@ -128,29 +128,29 @@ public:
 	Matrix Negative() const;
 	Matrix Abs() const;
 
-	Matrix Add(float scalar) const;
-	Matrix Add(const std::vector<float>& scalar) const;
-	Matrix Add(const Matrix& element) const;
+	Matrix Add(float) const;
+	Matrix Add(const std::vector<float>&) const;
+	Matrix Add(const Matrix&) const;
 
-	Matrix Subtract(float scalar) const;
-	Matrix Subtract(const std::vector<float>& scalar) const;
-	Matrix Subtract(const Matrix& element) const;
+	Matrix Subtract(float) const;
+	Matrix Subtract(const std::vector<float>&) const;
+	Matrix Subtract(const Matrix&) const;
 
-	Matrix Multiply(float scalar) const;
-	Matrix Multiply(const std::vector<float>& scalar) const;
-	Matrix Multiply(const Matrix& element) const;
+	Matrix Multiply(float) const;
+	Matrix Multiply(const std::vector<float>&) const;
+	Matrix Multiply(const Matrix&) const;
 
-	Matrix Divide(float scalar) const;
-	Matrix Divide(const std::vector<float>& scalar) const;
-	Matrix Divide(const Matrix& element) const;
+	Matrix Divide(float) const;
+	Matrix Divide(const std::vector<float>&) const;
+	Matrix Divide(const Matrix&) const;
 
-	Matrix Pow(float scalar) const;
-	Matrix Pow(const std::vector<float>& scalar) const;
-	Matrix Pow(const Matrix& element) const;
+	Matrix Pow(float) const;
+	Matrix Pow(const std::vector<float>&) const;
+	Matrix Pow(const Matrix&) const;
 
-	Matrix Exp(float base = std::exp(1.0)) const;
-	Matrix Exp(const std::vector<float>& base) const;
-	Matrix Exp(const Matrix& base) const;
+	Matrix Exp(float = std::exp(1.0)) const;
+	Matrix Exp(const std::vector<float>&) const;
+	Matrix Exp(const Matrix&) const;
 
 	Matrix Log() const;
 
@@ -163,10 +163,8 @@ public:
 	// Activation Functions
 	Matrix Sigmoid() const;
 	Matrix ReLU() const;
-	Matrix LeakyReLU(float alpha = 0.1f) const;
-	Matrix _LeakyReLU() const;
-	Matrix ELU(float alpha = 1.0f) const;
-	Matrix _ELU() const;
+	Matrix LeakyReLU() const;
+	Matrix ELU() const;
 	Matrix Tanh() const;
 	Matrix Softplus() const;
 	Matrix SiLU() const;
@@ -176,20 +174,18 @@ public:
 	// Activation Derivatives
 	Matrix SigmoidDerivative() const;
 	Matrix ReLUDerivative() const;
-	Matrix LeakyReLUDerivative(float alpha = 0.1f) const;
-	Matrix _LeakyReLUDerivative() const;
-	Matrix ELUDerivative(float alpha = 1.0f) const;
-	Matrix _ELUDerivative() const;
+	Matrix LeakyReLUDerivative() const;
+	Matrix ELUDerivative() const;
 	Matrix TanhDerivative() const;
 	Matrix SoftplusDerivative() const;
 	Matrix SiLUDerivative() const;
 
 	Matrix Transpose() const;
 
-	Matrix Combine(Matrix element);
-	Matrix Join(Matrix element);
+	Matrix Combine(Matrix);
+	Matrix Join(Matrix);
 
-	void Insert(int startRow, Matrix element);
+	void Insert(int, Matrix);
 
 	std::string ToString() const;
 	std::string Size() const;

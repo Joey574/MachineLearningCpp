@@ -55,9 +55,8 @@ public:
 		__m256 _scalar = _mm256_set1_ps(mult);
 
 		int i = 0;
-		for (; i + 8 < this->size(); i += 8) {
-
-			_mm256_store_ps(&bias[i], _mm256_sub_ps(_mm256_load_ps(&bias[i]), _mm256_mul_ps(_mm256_load_ps(&deriv.bias[i]), _scalar)));
+		for (; i + 8 <= this->size(); i += 8) {
+			_mm256_store_ps(&bias[i], _mm256_fnmadd_ps(_mm256_load_ps(&deriv.bias[i]), _scalar, _mm256_load_ps(&bias[i])));
 		}
 
 		for (; i < this->size(); i++) {
@@ -72,5 +71,4 @@ public:
 	float* bias;
 private:
 	std::vector<int> dimensions;
-
 };
