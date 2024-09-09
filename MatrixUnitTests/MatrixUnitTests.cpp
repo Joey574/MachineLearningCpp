@@ -518,8 +518,8 @@ bool matrix_derivative_function_check(Matrix a, Matrix b, double precision) {
 bool matrix_dot_product_check(Matrix a, Matrix b, double precision) {
 
     Matrix dot_a = Matrix({
-       {1, 2, 3},
-       {4, 5, 6}
+        {1, 2, 3},
+        {4, 5, 6}
         });
 
     Matrix dot_b = Matrix({
@@ -532,10 +532,12 @@ bool matrix_dot_product_check(Matrix a, Matrix b, double precision) {
         {58, 64},
         {139, 154}
         });
+
     Matrix  result = dot_a.dot_product(dot_b);
     for (int r = 0; r < check_a.RowCount; r++) {
         for (int c = 0; c < check_a.ColumnCount; c++) {
             if (result(r, c) != check_a(r, c)) {
+                std::cout << "computed:\n" << result.ToString() << "\n";
                 return false;
             }
         }
@@ -559,6 +561,7 @@ bool matrix_dot_product_check(Matrix a, Matrix b, double precision) {
     for (int r = 0; r < check_a.RowCount; r++) {
         for (int c = 0; c < check_a.ColumnCount; c++) {
             if (result(r, c) != check_a(r, c)) {
+                std::cout << "b";
                 return false;
             }
         }
@@ -582,6 +585,7 @@ bool matrix_dot_product_check(Matrix a, Matrix b, double precision) {
     for (int r = 0; r < check_a.RowCount; r++) {
         for (int c = 0; c < check_a.ColumnCount; c++) {
             if (result(r, c) != check_a(r, c)) {
+                std::cout << "c";
                 return false;
             }
         }
@@ -597,6 +601,7 @@ bool matrix_dot_product_check(Matrix a, Matrix b, double precision) {
     for (int r = 0; r < check_a.RowCount; r++) {
         for (int c = 0; c < check_a.ColumnCount; c++) {
             if (result(r, c) != check_a(r, c)) {
+                std::cout << "d";
                 return false;
             }
         }
@@ -657,6 +662,7 @@ bool matrix_dot_product_check(Matrix a, Matrix b, double precision) {
     for (int r = 0; r < check_a.RowCount; r++) {
         for (int c = 0; c < check_a.ColumnCount; c++) {
             if (result(r, c) != check_a(r, c)) {
+                std::cout << "e";
                 return false;
             }
         }
@@ -706,8 +712,7 @@ bool matrix_dot_product_check(Matrix a, Matrix b, double precision) {
     for (int r = 0; r < check_a.RowCount; r++) {
         for (int c = 0; c < check_a.ColumnCount; c++) {
             if (!is_near(result(r, c), check_a(r, c), precision)) {
-                std::cout << r << " :: " << c << std::endl;
-                std::cout << result(r, c) << " :: " << check_a(r, c) << std::endl << std::endl;
+                std::cout << "f";
                 return false;
             }
         }

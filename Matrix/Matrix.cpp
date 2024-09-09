@@ -1,5 +1,11 @@
 #include "Matrix.h"
 
+#define BLOCK_SIZE 8
+alignas(64) float local_a[BLOCK_SIZE * BLOCK_SIZE];
+alignas(64) float local_b[BLOCK_SIZE * BLOCK_SIZE];
+alignas(64) float local_c[BLOCK_SIZE * BLOCK_SIZE];
+#pragma omp threadprivate(local_a, local_b, local_c)
+
 // Constructors
 Matrix::Matrix(size_t rows, size_t columns) : RowCount(rows), ColumnCount(columns), matrix(c_init()) {}
 Matrix::Matrix(size_t rows, size_t columns, float value) : RowCount(rows), ColumnCount(columns), matrix(m_init()) {
