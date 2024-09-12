@@ -12,22 +12,21 @@ int main()
 	srand(time(0));
 
 	// Model definitions
-	std::vector<int> dims = { 2, 128, 128, 128, 1 };
-	std::unordered_set<int> res = {  };
-	std::unordered_set<int> batch_norm = {  };
+	std::vector<int> dims = { 2, 512, 512, 512, 512, 512, 512, 512, 512, 1 };
 
 	// Model compilation parameters
-	NeuralNetwork::loss_metrics loss = NeuralNetwork::loss_metrics::mae;
-	NeuralNetwork::loss_metrics metrics = NeuralNetwork::loss_metrics::mae;
+	NeuralNetwork::loss_metric loss = NeuralNetwork::loss_metric::mae;
+	NeuralNetwork::loss_metric metrics = NeuralNetwork::loss_metric::mae;
 	NeuralNetwork::optimization_technique optimizer = NeuralNetwork::optimization_technique::none;
 	Matrix::init weight_init = Matrix::init::He;
 
 	// Model fit information
 	Matrix x;
 	Matrix y;
-	int batch_size = 500;
-	int epochs = 5;
-	float learning_rate = 1.0f;
+	int batch_size = 320;
+	int epochs = 25;
+	float learning_rate = 0.001f;
+	float weight_decay = 0.0f;
 	float validation_split = 0.1f;
 	bool shuffle = true;
 	int validation_freq = 1;
@@ -35,7 +34,7 @@ int main()
 	// Feature engineering and dataset processing
 	Mandlebrot mandlebrot;
 
-	int fourier = 86;
+	int fourier = 128;
 	int taylor = 0;
 	int chebyshev = 0;
 	int legendre = 0;
@@ -56,10 +55,8 @@ int main()
 
 	model.Define(
 		dims,
-		res,
-		batch_norm,
-		{ &Matrix::_ELU, &Matrix::_ELU, &Matrix::_ELU, &Matrix::Sigmoid},
-		{ &Matrix::_ELUDerivative, &Matrix::_ELUDerivative, &Matrix::_ELUDerivative }
+		{ NeuralNetwork::activations::ELU, NeuralNetwork::activations::ELU, NeuralNetwork::activations::ELU, NeuralNetwork::activations::ELU, NeuralNetwork::activations::ELU, 
+		NeuralNetwork::activations::ELU, NeuralNetwork::activations::ELU, NeuralNetwork::activations::ELU, NeuralNetwork::activations::Sigmoid }
 	);
 
 	// Compile the model
@@ -70,7 +67,7 @@ int main()
 		weight_init
 	);
 
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < 20; i++) {
 
 		// Actual dataset, create new one each training session
 		std::tie(x, y) = mandlebrot.make_dataset(200000, 250, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
@@ -84,6 +81,7 @@ int main()
 			batch_size,
 			epochs,
 			learning_rate,
+			weight_decay,
 			validation_split,
 			shuffle,
 			validation_freq
@@ -93,8 +91,8 @@ int main()
 		make_bmp("NetworkImages/test_" + std::to_string(i).append(".bmp"), width, height, 0.95f, model, mandlebrot.create_image_features(width, height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
 	}
 
-	int f_width = 800;
-	int f_height = 450;
+	int f_width = 1920;
+	int f_height = 1080;
 
 	make_bmp("NetworkImages/final.bmp", f_width, f_height, 0.95f, model, mandlebrot.create_image_features(f_width, f_height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
 }
@@ -116,7 +114,7 @@ void make_bmp(std::string filename, int width, int height, float confidence_thre
 
 		for (int x = 0; x < width; x++) {
 
-			std::vector<float> color = Mandlebrot::gradient(x, y, pixel_data(0, x), confidence_threshold, Mandlebrot::gradient_type::diagonal);
+			std::vector<float> color = Mandlebrot::gradient(x, y, pixel_data(0, x), confidence_threshold, Mandlebrot::gradient_type::red_secondary);
 
 			image.SetPixel(x, y, RGB(color[0], color[1], color[2]));
 		}

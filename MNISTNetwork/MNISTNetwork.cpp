@@ -25,9 +25,9 @@ int main()
 	Matrix x_test;
 	Matrix y_test;
 	int batch_size = 320;
-	int epochs = 75;
+	int epochs = 20;
 	float learning_rate = 0.1f;
-	float weight_decay = 0.05f;
+	float weight_decay = 0.0f;
 	float validation_split = 0.0f;
 	bool shuffle = true;
 	int validation_freq = 1;
@@ -52,7 +52,7 @@ int main()
 
 	model.Define(
 		dims,
-		{ NeuralNetwork::activations::ELU, NeuralNetwork::activations::ELU, NeuralNetwork::activations::ELU, NeuralNetwork::activations::Softmax }
+		{ NeuralNetwork::activations::leakyReLU, NeuralNetwork::activations::leakyReLU, NeuralNetwork::activations::leakyReLU, NeuralNetwork::activations::Softmax }
 	);
 
 	// Compile the model

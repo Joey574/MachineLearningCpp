@@ -172,9 +172,23 @@ std::vector<float> Matrix::ColumnSums() const {
 	std::vector<float> sums(ColumnCount);
 
 	for (int r = 0; r < RowCount; r++) {
-		for (int c = 0; c < ColumnCount; c++) {
+
+		int c = 0;
+		for (; c + 8 <= ColumnCount; c += 8) {
+			_mm256_store_ps(&sums[c],
+				_mm256_add_ps(
+					_mm256_load_ps(&matrix[r * ColumnCount + c]),
+					_mm256_load_ps(&sums[c])
+				));
+		}
+
+		for (; c < ColumnCount; c++) {
 			sums[c] += matrix[r * ColumnCount + c];
 		}
+
+		/*for (int c = 0; c < ColumnCount; c++) {
+			sums[c] += matrix[r * ColumnCount + c];
+		}*/
 	}
 
 	return sums;
@@ -840,10 +854,10 @@ Matrix Matrix::Join(Matrix element) {
 Matrix Matrix::Transpose() const {
 	Matrix a(ColumnCount, RowCount);
 
-	#pragma unroll(8)
-	for (int r = 0; r < RowCount; r++) {
-		for (int c = 0; c < ColumnCount; c++) {
-			a.matrix[c * RowCount + r] = matrix[r * ColumnCount + c];
+	#pragma omp parallel for
+	for (int c = 0; c < ColumnCount; c++) {
+		for (int r = 0; r < RowCount; r++) {
+			a.matrix[c * a.ColumnCount + r] = matrix[r * ColumnCount + c];
 		}
 	}
 

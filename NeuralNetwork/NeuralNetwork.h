@@ -35,10 +35,10 @@ public:
 	);
 
 	void Compile(
-		loss_metric loss = loss_metric::none,
-		loss_metric metrics = loss_metric::none,
-		optimization_technique optimizer = optimization_technique::none,
-		Matrix::init weight_initialization = Matrix::init::Random
+		loss_metric loss,
+		loss_metric metrics,
+		optimization_technique optimizer,
+		Matrix::init weight_initialization
 	);
 
 	training_history Fit(
@@ -49,10 +49,10 @@ public:
 		int batch_size,
 		int epochs,
 		float learning_rate,
-		float weight_decay = 0.0f,
-		float validation_split = 0.0f,
-		bool shuffle = true,
-		int validation_freq = 1
+		float weight_decay,
+		float validation_split,
+		bool shuffle,
+		int validation_freq
 	);
 
 	std::tuple<Matrix, Matrix> Shuffle(Matrix x, Matrix y);
