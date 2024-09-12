@@ -520,6 +520,8 @@ Matrix Matrix::LeakyReLU() const {
 }
 Matrix Matrix::ELU() const {
 	Matrix a = *this;
+
+	#pragma omp parallel for
 	for (int r = 0; r < RowCount; r++) {
 		for (int c = 0; c < ColumnCount; c++) {
 			a(r, c) = matrix[r * ColumnCount + c] < 0.0f ? (std::exp(matrix[r * ColumnCount + c]) - 1) : matrix[r * ColumnCount + c];
@@ -561,6 +563,8 @@ Matrix Matrix::ReLUDerivative() const {
 }
 Matrix Matrix::LeakyReLUDerivative() const {
 	Matrix deriv = *this;
+
+	#pragma omp parallel for
 	for (int c = 0; c < ColumnCount; c++) {
 		for (int r = 0; r < RowCount; r++) {
 			deriv(r, c) = deriv(r, c) > 0.0f ? 1.0f : 0.1f;
@@ -571,6 +575,7 @@ Matrix Matrix::LeakyReLUDerivative() const {
 Matrix Matrix::ELUDerivative() const {
 	Matrix a = *this;
 
+	#pragma omp parallel for
 	for (int r = 0; r < this->RowCount; r++) {
 		for (int c = 0; c < this->ColumnCount; c++) {
 			a(r, c) = matrix[r * ColumnCount + c] > 0.0f ? 1.0f : std::exp(matrix[r * ColumnCount + c]);
@@ -854,9 +859,38 @@ Matrix Matrix::Join(Matrix element) {
 Matrix Matrix::Transpose() const {
 	Matrix a(ColumnCount, RowCount);
 
-	#pragma omp parallel for
+	/*#pragma omp parallel for
 	for (int c = 0; c < ColumnCount; c++) {
 		for (int r = 0; r < RowCount; r++) {
+			a.matrix[c * a.ColumnCount + r] = matrix[r * ColumnCount + c];
+		}
+	}*/
+
+	/*#pragma omp parallel for
+	for (int r = 0; r < RowCount; r++) {
+		for (int c = 0; c < ColumnCount; c++) {
+			a.matrix[c * a.ColumnCount + r] = matrix[r * ColumnCount + c];
+		}
+	}*/
+
+	#pragma omp parallel for
+	for (int c = 0; c < ColumnCount; c++) {
+
+		int r = 0;
+		for (; r + 8 <= RowCount; r += 8) {
+			_mm256_store_ps(&a.matrix[c * a.ColumnCount + r], {
+				matrix[r * ColumnCount + c],
+				matrix[(r + 1) * ColumnCount + c],
+				matrix[(r + 2) * ColumnCount + c],
+				matrix[(r + 3) * ColumnCount + c],
+				matrix[(r + 4) * ColumnCount + c],
+				matrix[(r + 5) * ColumnCount + c],
+				matrix[(r + 6) * ColumnCount + c],
+				matrix[(r + 7) * ColumnCount + c]
+				});
+		}
+
+		for (; r < RowCount; r++) {
 			a.matrix[c * a.ColumnCount + r] = matrix[r * ColumnCount + c];
 		}
 	}
