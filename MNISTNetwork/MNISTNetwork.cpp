@@ -78,11 +78,11 @@ int main()
 		validation_freq
 	);
 
-	std::cout << "Training time: " << history.train_time.count() << std::endl;
-	std::cout << "Epoch time: " << history.epoch_time.count() << std::endl;
+	std::cout << "Training time: " << history.train_time.count() << "\n";
+	std::cout << "Epoch time: " << history.epoch_time.count() << "\n";
 
-	std::cout << "train_data: " << model.Evaluate(x, y) << std::endl;
-	std::cout << "test_data: " << model.Evaluate(x_test, y_test) << std::endl;
+	std::cout << "train_data: " << model.Evaluate(x, y) << "\n";
+	std::cout << "test_data: " << model.Evaluate(x_test, y_test) << "\n";
 
 	//model.save("Networks/784_4.txt");
 }

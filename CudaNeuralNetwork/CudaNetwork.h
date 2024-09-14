@@ -1,4 +1,5 @@
 #pragma once
+
 #include <vector>
 
 #include "Matrix.h"
@@ -14,20 +15,22 @@ public:
 	void fit(Matrix x, Matrix y);
 
 	~CudaNetwork() {
-
+		free(m_network);
+		free(m_results);
+		free(m_derivs);
 	}
 
 private:
 
-	std::vector<int> _dimensions;
+	std::vector<int> m_dimensions;
 
-	float* _network;
-	float* _results;
-	float* _derivs;
+	float* m_network;
+	float* m_results;
+	float* m_derivs;
 
-	int _network_size;
-	int _results_size;
-	int _derivs_size;
+	int m_network_size;
+	int m_results_size;
+	int m_derivs_size;
 
 };
 

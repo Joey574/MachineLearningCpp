@@ -107,11 +107,11 @@ NeuralNetwork::training_history NeuralNetwork::Fit(Matrix x_train, Matrix y_trai
 			std::string score = test_network(x_valid, y_valid, _network);
 
 			time = std::chrono::high_resolution_clock::now() - epoch_start_time;
-			std::cout << "Epoch: " << e << " Time: " << clean_time(time.count()) << " " << score << std::endl;
+			std::cout << "Epoch: " << e << " Time: " << clean_time(time.count()) << " " << score << "\n";
 		}
 		else {
 			time = std::chrono::high_resolution_clock::now() - epoch_start_time;
-			std::cout << "Epoch: " << e << " Time: " << clean_time(time.count()) << std::endl;
+			std::cout << "Epoch: " << e << " Time: " << clean_time(time.count()) << "\n";
 		}
 		intermediate_history(history);
 	}
@@ -123,7 +123,6 @@ NeuralNetwork::training_history NeuralNetwork::Fit(Matrix x_train, Matrix y_trai
 
 	return history;
 }
-
 
 NeuralNetwork::result_matrices NeuralNetwork::forward_propogate(Matrix x, network_structure net, result_matrices results) {
 	for (int i = 0; i < results.total.size(); i++) {
@@ -172,7 +171,6 @@ NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Ma
 		for (; j < net.weights[i].RowCount * net.weights[i].ColumnCount; j++) {\
 			net.weights[i].matrix[j] = (net.weights[i].matrix[j] * l2_reg) - (deriv.d_weights[i].matrix[j] * s_factor);
 		}
-
 	}
 	net.biases.update(deriv.d_biases, s_factor);
 

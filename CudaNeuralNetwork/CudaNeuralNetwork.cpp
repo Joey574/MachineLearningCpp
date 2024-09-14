@@ -4,5 +4,7 @@
 
 int main()
 {
-	
+	CudaNetwork model;
+
+	model.fit(Matrix(), Matrix());
 }
