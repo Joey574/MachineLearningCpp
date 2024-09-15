@@ -148,7 +148,9 @@ NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Ma
 		deriv.d_biases.assign(i, deriv.d_total[i].Multiply(s_factor).RowSums());
 	}
 
-	// net.weights[i].matrix[j] := (net.weights[i].matrix[j] * l2_reg) - (deriv.d_weights[i].matrix[j] * s_factor)
+	// weight := (weight * l2_reg) - (d_weight * s_factor);
+	// weight := (weight - l1_reg) - (d_weight * s_factor);
+	// l1_reg := l1 * sgn(weight) -> l1 if weight + : -l1 if weight -
 	#pragma omp parallel for
 	for (int i = 0; i < net.weights.size(); i++) {
 
