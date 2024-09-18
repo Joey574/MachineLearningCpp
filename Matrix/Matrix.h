@@ -110,13 +110,6 @@ public:
 	/// <param name="element"></param>
 	/// <returns></returns>
 	Matrix dot_product(const Matrix&) const;
-	/// <summary>
-	/// Computes the dot prod between host and element, however adds bias value on top of the result
-	/// </summary>
-	/// <param name="element"></param>
-	/// <param name="bias"></param>
-	/// <returns></returns>
-	Matrix dot_product_add(const Matrix&, const std::vector<float>&) const;
 
 	/// <summary>
 	/// Log sum exp trick on each column, 
@@ -132,17 +125,33 @@ public:
 	Matrix Add(const std::vector<float>&) const;
 	Matrix Add(const Matrix&) const;
 
+	void Add(float, Matrix&) const;
+	void Add(const std::vector<float>&, Matrix&) const;
+	void Add(const Matrix&, Matrix&) const;
+
 	Matrix Subtract(float) const;
 	Matrix Subtract(const std::vector<float>&) const;
 	Matrix Subtract(const Matrix&) const;
+
+	void Subtract(float, Matrix&) const;
+	void Subtract(const std::vector<float>&, Matrix&) const;
+	void Subtract(const Matrix&, Matrix&) const;
 
 	Matrix Multiply(float) const;
 	Matrix Multiply(const std::vector<float>&) const;
 	Matrix Multiply(const Matrix&) const;
 
+	void Multiply(float, Matrix&) const;
+	void Multiply(const std::vector<float>&, Matrix&) const;
+	void Multiply(const Matrix&, Matrix&) const;
+
 	Matrix Divide(float) const;
 	Matrix Divide(const std::vector<float>&) const;
 	Matrix Divide(const Matrix&) const;
+
+	void Divide(float, Matrix&) const;
+	void Divide(const std::vector<float>&, Matrix&) const;
+	void Divide(const Matrix&, Matrix&) const;
 
 	Matrix Pow(float) const;
 	Matrix Pow(const std::vector<float>&) const;
@@ -331,6 +340,13 @@ private:
 		float (Matrix::* remainderOperation)(float a, float b) const, const std::vector<float>& scalar);
 	void matrix_float_operation_in_place(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo) const,
 		float (Matrix::* remainderOperation)(float a, float b) const, const Matrix& element);
+
+	void single_float_operation_store(__m256(Matrix::* operation)(__m256, __m256) const noexcept,
+		float(Matrix::* remainderOperation)(float a, float b) const noexcept, float scalar, Matrix& store) const;
+	void vector_float_operation_store(__m256(Matrix::* operation)(__m256, __m256) const noexcept,
+		float(Matrix::* remainderOperation)(float a, float b) const noexcept, const std::vector<float>& scalar, Matrix& store) const;
+	void matrix_float_operation_store(__m256(Matrix::* operation)(__m256, __m256) const noexcept,
+		float(Matrix::* remainderOperation)(float a, float b) const noexcept, const Matrix& element, Matrix& store) const;
 
 	inline __m256 SIMDAdd(__m256 opOne, __m256 opTwo) const noexcept;
 	inline __m256 SIMDSub(__m256 opOne, __m256 opTwo) const noexcept;

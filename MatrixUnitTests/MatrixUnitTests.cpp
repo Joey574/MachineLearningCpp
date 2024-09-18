@@ -537,7 +537,8 @@ bool matrix_dot_product_check(Matrix a, Matrix b, double precision) {
     for (int r = 0; r < check_a.RowCount; r++) {
         for (int c = 0; c < check_a.ColumnCount; c++) {
             if (result(r, c) != check_a(r, c)) {
-                std::cout << "computed:\n" << result.ToString() << "\n";
+                std::cout << "computed:\n" << result.ToString();
+                std::cout << "offby:\n" << (check_a - result).ToString() << "\n";
                 return false;
             }
         }

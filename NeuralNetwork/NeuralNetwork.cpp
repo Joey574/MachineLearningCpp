@@ -126,7 +126,7 @@ NeuralNetwork::training_history NeuralNetwork::Fit(Matrix x_train, Matrix y_trai
 
 NeuralNetwork::result_matrices NeuralNetwork::forward_propogate(Matrix x, network_structure net, result_matrices results) {
 	for (int i = 0; i < results.total.size(); i++) {
-		results.total[i] = net.weights[i].dot_product_add(((i == 0) ? x : results.activation[i - 1]), net.biases[i]);
+		results.total[i] = net.weights[i].dot_product((i == 0) ? x : results.activation[i - 1]) + net.biases[i];
 		results.activation[i] = (results.total[i].*_activation_functions[i].activation)();
 	}
 	return results;
@@ -138,9 +138,51 @@ NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Ma
 
 	// Compute loss
 	deriv.d_total.back() = (this->*_loss.derivative)(results.activation.back(), y.Transpose());
+	std::cout << "last: " << deriv.d_total.back().Size() << "\n";
 
+	// d_total[i] := weight.T.dot(d_total[i + 1]) * total[i].activ_derivative
 	for (int i = deriv.d_total.size() - 1; i > 0; i--) {
+
+		//// make weight transpose
+		//Matrix w_t = net.weights[i].Transpose();
+
+		//// zero out d_total
+		//for (int j = 0; j < deriv.d_total[i - 1].RowCount * deriv.d_total[i - 1].ColumnCount; j++) {
+		//	deriv.d_total[i - 1].matrix[j] = 0;
+		//}
+
+		//#pragma omp parallel for
+		//for (int r = 0; r < w_t.RowCount; r++) {
+		//	for (int k = 0; k < deriv.d_total[i].RowCount; k++) {
+		//		__m256 scalar = _mm256_set1_ps(w_t.matrix[r * w_t.ColumnCount + k]);
+
+		//		int c = 0;
+		//		for (; c + 16 <= deriv.d_total[i].ColumnCount; c += 8) {
+
+		//			_mm256_store_ps(&deriv.d_total[i - 1].matrix[r * deriv.d_total[i].ColumnCount + c],
+		//				_mm256_fmadd_ps(_mm256_load_ps(
+		//					&deriv.d_total[i].matrix[k * deriv.d_total[i].ColumnCount + c]),
+		//					scalar,
+		//					_mm256_load_ps(&deriv.d_total[i - 1].matrix[r * deriv.d_total[i].ColumnCount + c])));
+
+		//			c += 8;
+		//			_mm256_store_ps(&deriv.d_total[i - 1].matrix[r * deriv.d_total[i].ColumnCount + c],
+		//				_mm256_fmadd_ps(_mm256_load_ps(
+		//					&deriv.d_total[i].matrix[k * deriv.d_total[i].ColumnCount + c]),
+		//					scalar,
+		//					_mm256_load_ps(&deriv.d_total[i - 1].matrix[r * deriv.d_total[i].ColumnCount + c])));
+		//		}
+
+		//		for (; c < deriv.d_total[i].ColumnCount; c++) {
+		//			deriv.d_total[i - 1].matrix[r * deriv.d_total[i].ColumnCount + c] += w_t.matrix[r * w_t.ColumnCount + k] * deriv.d_total[i].matrix[k * deriv.d_total[i].ColumnCount + c];
+		//		}
+		//	}
+		//}
+
+		//deriv.d_total[i - 1] *= (results.total[i - 1].*_activation_functions[i - 1].derivative)();
+
 		deriv.d_total[i - 1] = net.weights[i].Transpose().dot_product(deriv.d_total[i]) * (results.total[i - 1].*_activation_functions[i - 1].derivative)();
+		std::cout << i - 1 << ": " << deriv.d_total[i].Size() << "\n";
 	}
 
 	for (int i = 0; i < deriv.d_weights.size(); i++) {
@@ -154,7 +196,7 @@ NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Ma
 	#pragma omp parallel for
 	for (int i = 0; i < net.weights.size(); i++) {
 
-		int j = 0;
+		size_t j = 0;
 		for (; j + 16 <= net.weights[i].RowCount * net.weights[i].ColumnCount; j += 8) {
 			_mm256_store_ps(&net.weights[i].matrix[j],
 				_mm256_fmsub_ps(
