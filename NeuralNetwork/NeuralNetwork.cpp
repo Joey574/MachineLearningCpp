@@ -102,7 +102,6 @@ NeuralNetwork::training_history NeuralNetwork::Fit(Matrix x_train, Matrix y_trai
 		}
 
 		// Test network every n epochs
-		std::string out;
 		if (e % validation_freq == 0) {
 			std::string score = test_network(x_valid, y_valid, _network);
 
@@ -126,6 +125,8 @@ NeuralNetwork::training_history NeuralNetwork::Fit(Matrix x_train, Matrix y_trai
 
 NeuralNetwork::result_matrices NeuralNetwork::forward_propogate(Matrix x, network_structure net, result_matrices results) {
 	for (int i = 0; i < results.total.size(); i++) {
+		std::cout << "w[" << i << "]: " << net.weights[i].Size();
+		std::cout << "x: " << ((i == 0) ? x.Size() : results.activation[i - 1].Size()) << "\n";
 		results.total[i] = net.weights[i].dot_product((i == 0) ? x : results.activation[i - 1]) + net.biases[i];
 		results.activation[i] = (results.total[i].*_activation_functions[i].activation)();
 	}
@@ -182,7 +183,7 @@ NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Ma
 		//deriv.d_total[i - 1] *= (results.total[i - 1].*_activation_functions[i - 1].derivative)();
 
 		deriv.d_total[i - 1] = net.weights[i].Transpose().dot_product(deriv.d_total[i]) * (results.total[i - 1].*_activation_functions[i - 1].derivative)();
-		std::cout << i - 1 << ": " << deriv.d_total[i].Size() << "\n";
+		std::cout << i - 1 << ": " << deriv.d_total[i - 1].Size() << "\n";
 	}
 
 	for (int i = 0; i < deriv.d_weights.size(); i++) {
