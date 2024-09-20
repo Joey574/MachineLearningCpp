@@ -49,11 +49,9 @@ public:
 
 	~NeuralNetwork() {
 		if (m_network) { free(m_network); }
-		if (m_batch_data) { free(m_batch_data); }
 	}
 
 private:
-
 
 	/* Memory Structure for network
 	* 
@@ -108,9 +106,6 @@ private:
 
 	int m_batch_data_size;
 	int m_r_total_size;
-
-	// interior pointers
-	
 
 	std::vector<int> m_dimensions;
 

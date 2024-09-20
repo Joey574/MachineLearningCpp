@@ -143,45 +143,6 @@ NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Ma
 
 	// d_total[i] := weight.T.dot(d_total[i + 1]) * total[i].activ_derivative
 	for (int i = deriv.d_total.size() - 1; i > 0; i--) {
-
-		//// make weight transpose
-		//Matrix w_t = net.weights[i].Transpose();
-
-		//// zero out d_total
-		//for (int j = 0; j < deriv.d_total[i - 1].RowCount * deriv.d_total[i - 1].ColumnCount; j++) {
-		//	deriv.d_total[i - 1].matrix[j] = 0;
-		//}
-
-		//#pragma omp parallel for
-		//for (int r = 0; r < w_t.RowCount; r++) {
-		//	for (int k = 0; k < deriv.d_total[i].RowCount; k++) {
-		//		__m256 scalar = _mm256_set1_ps(w_t.matrix[r * w_t.ColumnCount + k]);
-
-		//		int c = 0;
-		//		for (; c + 16 <= deriv.d_total[i].ColumnCount; c += 8) {
-
-		//			_mm256_store_ps(&deriv.d_total[i - 1].matrix[r * deriv.d_total[i].ColumnCount + c],
-		//				_mm256_fmadd_ps(_mm256_load_ps(
-		//					&deriv.d_total[i].matrix[k * deriv.d_total[i].ColumnCount + c]),
-		//					scalar,
-		//					_mm256_load_ps(&deriv.d_total[i - 1].matrix[r * deriv.d_total[i].ColumnCount + c])));
-
-		//			c += 8;
-		//			_mm256_store_ps(&deriv.d_total[i - 1].matrix[r * deriv.d_total[i].ColumnCount + c],
-		//				_mm256_fmadd_ps(_mm256_load_ps(
-		//					&deriv.d_total[i].matrix[k * deriv.d_total[i].ColumnCount + c]),
-		//					scalar,
-		//					_mm256_load_ps(&deriv.d_total[i - 1].matrix[r * deriv.d_total[i].ColumnCount + c])));
-		//		}
-
-		//		for (; c < deriv.d_total[i].ColumnCount; c++) {
-		//			deriv.d_total[i - 1].matrix[r * deriv.d_total[i].ColumnCount + c] += w_t.matrix[r * w_t.ColumnCount + k] * deriv.d_total[i].matrix[k * deriv.d_total[i].ColumnCount + c];
-		//		}
-		//	}
-		//}
-
-		//deriv.d_total[i - 1] *= (results.total[i - 1].*_activation_functions[i - 1].derivative)();
-
 		deriv.d_total[i - 1] = net.weights[i].Transpose().dot_product(deriv.d_total[i]) * (results.total[i - 1].*_activation_functions[i - 1].derivative)();
 		std::cout << i - 1 << ": " << deriv.d_total[i - 1].Size() << "\n";
 	}

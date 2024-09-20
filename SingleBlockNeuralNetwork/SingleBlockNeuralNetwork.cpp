@@ -132,6 +132,8 @@ NeuralNetwork::history NeuralNetwork::fit(Matrix x_train, Matrix y_train, Matrix
 	free(m_batch_data);
 
 	std::cout << "Status: training_complete\n";
+
+	return h;
 }
 
 void NeuralNetwork::initialize_batch_data(int batch_size) {
@@ -163,9 +165,6 @@ std::string NeuralNetwork::test_network(float* x, float* y) {
 
 void NeuralNetwork::forward_prop(float* x_data, float learning_rate, int batch_size) {
 
-	// total := weights.dot(x || activation[i - 1]) + biases
-	// activation := results.activation
-
 	int weight_idx = 0;
 	int bias_idx = 0;
 
@@ -173,27 +172,6 @@ void NeuralNetwork::forward_prop(float* x_data, float learning_rate, int batch_s
 	int output_idx = 0;
 
 	for (int i = 0; i < m_dimensions.size() - 1; i++) {
-
-		// 784 128 128 10
-
-		// weight shape:
-		// w0: 128 x 784
-		// w1: 128 x 128
-		// w2: 10 x 128
-
-		// input shape:
-		// x0: 784 x 320
-		// x1: 128 x 320 = a0
-		// x2: 128 x 320 = a1
-
-		// output shape:
-		// t0: 128 x 320
-		// t1: 128 x 320
-		// t2: 10 x 320
-
-		// a0: 128 x 320
-		// a1: 128 x 320
-		// a2: 10 x 320
 
 		float* weights_start = &m_network[weight_idx];
 		float* bias_start = &m_biases[bias_idx];
@@ -255,10 +233,57 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data,	float learning_rate,
 
 	// compute loss
 
+	// 784 128 128 10
+		// weight shape:
+		// w0: 128 x 784
+		// w1: 128 x 128
+		// w2: 10 x 128
+
+		// input shape:
+		// x0: 784 x 320
+		// x1: 128 x 320 = a0
+		// x2: 128 x 320 = a1
+
+		// output shape:
+		// t0: 128 x 320
+		// t1: 128 x 320
+		// t2: 10 x 320
+
+		// a0: 128 x 320
+		// a1: 128 x 320
+		// a2: 10 x 320
+
 	// d_total[i] := weight.T.dot(d_total[i + 1]) * total[i].activ_derivative
+	for (size_t i = m_dimensions.size() - 2; i > 0; i--) {
+
+		float* weight = &m_network[0];
+
+		float* prev_d_total = &m_batch_data[0];
+		float* cur_d_total = &m_batch_data[0];
+
+		float* prev_activation = &m_batch_data[0];
+
+		// deriv.d_total[i - 1] = net.weights[i].Transpose().dot_product(deriv.d_total[i]) * (results.total[i - 1].*_activation_functions[i - 1].derivative)();
+		for (size_t j = 0; j < m_dimensions[i]; j++) { // -> rowc
+			for (size_t k = 0; k < m_dimensions[i]; k++) { // ele.rowc
+
+				__m256 _scalar;
+
+				size_t l = 0;
+				for (; l + 8 <= batch_size; l += 8) {
+					
+				}
+
+				for (; l < batch_size; l++) {
+
+				}
+			}
+		}
+	}
 
 	// d_weights[i] := d_total[i].dot(x.T || activation[i - 1].T) * s_factor
 	// d_biases[i] := (d_total[i] * s_factor).row_sums
+
 
 	size_t i = 0;
 

@@ -11,7 +11,7 @@ int main()
 	srand(time(0));
 
 	// Model definitions
-	std::vector<int> dims = { 784, 128, 128, 128, 10 };
+	std::vector<int> dims = { 784, 128, 128, 10 };
 
 	// Model fit information
 	Matrix x;
@@ -19,7 +19,7 @@ int main()
 	Matrix x_test;
 	Matrix y_test;
 	int batch_size = 320;
-	int epochs = 200;
+	int epochs = 50;
 	float learning_rate = 0.1f;
 	float weight_decay = 0.01f;
 	bool shuffle = true;
