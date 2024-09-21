@@ -81,7 +81,7 @@ private:
 	* m_deriv_w := pointer to dw0
 	* m_deriv_b := pointer to db0
 	* 
-	* m_r_total_size := size of t0 t1 ... (a0 a1 ... , are of the same size) (d0 d1 ... , are of the same size)
+	* m_r_total_size := size of t0 t1 ... (a0 a1 ... , are of the same size) (dt0 dt1 ... , are of the same size)
 	* 
 	* m_batch_data_size := total size of batch_data
 	*/

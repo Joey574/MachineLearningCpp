@@ -120,9 +120,9 @@
       <ConformanceMode>true</ConformanceMode>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <OpenMPSupport>true</OpenMPSupport>
       <AdditionalIncludeDirectories>$(SolutionDir)Matrix</AdditionalIncludeDirectories>
       <AdditionalOptions>-openmp:llvm %(AdditionalOptions)</AdditionalOptions>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

@@ -19,7 +19,7 @@ int main()
 	Matrix x_test;
 	Matrix y_test;
 	int batch_size = 320;
-	int epochs = 50;
+	int epochs = 20;
 	float learning_rate = 0.1f;
 	float weight_decay = 0.01f;
 	bool shuffle = true;
