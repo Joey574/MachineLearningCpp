@@ -123,6 +123,8 @@
       <AdditionalIncludeDirectories>$(SolutionDir)Matrix</AdditionalIncludeDirectories>
       <AdditionalOptions>-openmp:llvm %(AdditionalOptions)</AdditionalOptions>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

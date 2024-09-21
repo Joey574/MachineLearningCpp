@@ -36,10 +36,10 @@ public:
 	);
 
 	history fit(
-		Matrix x_train,
-		Matrix y_train,
-		Matrix x_valid,
-		Matrix y_valid,
+		Matrix& x_train,
+		Matrix& y_train,
+		Matrix& x_valid,
+		Matrix& y_valid,
 		int batch_size,
 		int epochs,
 		float learning_rate,
@@ -55,9 +55,9 @@ private:
 
 	/* Memory Structure for network
 	* 
-	* m_network -> contains weights and biases
-	* w0 -> w1 -> ... wn
-	* b0 -> b1 -> ... bn
+	* M_NETWORK -> contains weights and biases
+	* w0 -> w1 ... wn
+	* b0 -> b1 ... bn
 	* 
 	* m_biases := pointer to b0
 	* 
@@ -67,13 +67,13 @@ private:
 	* m_network_size := total size of network
 	* 
 	* 
-	* m_batch_data
-	* t0 -> t1 := ... tn
-	* a0 -> a1 := ... an
+	* M_BATCH_DATA -> contains activation and derivatives
+	* t0 -> t1 ... tn
+	* a0 -> a1 ... an
 	* 
-	* dt0 -> dt1 := ... dtn
-	* dw0 -> dw1 := .. dwn
-	* db0 -> db1 := ... dbn
+	* dt0 -> dt1 ... dtn
+	* dw0 -> dw1 ... dwn
+	* db0 -> db1 ... dbn
 	* 
 	* m_activation := pointer to a0
 	* 
@@ -84,6 +84,14 @@ private:
 	* m_r_total_size := size of t0 t1 ... (a0 a1 ... , are of the same size) (dt0 dt1 ... , are of the same size)
 	* 
 	* m_batch_data_size := total size of batch_data
+	* 
+	* M_TEST_DATA -> contains activation for test data
+	* t0 -> t1 ... tn
+	* a0 -> a1 ... an
+	* 
+	* m_test_activation := pointer to a0 in m_test_data
+	* 
+	* m_test_activation_size := size of t0 t1 ... in m_test_data, a0 a1 ... is of equal size
 	*/
 
 	// pointer to start of weights and biases
@@ -107,28 +115,43 @@ private:
 	int m_batch_data_size;
 	int m_r_total_size;
 
+	// pointer to start of test data results
+	float* m_test_data;
+
+	float* m_test_activation;
+
+	int m_test_activation_size;
+
+	// misc
 	std::vector<int> m_dimensions;
 
 
 	void forward_prop(
 		float* x_data,
-		float learning_rate,
-		int batch_size
+		float* result_data,
+		int activation_size,
+		int num_elements
 	);
 
 	void back_prop(
 		float* x_data,
 		float* y_data,
 		float learning_rate,
-		int batch_size
+		int num_elements
 	);
 
 	std::string test_network(
 		float* x,
-		float* y
+		float* y,
+		int test_size
 	);
 
+	void dot_prod(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear);
+	void dot_prod_t_a(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear);
+	void dot_prod_t_b(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear);
+
 	void initialize_batch_data(int batch_size);
+	void initialize_test_data(int test_size);
 
 	std::string clean_time(double time);
 

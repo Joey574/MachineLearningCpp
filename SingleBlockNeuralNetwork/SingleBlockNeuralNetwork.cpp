@@ -88,7 +88,7 @@ void NeuralNetwork::compile(loss_metric loss, loss_metric metrics, weight_init w
 	}
 }
 
-NeuralNetwork::history NeuralNetwork::fit(Matrix x_train, Matrix y_train, Matrix x_valid, Matrix y_valid, int batch_size, int epochs, float learning_rate, bool shuffle, int validation_freq) {
+NeuralNetwork::history NeuralNetwork::fit(Matrix& x_train, Matrix& y_train, Matrix& x_valid, Matrix& y_valid, int batch_size, int epochs, float learning_rate, bool shuffle, int validation_freq) {
 
 	std::cout << "Status: network_training\n";
 
@@ -100,6 +100,7 @@ NeuralNetwork::history NeuralNetwork::fit(Matrix x_train, Matrix y_train, Matrix
 	const int iterations = x_train.RowCount / batch_size;
 
 	initialize_batch_data(batch_size);
+	initialize_test_data(x_valid.RowCount);
 
 	// train network
 	for (int e = 0; e < epochs; e++) {
@@ -110,14 +111,19 @@ NeuralNetwork::history NeuralNetwork::fit(Matrix x_train, Matrix y_train, Matrix
 
 			// adjust pointer to start of data
 			float* x = &x_train.matrix[(i * batch_size) * x_train.ColumnCount];
-			float* y = &y_train.matrix[(i * batch_size) * y_train.ColumnCount];
 
-			forward_prop(x, learning_rate, batch_size);
+			forward_prop(x, m_batch_data, m_r_total_size, batch_size);
+
+			// stupid fix in meantime to prevent dereferencing
+			x = &x_train.matrix[(i * batch_size) * x_train.ColumnCount];
+
+			float* y = &y_train.matrix[(i * batch_size) * y_train.ColumnCount];
+			
 			back_prop(x, y, learning_rate, batch_size);
 		}
 
 		if (e % validation_freq == 0) {
-			std::string score = test_network(x_valid.matrix, y_valid.matrix);
+			std::string score = test_network(x_valid.matrix, y_valid.matrix, x_valid.RowCount);
 
 			time = std::chrono::high_resolution_clock::now() - epoch_start_time;
 			std::cout << "Epoch: " << e << " Time: " << clean_time(time.count()) << " " << score << "\n";
@@ -125,11 +131,12 @@ NeuralNetwork::history NeuralNetwork::fit(Matrix x_train, Matrix y_train, Matrix
 			time = std::chrono::high_resolution_clock::now() - epoch_start_time;
 			std::cout << "Epoch: " << e << " Time: " << clean_time(time.count()) << "\n";
 		}
-
 	}
-	auto end_time = std::chrono::high_resolution_clock::now();
 
 	free(m_batch_data);
+	free(m_test_data);
+
+	auto end_time = std::chrono::high_resolution_clock::now();
 
 	std::cout << "Status: training_complete\n";
 
@@ -158,12 +165,47 @@ void NeuralNetwork::initialize_batch_data(int batch_size) {
 	m_deriv_b = &m_deriv_w[m_weights_size];
  
 }
+void NeuralNetwork::initialize_test_data(int test_size) {
+	int size = 0;
+	for (int i = 1; i < m_dimensions.size(); i++) {
+		// size for activation and total
+		size += 2 * (m_dimensions[i] * test_size);
 
-std::string NeuralNetwork::test_network(float* x, float* y) {
-	return "";
+		m_test_activation_size += m_dimensions[i] * test_size;
+	}
+
+	m_test_data = (float*)malloc(size * sizeof(float));
+	m_test_activation = &m_test_data[m_test_activation_size];
 }
 
-void NeuralNetwork::forward_prop(float* x_data, float learning_rate, int batch_size) {
+std::string NeuralNetwork::test_network(float* x, float* y, int test_size) {
+
+	forward_prop(x, m_test_data, m_test_activation_size, test_size);
+
+	// compute metric data hardcoded to accuracy for now
+	float* last_activation = &m_test_activation[m_test_activation_size - (m_dimensions.back() * test_size)];
+
+	size_t correct = 0;
+	for (size_t i = 0; i < test_size; i++) {
+
+		int max_idx = 0;
+
+		// find max value idx in loop
+		for (size_t j = 1; j < m_dimensions.back(); j++) {
+			if (last_activation[i * m_dimensions.back() + j] > last_activation[i * m_dimensions.back() + max_idx]) {
+				max_idx = j;
+			}
+		}
+
+		if (max_idx == y[i]) {
+			correct++;
+		}
+	}
+
+	return "accuracy: " + std::to_string(((float)correct / test_size) * 100.0f);
+}
+
+void NeuralNetwork::forward_prop(float* x_data, float* result_data, int activation_size, int num_elements) {
 
 	int weight_idx = 0;
 	int bias_idx = 0;
@@ -176,127 +218,77 @@ void NeuralNetwork::forward_prop(float* x_data, float learning_rate, int batch_s
 		float* weights_start = &m_network[weight_idx];
 		float* bias_start = &m_biases[bias_idx];
 
-		float* output_start = &m_batch_data[output_idx];
+		float* output_start = &result_data[output_idx];
 
-		float* input_start = i == 0 ? &x_data[0] : &m_batch_data[input_idx + m_r_total_size];
+		float* input_start = i == 0 ? &x_data[0] : &result_data[input_idx + activation_size];
 
 		// -> initialize memory to bias values, prevents having to clear later
 		for (size_t r = 0; r < m_dimensions[i + 1]; r++) {
-			for (size_t c = 0; c < batch_size; c++) {
-				output_start[r * batch_size + c] = bias_start[r];
+			for (size_t c = 0; c < num_elements; c++) {
+				output_start[r * num_elements + c] = bias_start[r];
 			}
 		}
 
 		// -> compute dot prod with weight and input
-		#pragma omp parallel for
-		for (size_t r = 0; r < m_dimensions[i + 1]; r++) {
-			for (size_t k = 0; k < m_dimensions[i]; k++) {
-				__m256 scalar = _mm256_set1_ps(weights_start[r * m_dimensions[i] + k]);
-
-				size_t c = 0;
-				for (; c + 8 <= batch_size; c += 8) {
-
-					_mm256_store_ps(&output_start[r * batch_size + c],
-						_mm256_fmadd_ps(_mm256_load_ps(
-							&input_start[k * batch_size + c]),
-							scalar,
-							_mm256_load_ps(&output_start[r * batch_size + c])));
-				}
-
-				for (; c < batch_size; c++) {
-					output_start[r * batch_size + c] += weights_start[r * m_dimensions[i] + k] * input_start[k * batch_size + c];
-				}
-			}
-		}
+		i == 0 ? dot_prod_t_b(weights_start, input_start, output_start, m_dimensions[i + 1], m_dimensions[i], m_dimensions[i], num_elements, false) :
+		dot_prod(weights_start, input_start, output_start, m_dimensions[i + 1], m_dimensions[i], m_dimensions[i], num_elements, false);
 
 		// -> compute activation hardcoded to leaky_relu at the moement
 		#pragma omp parallel for
 		for (size_t r = 0; r < m_dimensions[i + 1]; r++) {
-			for (size_t c = 0; c < batch_size; c++) {
-				output_start[m_r_total_size + (r * batch_size + c)] = output_start[m_r_total_size + (r * batch_size + c)] > 0.0f ? output_start[m_r_total_size + (r * batch_size + c)] : 0.1f * output_start[m_r_total_size + (r * batch_size + c)];
+			for (size_t c = 0; c < num_elements; c++) {
+				output_start[activation_size + (r * num_elements + c)] = output_start[activation_size + (r * num_elements + c)] > 0.0f ? output_start[activation_size + (r * num_elements + c)] : 0.1f * output_start[activation_size + (r * num_elements + c)];
 			}
 		}
 
 		weight_idx += m_dimensions[i] * m_dimensions[i + 1];
 		bias_idx += m_dimensions[i + 1];
 
-		output_idx += m_dimensions[i + 1] * batch_size;
+		output_idx += m_dimensions[i + 1] * num_elements;
 
-		input_idx += i == 0 ? 0 : (m_dimensions[i] * batch_size);
+		input_idx += i == 0 ? 0 : (m_dimensions[i] * num_elements);
 	}
 }
+void NeuralNetwork::back_prop(float* x_data, float* y_data,	float learning_rate, int num_elements) {
 
-void NeuralNetwork::back_prop(float* x_data, float* y_data,	float learning_rate, int batch_size) {
-
-	const float s_factor = std::sqrt(learning_rate) / std::sqrt(float(batch_size));
+	const float s_factor = std::sqrt(learning_rate) / std::sqrt(float(num_elements));
 	const __m256 _s_factor = _mm256_set1_ps(s_factor);
 
 	// compute loss
 
 
 	int weight_idx = m_weights_size - (m_dimensions[m_dimensions.size() - 1] * m_dimensions[m_dimensions.size() - 2]);
-	int d_total_idx = m_r_total_size - (m_dimensions.back() * batch_size); // -> initialize to last dtn where n is last element of dt
+	int d_total_idx = m_r_total_size - (m_dimensions.back() * num_elements); // -> initialize to last element of dt
 
 	for (size_t i = m_dimensions.size() - 2; i > 0; i--) {
 
-		float* weight_t = &m_network[weight_idx];
-		// prev weight idx weight[j * m_dimensions[i - 1] + k]
-		// transpose weight idx weight[k * m_dimensions[i] + j]
+		float* weight = &m_network[weight_idx];
 
 		float* cur_d_total = &m_deriv_t[d_total_idx];
-		float* prev_d_total = &m_deriv_t[d_total_idx - (m_dimensions[i] * batch_size)]; // sub offset to previous element of dt
-
-		// clear dt in future move this to first loop iter of dot prod
-		for (size_t j = 0; j < m_dimensions[i] * batch_size; j++) {
-			m_deriv_t[j] = 0;
-		}
+		float* prev_d_total = &m_deriv_t[d_total_idx - (m_dimensions[i] * num_elements)]; // sub offset to previous element of dt
 
 		// compute d_total
 		// d_total[i - 1] := weight[i].T.dot(d_total[i]) * total[i - 1].activ_derivative
-		#pragma omp parallel for
-		for (size_t j = 0; j < m_dimensions[i]; j++) { // rowc or in this case w.T rowc ie colc
-			for (size_t k = 0; k < m_dimensions[i]; k++) { // ele.rowc 
+		dot_prod_t_a(weight, cur_d_total, prev_d_total, m_dimensions[i + 1], m_dimensions[i], m_dimensions[i], num_elements, true);
 
-				__m256 _scalar = _mm256_load_ps(&weight_t[k * m_dimensions[i] + j]);
-
-				size_t l = 0;
-				for (; l + 8 <= batch_size; l += 8) { // ele.colc
-					_mm256_store_ps(&prev_d_total[j * batch_size + l],
-						_mm256_fmadd_ps(
-							_mm256_load_ps(&cur_d_total[k * batch_size + l]),
-							_scalar,
-							_mm256_load_ps(&prev_d_total[j * batch_size + l])
-						));
-				}
-
-				for (; l < batch_size; l++) { // ele.colc
-					prev_d_total[j * batch_size + l] += weight_t[k * m_dimensions[i] + j] * cur_d_total[k * batch_size + l];
-				}
-
-				//for (size_t l = 0; l < batch_size; l++) { // ele.colc
-				//	prev_d_total[j * batch_size + l] += weight_t[k * m_dimensions[i] + j] * cur_d_total[k * batch_size + l];
-				//}
-			}
-		}
-
-		float* prev_activation = &m_batch_data[d_total_idx - (m_dimensions[i] * batch_size)]; // sub offset to previous element of result total
+		float* prev_activation = &m_batch_data[d_total_idx - (m_dimensions[i] * num_elements)]; // sub offset to previous element of result total
 
 		// mult by activation derivative hardcoded to leaky relu at the moment
 		#pragma omp parallel for
 		for (size_t j = 0; j < m_dimensions[i]; j++) {
-			for (size_t k = 0; k < batch_size; k++) {
-				m_deriv_t[j * batch_size + k] *= prev_activation[j * batch_size + k] > 0 ? 1 : 0.1 * prev_activation[j * batch_size + k];
+			for (size_t k = 0; k < num_elements; k++) {
+				m_deriv_t[j * num_elements + k] *= prev_activation[j * num_elements + k] > 0 ? 1 : 0.1 * prev_activation[j * num_elements + k];
 			}
 		}
 
-		d_total_idx -= m_dimensions[i] * batch_size; // -> move back to previous dt
+		d_total_idx -= m_dimensions[i] * num_elements; // -> move back to previous dt
 		weight_idx -= m_dimensions[i] * m_dimensions[i - 1]; // -> move back to previous weight
 	}
 
 
-	int bias_idx = 0;
 	int activation_idx = 0;
 	int d_weight_idx = 0;
+	int d_bias_idx = 0;
 
 	d_total_idx = 0;
 
@@ -307,50 +299,18 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data,	float learning_rate,
 		float* d_t = &m_deriv_t[d_total_idx];
 		float* d_w = &m_deriv_w[d_weight_idx];
 
-		// initialize values to 0
-		for (size_t k = 0; k < m_dimensions[i] * m_dimensions[i + 1]; k++) {
-			d_w[k] = 0;
-		}
-
 		// compute d_weights
 		// d_weights[i] := d_total[i].dot(x.T || activation[i - 1].T) * s_factor
-		for (size_t r = 0; r < m_dimensions[i + 1]; r++) { // rowc
-			
-			// d_w[0] rows = 128 d_w[0] cols = 784
-			// d_t[0] rows = 128 d_t[0] cols = 320
-			// x_data rows = 784 x_data cols = 320
+		i == 0 ? dot_prod(d_t, prev_activ, d_w, m_dimensions[i + 1], num_elements, num_elements, m_dimensions[i], true) :
+			dot_prod_t_b(d_t, prev_activ, d_w, m_dimensions[i + 1], num_elements, m_dimensions[i], num_elements, true);
 
-			#pragma omp parallel for
-			for (size_t c = 0; c < m_dimensions[i]; c++) { // ele.rowc -> x.colc -> x.T.rowc
-
-				size_t k = 0;
-				for (; k + 8 <= batch_size; k += 8) { // ele.colc -> x.rowc -> x.T.colc
-					_mm256_store_ps(&d_w[r * m_dimensions[i] + c],
-						_mm256_fmadd_ps(
-							_mm256_load_ps(&prev_activ[c * m_dimensions[i] + k]),
-							_mm256_load_ps(&d_t[r * batch_size + k]),
-							_mm256_load_ps(&d_w[r * m_dimensions[i] + c])
-						));
-				}
-
-				for (; k < batch_size; k++) {
-					d_w[r * m_dimensions[i] + c] += d_t[r * batch_size + k] * prev_activ[c * m_dimensions[i] + k];
-				}
-
-				/*for (size_t k = 0; k < batch_size; k++) {
-					d_w[r * m_dimensions[i] + c] += d_t[r * batch_size + k] * prev_activ[c * m_dimensions[i] + k];
-				}*/
-
-			}
-			
-			// multiply by s_factor
-			#pragma omp parallel for
-			for (size_t k = 0; k < m_dimensions[i] * m_dimensions[i + 1]; k++) {
-				d_w[k] *= s_factor;
-			}
+		// multiply by s_factor
+		#pragma omp parallel for
+		for (size_t k = 0; k < m_dimensions[i] * m_dimensions[i + 1]; k++) {
+			d_w[k] *= s_factor;
 		}
 
-		float* bias = &m_deriv_b[bias_idx];
+		float* d_bias = &m_deriv_b[d_bias_idx];
 
 		// compute b_biases
 		// d_biases[i] := (d_total[i] * s_factor).row_sums
@@ -358,18 +318,18 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data,	float learning_rate,
 		for (size_t j = 0; j < m_dimensions[i + 1]; j++) {
 
 			// set value, overwrite old data
-			bias[j] = d_t[0] * s_factor;
+			d_bias[j] = d_t[0] * s_factor;
 
 			// rest of loop
-			for (size_t k = 1; k < batch_size; k++) {
-				bias[j] += d_t[k] * s_factor;
+			for (size_t k = 1; k < num_elements; k++) {
+				d_bias[j] += d_t[k] * s_factor;
 			}
 		}
 
-		bias_idx += m_dimensions[i + 1];
-		d_total_idx += m_dimensions[i + 1] * batch_size;
+		d_bias_idx += m_dimensions[i + 1];
+		d_total_idx += m_dimensions[i + 1] * num_elements;
 		d_weight_idx += m_dimensions[i] * m_dimensions[i + 1];
-		activation_idx += i == 0 ? 0 : (m_dimensions[i] * batch_size);
+		activation_idx += i == 0 ? 0 : (m_dimensions[i] * num_elements);
 	}
 
 	//size_t i = 0;
@@ -411,6 +371,82 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data,	float learning_rate,
 	#pragma omp parallel for 
 	for (size_t i = 0; i < m_biases_size; i ++) {
 		m_biases[i] -= m_deriv_b[i] * s_factor;
+	}
+}
+
+void NeuralNetwork::dot_prod(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear) {
+	#pragma omp parallel for
+	for (size_t i = 0; i < a_r; i++) {
+
+		// first j loop to clear existing c values
+		if (clear) {
+			__m256 scalar = _mm256_set1_ps(a[i * a_c + 0]);
+			size_t k = 0;
+			for (; k + 8 <= b_c; k += 8) {
+				_mm256_store_ps(&c[i * b_c + k],
+					_mm256_mul_ps(
+						scalar,
+						_mm256_load_ps(&b[0 * b_c + k])
+					));
+			}
+
+			for (; k < b_c; k++) {
+				c[i * b_c + k] = a[i * a_c + 0] * b[0 * b_c + k];
+			}
+		}
+		
+		for (size_t j = clear ? 1 : 0; j < b_r; j++) {
+			__m256 scalar = _mm256_set1_ps(a[i * a_c + j]);
+
+			size_t k = 0;
+			for (; k + 8 <= b_c; k += 8) {
+				_mm256_store_ps(&c[i * b_c + k],
+					_mm256_fmadd_ps(
+						scalar,
+						_mm256_load_ps(&b[j * b_c + k]),
+						_mm256_load_ps(&c[i * b_c + k])));
+			}
+
+			for (; k < b_c; k++) {
+				c[i * b_c + k] += a[i * a_c + j] * b[j * b_c + k];
+			}
+		} 
+	}
+}
+void NeuralNetwork::dot_prod_t_a(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear) {
+	#pragma omp parallel for
+	for (size_t i = 0; i < a_c; i++) {
+
+		// first j loop to clear existing c values
+		if (clear) {
+			for (size_t k = 0; k < b_c; k++) {
+				c[i * b_c + k] = a[0 * a_c + i] * b[0 * b_c + k];
+			}
+		}
+
+		for (size_t j = clear ? 1 : 0; j < b_r; j++) {
+			for (size_t k = 0; k < b_c; k++) {
+				c[i * b_c + k] += a[j * a_c + i] * b[j * b_c + k];
+			}
+		}
+	}
+}
+void NeuralNetwork::dot_prod_t_b(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear) {
+	#pragma omp parallel for
+	for (size_t i = 0; i < a_r; i++) {
+
+		// first j loop to clear existing c values
+		if (clear) {
+			for (size_t k = 0; k < b_r; k++) {
+				c[i * b_r + k] = a[i * a_c + 0] * b[k * b_c + 0];
+			}
+		}
+
+		for (size_t j = clear ? 1 : 0; j < b_r; j++) {
+			for (size_t k = 0; k < b_r; k++) {
+				c[i * b_r + k] += a[i * a_c + j] * b[k * b_c + j];
+			}
+		}
 	}
 }
 
