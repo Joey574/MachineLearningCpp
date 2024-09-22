@@ -1,7 +1,9 @@
 #include "SingleBlockNeuralNetwork.h"
-#include <cstdint>
 
-void NeuralNetwork::define(std::vector<int> dimensions) {
+#include "SingleBlockActivations.cpp"
+#include "SingleBlockDotProds.cpp"
+
+void NeuralNetwork::define(std::vector<int> dimensions, std::vector<activation_functions> activations) {
 
 	m_network_size = 0;
 	m_weights_size = 0;
@@ -24,6 +26,11 @@ void NeuralNetwork::define(std::vector<int> dimensions) {
 	m_biases = &m_network[m_weights_size];
 
 	m_dimensions = dimensions;
+	m_activation_data = std::vector<activation_data>(activations.size());
+
+	for (size_t i = 0; i < activations.size(); i++) {
+		m_activation_data[i].type = activations[i];
+	}
 }
 
 void NeuralNetwork::compile(loss_metric loss, loss_metric metrics, weight_init weight_initialization) {
@@ -36,6 +43,28 @@ void NeuralNetwork::compile(loss_metric loss, loss_metric metrics, weight_init w
 
 	}
 
+	// assign pointers to activation functions and respective derivatives
+	for (size_t i = 0; i < m_activation_data.size(); i++) {
+		switch (m_activation_data[i].type) {
+		case activation_functions::relu:
+			m_activation_data[i].activation = &NeuralNetwork::relu;
+			m_activation_data[i].derivative = &NeuralNetwork::relu_derivative;
+			break;
+		case activation_functions::leaky_relu:
+			m_activation_data[i].activation = &NeuralNetwork::leaky_relu;
+			m_activation_data[i].derivative = &NeuralNetwork::leaky_relu_derivative;
+			break;
+		case activation_functions::elu:
+			m_activation_data[i].activation = &NeuralNetwork::elu;
+			m_activation_data[i].derivative = &NeuralNetwork::elu_derivative;
+			break;
+		case activation_functions::sigmoid:
+			m_activation_data[i].activation = &NeuralNetwork::sigmoid;
+			m_activation_data[i].derivative = &NeuralNetwork::sigmoid_derivative;
+			break;
+		}
+	}
+
 	float lower_rand;
 	float upper_rand;
 
@@ -44,7 +73,11 @@ void NeuralNetwork::compile(loss_metric loss, loss_metric metrics, weight_init w
 	std::random_device rd;
 	std::mt19937 gen(rd());
 
+	// assign weight values based on init type
 	switch (weight_initialization) {
+
+		
+
 	case weight_init::xavier: {
 		for (size_t i = 0; i < m_dimensions.size() - 1; i++) {
 			lower_rand = -(1.0f / std::sqrt(m_dimensions[i + 1]));
@@ -112,7 +145,7 @@ NeuralNetwork::history NeuralNetwork::fit(Matrix& x_train, Matrix& y_train, Matr
 			// adjust pointer to start of data
 			float* x = &x_train.matrix[(i * batch_size) * x_train.ColumnCount];
 
-			forward_prop(x, m_batch_data, m_r_total_size, batch_size);
+			forward_prop(x, m_batch_data, m_batch_activation_size, batch_size);
 
 			// stupid fix in meantime to prevent dereferencing
 			x = &x_train.matrix[(i * batch_size) * x_train.ColumnCount];
@@ -133,8 +166,8 @@ NeuralNetwork::history NeuralNetwork::fit(Matrix& x_train, Matrix& y_train, Matr
 		}
 	}
 
-	free(m_batch_data);
-	free(m_test_data);
+	free(m_batch_data); m_batch_data = nullptr;
+	free(m_test_data); m_test_data = nullptr;
 
 	auto end_time = std::chrono::high_resolution_clock::now();
 
@@ -145,7 +178,7 @@ NeuralNetwork::history NeuralNetwork::fit(Matrix& x_train, Matrix& y_train, Matr
 
 void NeuralNetwork::initialize_batch_data(int batch_size) {
 
-	m_r_total_size = 0;
+	m_batch_activation_size = 0;
 
 	// size for dw and db
 	m_batch_data_size = m_network_size;
@@ -153,16 +186,16 @@ void NeuralNetwork::initialize_batch_data(int batch_size) {
 		// size for activation, total, and deriv_t
 		m_batch_data_size += 3 * (m_dimensions[i] * batch_size);
 
-		m_r_total_size += m_dimensions[i] * batch_size;
+		m_batch_activation_size += m_dimensions[i] * batch_size;
 	}
 
 	// allocate memory for m_batch_data
 	m_batch_data = (float*)malloc(m_batch_data_size * sizeof(float));
 
-	m_activation = &m_batch_data[m_r_total_size];
-	m_deriv_t = &m_activation[m_r_total_size];
-	m_deriv_w = &m_deriv_t[m_r_total_size];
-	m_deriv_b = &m_deriv_w[m_weights_size];
+	m_activation = &m_batch_data[m_batch_activation_size];
+	m_deriv_t = &m_activation[m_batch_activation_size];
+	m_deriv_w = &m_deriv_t[m_batch_activation_size];
+	m_deriv_b = &m_deriv_w[m_batch_activation_size];
  
 }
 void NeuralNetwork::initialize_test_data(int test_size) {
@@ -215,6 +248,7 @@ void NeuralNetwork::forward_prop(float* x_data, float* result_data, int activati
 
 	for (int i = 0; i < m_dimensions.size() - 1; i++) {
 
+		// initialize pointers
 		float* weights_start = &m_network[weight_idx];
 		float* bias_start = &m_biases[bias_idx];
 
@@ -231,18 +265,13 @@ void NeuralNetwork::forward_prop(float* x_data, float* result_data, int activati
 
 		// -> compute dot prod with weight and input
 		i == 0 ? 
-			dot_prod_t_b(weights_start, input_start, output_start, m_dimensions[i + 1], m_dimensions[i], m_dimensions[i], num_elements, false) :
+			dot_prod_t_b(weights_start, input_start, output_start, m_dimensions[i + 1], m_dimensions[i], num_elements, m_dimensions[i], false) :
 			dot_prod(weights_start, input_start, output_start, m_dimensions[i + 1], m_dimensions[i], m_dimensions[i], num_elements, false);
 
-		// -> compute activation hardcoded to leaky_relu at the moement
-		#pragma omp parallel for
-		for (size_t r = 0; r < m_dimensions[i + 1]; r++) {
-			for (size_t c = 0; c < num_elements; c++) {
-				output_start[activation_size + (r * num_elements + c)] = output_start[activation_size + (r * num_elements + c)] > 0.0f ? output_start[activation_size + (r * num_elements + c)] : 0.1f * output_start[activation_size + (r * num_elements + c)];
-				//std::cout << " " + std::to_string(output_start[activation_size + (r * num_elements + c)]);
-			}
-		}
+		// -> compute activation
+		(this->*m_activation_data[i].activation)(output_start, &output_start[activation_size], m_dimensions[i + 1] * num_elements);
 
+		// update pointers
 		weight_idx += m_dimensions[i] * m_dimensions[i + 1];
 		bias_idx += m_dimensions[i + 1];
 
@@ -251,16 +280,25 @@ void NeuralNetwork::forward_prop(float* x_data, float* result_data, int activati
 		input_idx += i == 0 ? 0 : (m_dimensions[i] * num_elements);
 	}
 }
-void NeuralNetwork::back_prop(float* x_data, float* y_data,	float learning_rate, int num_elements) {
+void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate, int num_elements) {
 
 	const float s_factor = std::sqrt(learning_rate) / std::sqrt(float(num_elements));
 	const __m256 _s_factor = _mm256_set1_ps(s_factor);
 
 	// -> compute loss
+	// hardcoded to log loss at the moment
+	float* last_activation = &m_activation[m_batch_activation_size - (m_dimensions.back() * num_elements)];
+	float* last_d_t = &m_deriv_t[m_batch_activation_size - (m_dimensions.back() * num_elements)];
 
+	for (size_t i = 0; i < num_elements; i++) {
+		for (size_t j = 0; j < m_dimensions.back(); j++) {
+			last_d_t[i * m_dimensions.back() + j] = last_activation[i * m_dimensions.back() + j];
+		}
+		last_d_t[i * m_dimensions.back() + (int)y_data[i]]--;
+	}
 
 	int weight_idx = m_weights_size - (m_dimensions[m_dimensions.size() - 1] * m_dimensions[m_dimensions.size() - 2]);
-	int d_total_idx = m_r_total_size - (m_dimensions.back() * num_elements); // -> initialize to last element of dt
+	int d_total_idx = m_batch_activation_size - (m_dimensions.back() * num_elements); // -> initialize to last element of dt
 
 	for (size_t i = m_dimensions.size() - 2; i > 0; i--) {
 
@@ -275,14 +313,9 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data,	float learning_rate,
 
 		float* prev_activation = &m_batch_data[d_total_idx - (m_dimensions[i] * num_elements)]; // sub offset to previous element of result total
 
-		// mult by activation derivative, hardcoded to leaky relu at the moment
-		#pragma omp parallel for
-		for (size_t j = 0; j < m_dimensions[i]; j++) {
-			for (size_t k = 0; k < num_elements; k++) {
-				m_deriv_t[j * num_elements + k] *= prev_activation[j * num_elements + k] > 0.0f ? 1.0f : 0.1f;
-			}
-		}
-
+		// mult by activation derivative
+		(this->*m_activation_data[i - 1].derivative)(prev_activation, m_deriv_t, m_dimensions[i] * num_elements);
+		
 		d_total_idx -= m_dimensions[i] * num_elements; // -> move back to previous dt
 		weight_idx -= m_dimensions[i] * m_dimensions[i - 1]; // -> move back to previous weight
 	}
@@ -374,117 +407,6 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data,	float learning_rate,
 	#pragma omp parallel for 
 	for (size_t i = 0; i < m_biases_size; i ++) {
 		m_biases[i] -= m_deriv_b[i] * s_factor;
-	}
-}
-
-void NeuralNetwork::dot_prod(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear) {
-	#pragma omp parallel for
-	for (size_t i = 0; i < a_r; i++) {
-
-		// first j loop to clear existing c values
-		if (clear) {
-			__m256 scalar = _mm256_set1_ps(a[i * a_c + 0]);
-			size_t k = 0;
-			for (; k + 8 <= b_c; k += 8) {
-				_mm256_store_ps(&c[i * b_c + k],
-					_mm256_mul_ps(
-						scalar,
-						_mm256_load_ps(&b[0 * b_c + k])
-					));
-			}
-
-			for (; k < b_c; k++) {
-				c[i * b_c + k] = a[i * a_c + 0] * b[0 * b_c + k];
-			}
-		}
-		
-		for (size_t j = clear ? 1 : 0; j < b_r; j++) {
-			__m256 scalar = _mm256_set1_ps(a[i * a_c + j]);
-
-			size_t k = 0;
-			for (; k + 8 <= b_c; k += 8) {
-				_mm256_store_ps(&c[i * b_c + k],
-					_mm256_fmadd_ps(
-						scalar,
-						_mm256_load_ps(&b[j * b_c + k]),
-						_mm256_load_ps(&c[i * b_c + k])));
-			}
-
-			for (; k < b_c; k++) {
-				c[i * b_c + k] += a[i * a_c + j] * b[j * b_c + k];
-			}
-		} 
-	}
-}
-void NeuralNetwork::dot_prod_t_a(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear) {
-	#pragma omp parallel for
-	for (size_t i = 0; i < a_c; i++) {
-
-		// first j loop to clear existing c values
-		if (clear) {
-			__m256 scalar = _mm256_set1_ps(a[0 * a_c + i]);
-
-			size_t k = 0;
-			for (; k + 8 <= b_c; k += 8) {
-				_mm256_store_ps(&c[i * b_c + k],
-					_mm256_mul_ps(
-						_mm256_load_ps(&b[0 * b_c + k]),
-						scalar
-					));
-			}
-
-			for (; k < b_c; k++) {
-				c[i * b_c + k] = a[0 * a_c + i] * b[0 * b_c + k];
-			}
-		}
-
-		// rest of loop
-		for (size_t j = clear ? 1 : 0; j < b_r; j++) {
-			__m256 scalar = _mm256_set1_ps(a[j * a_c + i]);
-
-			size_t k = 0;
-			for (; k + 8 <= b_c; k += 8) {
-				_mm256_store_ps(&c[i * b_c + k],
-					_mm256_fmadd_ps(
-						_mm256_load_ps(&b[j * b_c + k]),
-						scalar,
-						_mm256_load_ps(&c[i * b_c + k])
-					));
-			}
-
-			for (; k < b_c; k++) {
-				c[i * b_c + k] += a[j * a_c + i] * b[j * b_c + k];
-			}
-		}
-	}
-}
-void NeuralNetwork::dot_prod_t_b(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear) {
-	float temp[8];
-
-	#pragma omp parallel for
-	for (size_t i = 0; i < a_r; i++) {
-		for (size_t k = 0; k < b_r; k++) {
-			__m256 sum = _mm256_setzero_ps();
-
-			size_t j = 0;
-			for (; j + 8 <= b_c; j++) {
-				sum = _mm256_fmadd_ps(
-					_mm256_load_ps(&a[i * a_c + j]),
-					_mm256_load_ps(&b[k * b_c + j]),
-					sum
-				);
-			}
-
-			_mm256_store_ps(&temp[0], sum);
-
-			temp[0] += temp[1] + temp[2] + temp[3] + temp[4] + temp[5] + temp[6] + temp[7];
-
-			for (j = 0; j < b_c; j++) {
-				temp[0] += a[i * a_c + j] * b[k * b_c + j];
-			}
-
-			c[i * b_r + k] = temp[0];
-		}
 	}
 }
 

@@ -12,6 +12,11 @@ int main()
 
 	// Model definitions
 	std::vector<int> dims = { 784, 128, 128, 10 };
+	std::vector<NeuralNetwork::activation_functions> act = {
+		NeuralNetwork::activation_functions::leaky_relu, 
+		NeuralNetwork::activation_functions::leaky_relu,
+		NeuralNetwork::activation_functions::sigmoid 
+	};
 
 	// Model fit information
 	Matrix x;
@@ -42,7 +47,7 @@ int main()
 
 	NeuralNetwork model;
 
-	model.define(dims);
+	model.define(dims, act);
 
 	model.compile(NeuralNetwork::loss_metric::mse, NeuralNetwork::loss_metric::mse, NeuralNetwork::weight_init::he);
 

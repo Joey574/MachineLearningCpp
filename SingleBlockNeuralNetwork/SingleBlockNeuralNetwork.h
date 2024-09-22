@@ -13,9 +13,11 @@ public:
 	static enum class weight_init {
 		he, normalize, xavier
 	};
-
 	static enum class loss_metric {
 		mse
+	};
+	static enum class activation_functions {
+		relu, leaky_relu, elu, sigmoid
 	};
 
 	struct history {
@@ -26,7 +28,8 @@ public:
 	};
 
 	void define(
-		std::vector<int> dimensions
+		std::vector<int> dimensions,
+		std::vector<activation_functions> activations
 	);
 
 	void compile(
@@ -49,9 +52,17 @@ public:
 
 	~NeuralNetwork() {
 		if (m_network) { free(m_network); }
+		if (m_batch_data) { free(m_batch_data); }
+		if (m_test_data) { free(m_test_data); }
 	}
 
 private:
+
+	struct activation_data {
+		activation_functions type;
+		void (NeuralNetwork::* activation)(float*, float*, size_t);
+		void (NeuralNetwork::* derivative)(float*, float*, size_t);
+	};
 
 	/* Memory Structure for network
 	* 
@@ -81,7 +92,7 @@ private:
 	* m_deriv_w := pointer to dw0
 	* m_deriv_b := pointer to db0
 	* 
-	* m_r_total_size := size of t0 t1 ... (a0 a1 ... , are of the same size) (dt0 dt1 ... , are of the same size)
+	* m_batch_activation_size := size of t0 t1 ... (a0 a1 ... , are of the same size) (dt0 dt1 ... , are of the same size)
 	* 
 	* m_batch_data_size := total size of batch_data
 	* 
@@ -113,7 +124,7 @@ private:
 	float* m_deriv_b;
 
 	int m_batch_data_size;
-	int m_r_total_size;
+	int m_batch_activation_size;
 
 	// pointer to start of test data results
 	float* m_test_data;
@@ -124,6 +135,7 @@ private:
 
 	// misc
 	std::vector<int> m_dimensions;
+	std::vector<activation_data> m_activation_data;
 
 
 	void forward_prop(
@@ -153,6 +165,17 @@ private:
 	void initialize_batch_data(int batch_size);
 	void initialize_test_data(int test_size);
 
-	std::string clean_time(double time);
+	// activation functions
+	void relu(float* x, float* y, size_t size);
+	void leaky_relu(float* x, float* y, size_t size);
+	void elu(float* x, float* y, size_t size);
+	void sigmoid(float* x, float* y, size_t size);
 
+	// activation derivatives
+	void relu_derivative(float* x, float* y, size_t size);
+	void leaky_relu_derivative(float* x, float* y, size_t size);
+	void elu_derivative(float* x, float* y, size_t size);
+	void sigmoid_derivative(float* x, float* y, size_t size);
+
+	std::string clean_time(double time);
 };
