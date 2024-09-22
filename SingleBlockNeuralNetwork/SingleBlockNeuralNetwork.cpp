@@ -230,14 +230,16 @@ void NeuralNetwork::forward_prop(float* x_data, float* result_data, int activati
 		}
 
 		// -> compute dot prod with weight and input
-		i == 0 ? dot_prod_t_b(weights_start, input_start, output_start, m_dimensions[i + 1], m_dimensions[i], m_dimensions[i], num_elements, false) :
-		dot_prod(weights_start, input_start, output_start, m_dimensions[i + 1], m_dimensions[i], m_dimensions[i], num_elements, false);
+		i == 0 ? 
+			dot_prod_t_b(weights_start, input_start, output_start, m_dimensions[i + 1], m_dimensions[i], m_dimensions[i], num_elements, false) :
+			dot_prod(weights_start, input_start, output_start, m_dimensions[i + 1], m_dimensions[i], m_dimensions[i], num_elements, false);
 
 		// -> compute activation hardcoded to leaky_relu at the moement
 		#pragma omp parallel for
 		for (size_t r = 0; r < m_dimensions[i + 1]; r++) {
 			for (size_t c = 0; c < num_elements; c++) {
 				output_start[activation_size + (r * num_elements + c)] = output_start[activation_size + (r * num_elements + c)] > 0.0f ? output_start[activation_size + (r * num_elements + c)] : 0.1f * output_start[activation_size + (r * num_elements + c)];
+				//std::cout << " " + std::to_string(output_start[activation_size + (r * num_elements + c)]);
 			}
 		}
 
@@ -254,7 +256,7 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data,	float learning_rate,
 	const float s_factor = std::sqrt(learning_rate) / std::sqrt(float(num_elements));
 	const __m256 _s_factor = _mm256_set1_ps(s_factor);
 
-	// compute loss
+	// -> compute loss
 
 
 	int weight_idx = m_weights_size - (m_dimensions[m_dimensions.size() - 1] * m_dimensions[m_dimensions.size() - 2]);
@@ -267,17 +269,17 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data,	float learning_rate,
 		float* cur_d_total = &m_deriv_t[d_total_idx];
 		float* prev_d_total = &m_deriv_t[d_total_idx - (m_dimensions[i] * num_elements)]; // sub offset to previous element of dt
 
-		// compute d_total
+		// -> compute d_total
 		// d_total[i - 1] := weight[i].T.dot(d_total[i]) * total[i - 1].activ_derivative
 		dot_prod_t_a(weight, cur_d_total, prev_d_total, m_dimensions[i + 1], m_dimensions[i], m_dimensions[i], num_elements, true);
 
 		float* prev_activation = &m_batch_data[d_total_idx - (m_dimensions[i] * num_elements)]; // sub offset to previous element of result total
 
-		// mult by activation derivative hardcoded to leaky relu at the moment
+		// mult by activation derivative, hardcoded to leaky relu at the moment
 		#pragma omp parallel for
 		for (size_t j = 0; j < m_dimensions[i]; j++) {
 			for (size_t k = 0; k < num_elements; k++) {
-				m_deriv_t[j * num_elements + k] *= prev_activation[j * num_elements + k] > 0 ? 1 : 0.1 * prev_activation[j * num_elements + k];
+				m_deriv_t[j * num_elements + k] *= prev_activation[j * num_elements + k] > 0.0f ? 1.0f : 0.1f;
 			}
 		}
 
@@ -299,9 +301,10 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data,	float learning_rate,
 		float* d_t = &m_deriv_t[d_total_idx];
 		float* d_w = &m_deriv_w[d_weight_idx];
 
-		// compute d_weights
+		// -> compute d_weights
 		// d_weights[i] := d_total[i].dot(x.T || activation[i - 1].T) * s_factor
-		i == 0 ? dot_prod(d_t, prev_activ, d_w, m_dimensions[i + 1], num_elements, num_elements, m_dimensions[i], true) :
+		i == 0 ?
+			dot_prod(d_t, prev_activ, d_w, m_dimensions[i + 1], num_elements, num_elements, m_dimensions[i], true) :
 			dot_prod_t_b(d_t, prev_activ, d_w, m_dimensions[i + 1], num_elements, m_dimensions[i], num_elements, true);
 
 		// multiply by s_factor
@@ -312,7 +315,7 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data,	float learning_rate,
 
 		float* d_bias = &m_deriv_b[d_bias_idx];
 
-		// compute b_biases
+		// -> compute b_biases
 		// d_biases[i] := (d_total[i] * s_factor).row_sums
 		#pragma omp parallel for
 		for (size_t j = 0; j < m_dimensions[i + 1]; j++) {
@@ -419,33 +422,68 @@ void NeuralNetwork::dot_prod_t_a(float* a, float* b, float* c, size_t a_r, size_
 
 		// first j loop to clear existing c values
 		if (clear) {
-			for (size_t k = 0; k < b_c; k++) {
+			__m256 scalar = _mm256_set1_ps(a[0 * a_c + i]);
+
+			size_t k = 0;
+			for (; k + 8 <= b_c; k += 8) {
+				_mm256_store_ps(&c[i * b_c + k],
+					_mm256_mul_ps(
+						_mm256_load_ps(&b[0 * b_c + k]),
+						scalar
+					));
+			}
+
+			for (; k < b_c; k++) {
 				c[i * b_c + k] = a[0 * a_c + i] * b[0 * b_c + k];
 			}
 		}
 
+		// rest of loop
 		for (size_t j = clear ? 1 : 0; j < b_r; j++) {
-			for (size_t k = 0; k < b_c; k++) {
+			__m256 scalar = _mm256_set1_ps(a[j * a_c + i]);
+
+			size_t k = 0;
+			for (; k + 8 <= b_c; k += 8) {
+				_mm256_store_ps(&c[i * b_c + k],
+					_mm256_fmadd_ps(
+						_mm256_load_ps(&b[j * b_c + k]),
+						scalar,
+						_mm256_load_ps(&c[i * b_c + k])
+					));
+			}
+
+			for (; k < b_c; k++) {
 				c[i * b_c + k] += a[j * a_c + i] * b[j * b_c + k];
 			}
 		}
 	}
 }
 void NeuralNetwork::dot_prod_t_b(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear) {
+	float temp[8];
+
 	#pragma omp parallel for
 	for (size_t i = 0; i < a_r; i++) {
+		for (size_t k = 0; k < b_r; k++) {
+			__m256 sum = _mm256_setzero_ps();
 
-		// first j loop to clear existing c values
-		if (clear) {
-			for (size_t k = 0; k < b_r; k++) {
-				c[i * b_r + k] = a[i * a_c + 0] * b[k * b_c + 0];
+			size_t j = 0;
+			for (; j + 8 <= b_c; j++) {
+				sum = _mm256_fmadd_ps(
+					_mm256_load_ps(&a[i * a_c + j]),
+					_mm256_load_ps(&b[k * b_c + j]),
+					sum
+				);
 			}
-		}
 
-		for (size_t j = clear ? 1 : 0; j < b_r; j++) {
-			for (size_t k = 0; k < b_r; k++) {
-				c[i * b_r + k] += a[i * a_c + j] * b[k * b_c + j];
+			_mm256_store_ps(&temp[0], sum);
+
+			temp[0] += temp[1] + temp[2] + temp[3] + temp[4] + temp[5] + temp[6] + temp[7];
+
+			for (j = 0; j < b_c; j++) {
+				temp[0] += a[i * a_c + j] * b[k * b_c + j];
 			}
+
+			c[i * b_r + k] = temp[0];
 		}
 	}
 }
