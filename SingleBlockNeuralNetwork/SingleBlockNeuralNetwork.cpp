@@ -256,11 +256,9 @@ void NeuralNetwork::forward_prop(float* x_data, float* result_data, int activati
 
 		float* input_start = i == 0 ? &x_data[0] : &result_data[input_idx + activation_size];
 
-		// -> initialize memory to bias values, prevents having to clear later
+		// -> initialize memory to bias values, prevents having to clear existinpragma omp parallel for
 		for (size_t r = 0; r < m_dimensions[i + 1]; r++) {
-			for (size_t c = 0; c < num_elements; c++) {
-				output_start[r * num_elements + c] = bias_start[r];
-			}
+			std::fill(&output_start[r * num_elements], &output_start[r * num_elements + num_elements], bias_start[r]);
 		}
 
 		// -> compute dot prod with weight and input
