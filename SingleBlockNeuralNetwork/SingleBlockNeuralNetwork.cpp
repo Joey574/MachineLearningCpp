@@ -256,7 +256,8 @@ void NeuralNetwork::forward_prop(float* x_data, float* result_data, int activati
 
 		float* input_start = i == 0 ? &x_data[0] : &result_data[input_idx + activation_size];
 
-		// -> initialize memory to bias values, prevents having to clear existinpragma omp parallel for
+		// -> initialize memory to bias values, prevents having to clear existing values
+		#pragma omp parallel for
 		for (size_t r = 0; r < m_dimensions[i + 1]; r++) {
 			std::fill(&output_start[r * num_elements], &output_start[r * num_elements + num_elements], bias_start[r]);
 		}
@@ -307,7 +308,8 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 
 		// -> compute d_total
 		// d_total[i - 1] := weight[i].T.dot(d_total[i]) * total[i - 1].activ_derivative
-		dot_prod_t_a(weight, cur_d_total, prev_d_total, m_dimensions[i + 1], m_dimensions[i], m_dimensions[i], num_elements, true);
+		//dot_prod_t_a(weight, cur_d_total, prev_d_total, m_dimensions[i + 1], m_dimensions[i], m_dimensions[i], num_elements, true);
+		dot_prod(weight, cur_d_total, prev_d_total, m_dimensions[i + 1], m_dimensions[i], m_dimensions[i], num_elements, true);
 
 		float* prev_activation = &m_batch_data[d_total_idx - (m_dimensions[i] * num_elements)]; // sub offset to previous element of result total
 
