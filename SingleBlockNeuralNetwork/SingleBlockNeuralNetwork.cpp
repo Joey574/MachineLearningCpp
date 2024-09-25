@@ -173,6 +173,10 @@ NeuralNetwork::history NeuralNetwork::fit(Matrix& x_train, Matrix& y_train, Matr
 
 	std::cout << "Status: training_complete\n";
 
+	time = end_time - start_time;
+
+	std::cout << "average epoch: " << clean_time(time.count() / (double)epochs);
+
 	return h;
 }
 
@@ -296,7 +300,7 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 		last_d_t[i * m_dimensions.back() + (int)y_data[i]]--;
 	}
 
-	int weight_idx = m_weights_size - (m_dimensions[m_dimensions.size() - 1] * m_dimensions[m_dimensions.size() - 2]);
+	int weight_idx = m_weights_size - (m_dimensions.back() * m_dimensions[m_dimensions.size() - 2]);
 	int d_total_idx = m_batch_activation_size - (m_dimensions.back() * num_elements); // -> initialize to last element of dt
 
 	for (size_t i = m_dimensions.size() - 2; i > 0; i--) {
@@ -313,7 +317,7 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 		float* prev_activation = &m_batch_data[d_total_idx - (m_dimensions[i] * num_elements)]; // sub offset to previous element of result total
 
 		// mult by activation derivative
-		(this->*m_activation_data[i - 1].derivative)(prev_activation, m_deriv_t, m_dimensions[i] * num_elements);
+		(this->*m_activation_data[i - 1].derivative)(prev_activation, prev_d_total, m_dimensions[i] * num_elements);
 		
 		d_total_idx -= m_dimensions[i] * num_elements; // -> move back to previous dt
 		weight_idx -= m_dimensions[i] * m_dimensions[i - 1]; // -> move back to previous weight
@@ -334,14 +338,18 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 		float* d_w = &m_deriv_w[d_weight_idx];
 
 		// -> compute d_weights
+		// in the casse of x since we don't transpose it in 'fit' we don't transpose it here, hence the ternary operator
 		// d_weights[i] := d_total[i].dot(x.T || activation[i - 1].T) * s_factor
 		i == 0 ?
 			dot_prod(d_t, prev_activ, d_w, m_dimensions[i + 1], num_elements, num_elements, m_dimensions[i], true) :
 			dot_prod_t_b(d_t, prev_activ, d_w, m_dimensions[i + 1], num_elements, m_dimensions[i], num_elements, true);
 
 		// multiply by s_factor
-		#pragma omp parallel for
+		//#pragma omp parallel for
 		for (size_t k = 0; k < m_dimensions[i] * m_dimensions[i + 1]; k++) {
+
+			//if (std::_Is_nan(d_w[k])) { std::cout << "d_w[" << k << "]: is_nan (s_factor mult) i == " << i << "\n"; }
+
 			d_w[k] *= s_factor;
 		}
 
@@ -400,7 +408,12 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 
 	#pragma omp parallel for
 	for (size_t i = 0; i < m_weights_size; i++) {
+
+		//if (std::_Is_nan(m_deriv_w[i])) { std::cout << "d_w[" + std::to_string(i).append("]: is_nan\n"); }
+		//if (std::_Is_nan(m_network[i])) { std::cout << "w[" + std::to_string(i).append("]: is_nan\n"); }
+
 		m_network[i] -= m_deriv_w[i] * s_factor;
+		//std::cout << (i % 1000 == 0 ? "n_w[" + std::to_string(i).append("]: ").append(std::to_string(m_network[i])).append(" :: d_w[").append(std::to_string(i)).append("]: ").append(std::to_string(m_deriv_w[i])).append(" * ").append(std::to_string(s_factor)).append("\n") : "");
 	}
 
 	#pragma omp parallel for 

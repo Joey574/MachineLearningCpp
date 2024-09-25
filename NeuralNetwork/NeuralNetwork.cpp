@@ -140,10 +140,6 @@ NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Ma
 
 	// d_total[i] := weight.T.dot(d_total[i + 1]) * total[i].activ_derivative
 	for (int i = deriv.d_total.size() - 1; i > 0; i--) {
-
-		std::cout << "weights[" << i << "]: " << net.weights[i].RowCount << " x " << net.weights[i].ColumnCount << "\nd_total[" << i << "]: " << deriv.d_total[i].RowCount << " x " << deriv.d_total[i].ColumnCount << "\ntotal[" << i - 1 << "]: " << results.total[i - 1].RowCount << " x " << results.total[i - 1].ColumnCount << "\n";
-
-
 		deriv.d_total[i - 1] = net.weights[i].Transpose().dot_product(deriv.d_total[i]) * (results.total[i - 1].*_activation_functions[i - 1].derivative)();
 	}
 

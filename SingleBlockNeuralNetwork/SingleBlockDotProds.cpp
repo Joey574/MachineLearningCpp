@@ -1,8 +1,6 @@
 #include "SingleBlockNeuralNetwork.h"
 
 void NeuralNetwork::dot_prod(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear) {
-	//std::cout << "a:\n\trows: " << a_r << "\n\tcols: " << a_c << "\nb:\n\trows: " << b_r << "\n\tcols: " << b_c << "\nclear: " << clear << "\n";
-
 	#pragma omp parallel for
 	for (size_t i = 0; i < a_r; i++) {
 
@@ -42,8 +40,6 @@ void NeuralNetwork::dot_prod(float* a, float* b, float* c, size_t a_r, size_t a_
 	}
 }
 void NeuralNetwork::dot_prod_t_a(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear) {
-	//std::cout << "a:\n\trows: " << a_r << "\n\tcols: " << a_c << "\nb:\n\trows: " << b_r << "\n\tcols: " << b_c << "\nclear: " << clear << "\n";
-
 	#pragma omp parallel for
 	for (size_t i = 0; i < a_c; i++) {
 
@@ -83,7 +79,7 @@ void NeuralNetwork::dot_prod_t_a(float* a, float* b, float* c, size_t a_r, size_
 	}
 }
 void NeuralNetwork::dot_prod_t_b(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear) {
-	//std::cout << "a:\n\trows: " << a_r << "\n\tcols: " << a_c << "\nb:\n\trows: " << b_r << "\n\tcols: " << b_c << "\nclear: " << clear << "\n";
+
 
 	#pragma omp parallel for
 	for (size_t i = 0; i < a_r; i++) {
@@ -96,7 +92,6 @@ void NeuralNetwork::dot_prod_t_b(float* a, float* b, float* c, size_t a_r, size_
 			__m256 sum = _mm256_setzero_ps();
 			size_t j = clear ? 1 : 0;
 			for (; j + 8 <= b_c; j += 8) {
-
 				sum = _mm256_fmadd_ps(
 					_mm256_load_ps(&a[i * a_c + j]),
 					_mm256_load_ps(&b[k * b_c + j]),
