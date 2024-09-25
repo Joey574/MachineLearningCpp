@@ -268,7 +268,7 @@ void NeuralNetwork::forward_prop(float* x_data, float* result_data, int activati
 		}
 
 		// -> compute dot prod with weight and input
-		i == 0 ? 
+		i == 0 ?
 			dot_prod_t_b(weights_start, input_start, output_start, m_dimensions[i + 1], m_dimensions[i], num_elements, m_dimensions[i], false) :
 			dot_prod(weights_start, input_start, output_start, m_dimensions[i + 1], m_dimensions[i], m_dimensions[i], num_elements, false);
 
@@ -317,7 +317,7 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 
 		float* prev_total = &m_batch_data[d_total_idx - (m_dimensions[i] * num_elements)]; // sub offset to previous element of result total
 
-		// mult by activation derivative
+		// -> mult by activation derivative
 		//std::cout << "index: " << i << "\n";
 		(this->*m_activation_data[i - 1].derivative)(prev_total, prev_d_total, m_dimensions[i] * num_elements);
 		
@@ -347,11 +347,8 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 			dot_prod_t_b(d_t, prev_activ, d_w, m_dimensions[i + 1], num_elements, m_dimensions[i], num_elements, true);
 
 		// multiply by s_factor
-		//#pragma omp parallel for
+		#pragma omp parallel for
 		for (size_t k = 0; k < m_dimensions[i] * m_dimensions[i + 1]; k++) {
-
-			if (std::_Is_nan(d_w[k])) { std::cout << "d_w[" << k << "]: is_nan (s_factor mult) i == " << i << "\n"; }
-
 			d_w[k] *= s_factor;
 		}
 
@@ -410,12 +407,7 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 
 	#pragma omp parallel for
 	for (size_t i = 0; i < m_weights_size; i++) {
-
-		//if (std::_Is_nan(m_deriv_w[i])) { std::cout << "d_w[" + std::to_string(i).append("]: is_nan\n"); }
-		//if (std::_Is_nan(m_network[i])) { std::cout << "w[" + std::to_string(i).append("]: is_nan\n"); }
-
 		m_network[i] -= m_deriv_w[i] * s_factor;
-		//std::cout << (i % 1000 == 0 ? "n_w[" + std::to_string(i).append("]: ").append(std::to_string(m_network[i])).append(" :: d_w[").append(std::to_string(i)).append("]: ").append(std::to_string(m_deriv_w[i])).append(" * ").append(std::to_string(s_factor)).append("\n") : "");
 	}
 
 	#pragma omp parallel for 
