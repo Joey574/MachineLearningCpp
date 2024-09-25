@@ -198,8 +198,9 @@ void NeuralNetwork::initialize_batch_data(int batch_size) {
 
 	m_activation = &m_batch_data[m_batch_activation_size];
 	m_deriv_t = &m_activation[m_batch_activation_size];
+
 	m_deriv_w = &m_deriv_t[m_batch_activation_size];
-	m_deriv_b = &m_deriv_w[m_batch_activation_size];
+	m_deriv_b = &m_deriv_w[m_weights_size];
  
 }
 void NeuralNetwork::initialize_test_data(int test_size) {
@@ -300,7 +301,7 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 		last_d_t[i * m_dimensions.back() + (int)y_data[i]]--;
 	}
 
-	int weight_idx = m_weights_size - (m_dimensions.back() * m_dimensions[m_dimensions.size() - 2]);
+	int weight_idx = m_weights_size - (m_dimensions.back() * m_dimensions[m_dimensions.size() - 2]); // -> initialize to last weight
 	int d_total_idx = m_batch_activation_size - (m_dimensions.back() * num_elements); // -> initialize to last element of dt
 
 	for (size_t i = m_dimensions.size() - 2; i > 0; i--) {
@@ -314,10 +315,11 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 		// d_total[i - 1] := weight[i].T.dot(d_total[i]) * total[i - 1].activ_derivative
 		dot_prod_t_a(weight, cur_d_total, prev_d_total, m_dimensions[i + 1], m_dimensions[i], m_dimensions[i + 1], num_elements, true);
 
-		float* prev_activation = &m_batch_data[d_total_idx - (m_dimensions[i] * num_elements)]; // sub offset to previous element of result total
+		float* prev_total = &m_batch_data[d_total_idx - (m_dimensions[i] * num_elements)]; // sub offset to previous element of result total
 
 		// mult by activation derivative
-		(this->*m_activation_data[i - 1].derivative)(prev_activation, prev_d_total, m_dimensions[i] * num_elements);
+		//std::cout << "index: " << i << "\n";
+		(this->*m_activation_data[i - 1].derivative)(prev_total, prev_d_total, m_dimensions[i] * num_elements);
 		
 		d_total_idx -= m_dimensions[i] * num_elements; // -> move back to previous dt
 		weight_idx -= m_dimensions[i] * m_dimensions[i - 1]; // -> move back to previous weight
@@ -348,7 +350,7 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 		//#pragma omp parallel for
 		for (size_t k = 0; k < m_dimensions[i] * m_dimensions[i + 1]; k++) {
 
-			//if (std::_Is_nan(d_w[k])) { std::cout << "d_w[" << k << "]: is_nan (s_factor mult) i == " << i << "\n"; }
+			if (std::_Is_nan(d_w[k])) { std::cout << "d_w[" << k << "]: is_nan (s_factor mult) i == " << i << "\n"; }
 
 			d_w[k] *= s_factor;
 		}
