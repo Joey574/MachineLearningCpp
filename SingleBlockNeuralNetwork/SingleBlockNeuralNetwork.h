@@ -106,7 +106,7 @@ private:
 	*/
 
 	// pointer to start of weights and biases
-	alignas (64) float* m_network;
+	float* m_network;
 
 	float* m_biases;
 
@@ -115,7 +115,7 @@ private:
 	int m_biases_size;
 
 	// pointer to start of batch data -> results and derivs
-	alignas (64) float* m_batch_data;
+	float* m_batch_data;
 
 	float* m_activation;
 
@@ -127,7 +127,7 @@ private:
 	int m_batch_activation_size;
 
 	// pointer to start of test data results
-	alignas (64) float* m_test_data;
+	float* m_test_data;
 
 	float* m_test_activation;
 

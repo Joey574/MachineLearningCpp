@@ -22,7 +22,7 @@ void NeuralNetwork::define(std::vector<int> dimensions, std::vector<activation_f
 	}
 
 	// allocate memory for network
-	m_network = (float*)malloc(m_network_size * sizeof(float));
+	m_network = (float*)_aligned_malloc(m_network_size * sizeof(float), 64);
 	m_biases = &m_network[m_weights_size];
 
 	m_dimensions = dimensions;
@@ -194,7 +194,7 @@ void NeuralNetwork::initialize_batch_data(int batch_size) {
 	}
 
 	// allocate memory for m_batch_data
-	m_batch_data = (float*)malloc(m_batch_data_size * sizeof(float));
+	m_batch_data = (float*)_aligned_malloc(m_batch_data_size * sizeof(float), 64);
 
 	m_activation = &m_batch_data[m_batch_activation_size];
 	m_deriv_t = &m_activation[m_batch_activation_size];
@@ -212,7 +212,7 @@ void NeuralNetwork::initialize_test_data(int test_size) {
 		m_test_activation_size += m_dimensions[i] * test_size;
 	}
 
-	m_test_data = (float*)malloc(size * sizeof(float));
+	m_test_data = (float*)_aligned_malloc(size * sizeof(float), 64);
 	m_test_activation = &m_test_data[m_test_activation_size];
 }
 
@@ -220,9 +220,9 @@ std::string NeuralNetwork::test_network(float* x, float* y, int test_size) {
 
 	forward_prop(x, m_test_data, m_test_activation_size, test_size);
 
-	// compute metric data hardcoded to accuracy for now
 	float* last_activation = &m_test_activation[m_test_activation_size - (m_dimensions.back() * test_size)];
 
+	// compute metric data hardcoded to accuracy for now
 	size_t correct = 0;
 	for (size_t i = 0; i < test_size; i++) {
 
@@ -288,12 +288,12 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 
 	const float s_factor = std::sqrt(learning_rate) / std::sqrt(float(num_elements));
 	const __m256 _s_factor = _mm256_set1_ps(s_factor);
-
-	// -> compute loss
-	// hardcoded to log loss at the moment
+	
 	float* last_activation = &m_activation[m_batch_activation_size - (m_dimensions.back() * num_elements)];
 	float* last_d_t = &m_deriv_t[m_batch_activation_size - (m_dimensions.back() * num_elements)];
 
+	// -> compute loss
+	// hardcoded to log loss at the moment
 	for (size_t i = 0; i < num_elements; i++) {
 		for (size_t j = 0; j < m_dimensions.back(); j++) {
 			last_d_t[i * m_dimensions.back() + j] = last_activation[i * m_dimensions.back() + j];
@@ -318,7 +318,7 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 		float* prev_total = &m_batch_data[d_total_idx - (m_dimensions[i] * num_elements)]; // sub offset to previous element of result total
 
 		// -> mult by activation derivative
-		//std::cout << "index: " << i << "\n";
+		std::cout << "index: " << i << "\n";
 		(this->*m_activation_data[i - 1].derivative)(prev_total, prev_d_total, m_dimensions[i] * num_elements);
 		
 		d_total_idx -= m_dimensions[i] * num_elements; // -> move back to previous dt
@@ -405,9 +405,12 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 	//	m_biases[i] -= m_deriv_b[i] * s_factor;
 	//}
 
-	#pragma omp parallel for
+	//#pragma omp parallel for
 	for (size_t i = 0; i < m_weights_size; i++) {
 		m_network[i] -= m_deriv_w[i] * s_factor;
+
+		if (std::_Is_nan(m_network[i])) { std::cout << "w[" << i << "]: is_nan\n"; }
+
 	}
 
 	#pragma omp parallel for 
