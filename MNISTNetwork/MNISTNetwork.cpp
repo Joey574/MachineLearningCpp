@@ -11,7 +11,7 @@ int main()
 	srand(time(0));
 
 	// Model definitions
-	std::vector<int> dims = { 784, 16, 16, 10 };
+	std::vector<int> dims = { 784, 128, 128, 10 };
 
 	// Model compilation parameters
 	NeuralNetwork::loss_metric loss = NeuralNetwork::loss_metric::cross_entropy;

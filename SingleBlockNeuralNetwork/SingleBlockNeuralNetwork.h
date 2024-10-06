@@ -105,7 +105,7 @@ private:
 	* m_test_activation_size := size of t0 t1 ... in m_test_data, a0 a1 ... is of equal size
 	*/
 
-	// pointer to start of weights and biases
+	// pointer to start network -> weights and biases
 	float* m_network;
 
 	float* m_biases;
@@ -126,7 +126,7 @@ private:
 	int m_batch_data_size;
 	int m_batch_activation_size;
 
-	// pointer to start of test data results
+	// pointer to start of test data -> results
 	float* m_test_data;
 
 	float* m_test_activation;

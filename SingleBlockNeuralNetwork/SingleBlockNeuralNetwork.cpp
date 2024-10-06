@@ -168,13 +168,9 @@ NeuralNetwork::history NeuralNetwork::fit(Matrix& x_train, Matrix& y_train, Matr
 	free(m_batch_data); m_batch_data = nullptr;
 	free(m_test_data); m_test_data = nullptr;
 
-	auto end_time = std::chrono::high_resolution_clock::now();
+	time = std::chrono::high_resolution_clock::now() - start_time;
 
-	std::cout << "Status: training_complete\n";
-
-	time = end_time - start_time;
-
-	std::cout << "average epoch: " << clean_time(time.count() / (double)epochs);
+	std::cout << "Status: training_complete\nAverage Epoch: " << clean_time(time.count() / (double)epochs);
 
 	return h;
 }
@@ -287,15 +283,15 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 	const __m256 _s_factor = _mm256_set1_ps(s_factor);
 	
 	float* last_activation = &m_activation[m_batch_activation_size - (m_dimensions.back() * num_elements)];
-	float* last_d_t = &m_deriv_t[m_batch_activation_size - (m_dimensions.back() * num_elements)];
+	float* last_d_total = &m_deriv_t[m_batch_activation_size - (m_dimensions.back() * num_elements)];
 
 	// -> compute loss
 	// hardcoded to log loss at the moment
 	for (size_t i = 0; i < num_elements; i++) {
 		for (size_t j = 0; j < m_dimensions.back(); j++) {
-			last_d_t[i * m_dimensions.back() + j] = last_activation[i * m_dimensions.back() + j];
+			last_d_total[i * m_dimensions.back() + j] = last_activation[i * m_dimensions.back() + j];
 		}
-		last_d_t[i * m_dimensions.back() + (int)y_data[i]]--;
+		last_d_total[i * m_dimensions.back() + (int)y_data[i]]--;
 	}
 
 	int weight_idx = m_weights_size - (m_dimensions.back() * m_dimensions[m_dimensions.size() - 2]); // -> initialize to last weight
@@ -304,17 +300,16 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 	for (size_t i = m_dimensions.size() - 2; i > 0; i--) {
 
 		float* weight = &m_network[weight_idx];
+		float* prev_total = &m_batch_data[d_total_idx - (m_dimensions[i] * num_elements)];
 
 		float* cur_d_total = &m_deriv_t[d_total_idx];
-		float* prev_d_total = &m_deriv_t[d_total_idx - (m_dimensions[i] * num_elements)]; // sub offset to previous element of dt
+		float* prev_d_total = &m_deriv_t[d_total_idx - (m_dimensions[i] * num_elements)];
 
 		// -> compute d_total
 		// d_total[i - 1] := weight[i].T.dot(d_total[i]) * total[i - 1].activ_derivative
 		dot_prod_t_a(weight, cur_d_total, prev_d_total, m_dimensions[i + 1], m_dimensions[i], m_dimensions[i + 1], num_elements, true);
 
-		float* prev_total = &m_batch_data[d_total_idx - (m_dimensions[i] * num_elements)]; // sub offset to previous element of result total
-
-		// -> mult by activation derivative
+		// mult by activation derivative
 		(this->*m_activation_data[i - 1].derivative)(prev_total, prev_d_total, m_dimensions[i] * num_elements);
 		
 		d_total_idx -= m_dimensions[i] * num_elements; // -> move back to previous dt
@@ -331,35 +326,33 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 
 		float* prev_activ = i == 0 ? &x_data[0] : &m_activation[activation_idx];
 
-		float* d_t = &m_deriv_t[d_total_idx];
-		float* d_w = &m_deriv_w[d_weight_idx];
+		float* d_total = &m_deriv_t[d_total_idx];
+		float* d_weights = &m_deriv_w[d_weight_idx];
+		float* d_bias = &m_deriv_b[d_bias_idx];
 
 		// -> compute d_weights
-		// in the casse of x since we don't transpose it in 'fit' we don't transpose it here, hence the ternary operator
-		// d_weights[i] := d_total[i].dot(x.T || activation[i - 1].T) * s_factor
+		// d_weights[i] := d_total[i].dot(x || activation[i - 1].T) * s_factor
 		i == 0 ?
-			dot_prod(d_t, prev_activ, d_w, m_dimensions[i + 1], num_elements, num_elements, m_dimensions[i], true) :
-			dot_prod_t_b(d_t, prev_activ, d_w, m_dimensions[i + 1], num_elements, m_dimensions[i], num_elements, true);
+			dot_prod(d_total, prev_activ, d_weights, m_dimensions[i + 1], num_elements, num_elements, m_dimensions[i], true) :
+			dot_prod_t_b(d_total, prev_activ, d_weights, m_dimensions[i + 1], num_elements, m_dimensions[i], num_elements, true);
 
 		// multiply by s_factor
 		#pragma omp parallel for
 		for (size_t k = 0; k < m_dimensions[i] * m_dimensions[i + 1]; k++) {
-			d_w[k] *= s_factor;
+			d_weights[k] *= s_factor;
 		}
 
-		float* d_bias = &m_deriv_b[d_bias_idx];
 
-		// -> compute b_biases
+		// -> compute d_biases
 		// d_biases[i] := (d_total[i] * s_factor).row_sums
 		#pragma omp parallel for
 		for (size_t j = 0; j < m_dimensions[i + 1]; j++) {
 
-			// set value, overwrite old data
-			d_bias[j] = d_t[0] * s_factor;
+			// clear existing value in b_biases
+			d_bias[j] = d_total[0] * s_factor;
 
-			// rest of loop
 			for (size_t k = 1; k < num_elements; k++) {
-				d_bias[j] += d_t[k] * s_factor;
+				d_bias[j] += d_total[k] * s_factor;
 			}
 		}
 
@@ -372,8 +365,6 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 	#pragma omp parallel for
 	for (size_t i = 0; i < m_weights_size; i++) {
 		m_network[i] -= m_deriv_w[i] * s_factor;
-
-		//if (std::_Is_nan(m_network[i])) { std::cout << "w[" << i << "]: is_nan\n"; }
 	}
 
 	#pragma omp parallel for 

@@ -15,7 +15,7 @@ int main()
 	std::vector<NeuralNetwork::activation_functions> act = {
 		NeuralNetwork::activation_functions::leaky_relu, 
 		NeuralNetwork::activation_functions::leaky_relu,
-		NeuralNetwork::activation_functions::sigmoid 
+		NeuralNetwork::activation_functions::sigmoid
 	};
 
 	// Model fit information

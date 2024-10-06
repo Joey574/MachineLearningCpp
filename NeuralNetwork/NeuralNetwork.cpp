@@ -170,7 +170,7 @@ NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Ma
 					_mm256_mul_ps(_mm256_load_ps(&deriv.d_weights[i].matrix[j]), _mm256_set1_ps(s_factor))));
 		}
 
-		for (; j < net.weights[i].RowCount * net.weights[i].ColumnCount; j++) {\
+		for (; j < net.weights[i].RowCount * net.weights[i].ColumnCount; j++) {
 			net.weights[i].matrix[j] = (net.weights[i].matrix[j] * l2_reg) - (deriv.d_weights[i].matrix[j] * s_factor);
 		}
 	}

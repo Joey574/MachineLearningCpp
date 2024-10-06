@@ -4,8 +4,6 @@
 
 // copy pasted dot prod functions here :)
 void dot_prod(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear) {
-	//std::cout << "a:\n\trows: " << a_r << "\n\tcols: " << a_c << "\nb:\n\trows: " << b_r << "\n\tcols: " << b_c << "\nclear: " << clear << "\n";
-
 #pragma omp parallel for
 	for (size_t i = 0; i < a_r; i++) {
 
@@ -39,26 +37,13 @@ void dot_prod(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, 
 			}
 
 			for (; k < b_c; k++) {
-
-				if (i * b_c + k > a_r * b_c) {
-					std::cout << "size error indexing into c\n";
-				}
-				if (i * a_c + j > a_c * a_r) {
-					std::cout << "size error indexing into a\n";
-				}
-				if (j * b_c + k > b_r * b_c) {
-					std::cout << "size error indexing into b\n";
-				}
-
 				c[i * b_c + k] += a[i * a_c + j] * b[j * b_c + k];
 			}
 		}
 	}
 }
 void dot_prod_t_a(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear) {
-	//std::cout << "a:\n\trows: " << a_r << "\n\tcols: " << a_c << "\nb:\n\trows: " << b_r << "\n\tcols: " << b_c << "\nclear: " << clear << "\n";
-
-	#pragma omp parallel for
+#pragma omp parallel for
 	for (size_t i = 0; i < a_c; i++) {
 
 		// first j loop to clear existing c values
@@ -73,7 +58,7 @@ void dot_prod_t_a(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b
 					));
 			}
 
-			for (; k < b_c; k++) {			
+			for (; k < b_c; k++) {
 				c[i * b_c + k] = a[0 * a_c + i] * b[0 * b_c + k];
 			}
 		}
@@ -91,25 +76,12 @@ void dot_prod_t_a(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b
 			}
 
 			for (; k < b_c; k++) {
-
-				if (i * b_c + k > a_c * b_c) {
-					std::cout << "size error indexing into c\n";
-				}
-				if (j * a_c + i > a_c * a_r) {
-					std::cout << "size error indexing into a\n";
-				}
-				if (j * b_c + k > b_r * b_c) {
-					std::cout << "size error indexing into b\n";
-				}
-
 				c[i * b_c + k] += a[j * a_c + i] * b[j * b_c + k];
 			}
 		}
 	}
 }
 void dot_prod_t_b(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear) {
-	//std::cout << "a:\n\trows: " << a_r << "\n\tcols: " << a_c << "\nb:\n\trows: " << b_r << "\n\tcols: " << b_c << "\nclear: " << clear << "\n";
-
 #pragma omp parallel for
 	for (size_t i = 0; i < a_r; i++) {
 		for (size_t k = 0; k < b_r; k++) {
@@ -121,7 +93,6 @@ void dot_prod_t_b(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b
 			__m256 sum = _mm256_setzero_ps();
 			size_t j = clear ? 1 : 0;
 			for (; j + 8 <= b_c; j += 8) {
-
 				sum = _mm256_fmadd_ps(
 					_mm256_load_ps(&a[i * a_c + j]),
 					_mm256_load_ps(&b[k * b_c + j]),
@@ -143,17 +114,6 @@ void dot_prod_t_b(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b
 				temp[7];
 
 			for (; j < b_c; j++) {
-
-				if (i * b_r + k > a_r * b_r) {
-					std::cout << "size error indexing into c\n";
-				}
-				if (i * a_c + j > a_c * a_r) {
-					std::cout << "size error indexing into a\n";
-				}
-				if (k * b_c + j > b_c * b_r) {
-					std::cout << "size error indexing into b\n";
-				}
-
 				c[i * b_r + k] += a[i * a_c + j] * b[k * b_c + j];
 			}
 		}

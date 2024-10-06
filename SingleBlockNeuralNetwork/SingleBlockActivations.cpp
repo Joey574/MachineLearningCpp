@@ -11,7 +11,7 @@ void NeuralNetwork::leaky_relu(float* x, float* y, size_t size) {
 	for (size_t i = 0; i < size; i++) {
 		y[i] = x[i] > 0.0f ? x[i] : (0.1f * x[i]);
 
-		//if (std::_Is_nan(y[i])) { std::cout << "y[" << i << "]: is_nan (activation)\n"; }
+		if (std::_Is_nan(y[i])) { std::cout << "y[" + std::to_string(i).append("]: is_nan (activation)\n"); }
 	}
 }
 void NeuralNetwork::elu(float* x, float* y, size_t size) {
@@ -39,7 +39,7 @@ void NeuralNetwork::leaky_relu_derivative(float* x, float* y, size_t size) {
 	for (size_t i = 0; i < size; i++) {
 		y[i] = x[i] > 0.0f ? y[i] : (y[i] * 0.1f);
 
-		//if (std::_Is_nan(y[i])) { std::cout << "y[" << i << "]: is_nan(derivative)\n"; }
+		if (std::_Is_nan(y[i])) { std::cout << "y[" + std::to_string(i).append("]: is_nan(derivative)\n"); }
 	}
 }
 void NeuralNetwork::elu_derivative(float* x, float* y, size_t size) {

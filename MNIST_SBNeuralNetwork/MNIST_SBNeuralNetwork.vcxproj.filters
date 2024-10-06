@@ -18,9 +18,6 @@
     <ClCompile Include="MNIST_SBNeuralNetwork.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\SingleBlockNeuralNetwork\SingleBlockNeuralNetwork.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\Matrix\Matrix.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
