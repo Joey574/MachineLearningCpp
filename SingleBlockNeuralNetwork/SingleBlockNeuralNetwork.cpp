@@ -144,13 +144,12 @@ NeuralNetwork::history NeuralNetwork::fit(Matrix& x_train, Matrix& y_train, Matr
 
 			// adjust pointer to start of data
 			float* x = &x_train.matrix[(i * batch_size) * x_train.ColumnCount];
+			float* y = &y_train.matrix[(i * batch_size) * y_train.ColumnCount];
 
 			forward_prop(x, m_batch_data, m_batch_activation_size, batch_size);
 
 			// stupid fix in meantime to prevent dereferencing
 			x = &x_train.matrix[(i * batch_size) * x_train.ColumnCount];
-
-			float* y = &y_train.matrix[(i * batch_size) * y_train.ColumnCount];
 			
 			back_prop(x, y, learning_rate, batch_size);
 		}
@@ -258,10 +257,9 @@ void NeuralNetwork::forward_prop(float* x_data, float* result_data, int activati
 		float* bias_start = &m_biases[bias_idx];
 
 		float* output_start = &result_data[output_idx];
-
 		float* input_start = i == 0 ? &x_data[0] : &result_data[input_idx + activation_size];
 
-		// -> initialize memory to bias values, prevents having to clear existing values
+		// initialize memory to bias values, prevents having to clear existing values
 		#pragma omp parallel for
 		for (size_t r = 0; r < m_dimensions[i + 1]; r++) {
 			std::fill(&output_start[r * num_elements], &output_start[r * num_elements + num_elements], bias_start[r]);
@@ -280,7 +278,6 @@ void NeuralNetwork::forward_prop(float* x_data, float* result_data, int activati
 		bias_idx += m_dimensions[i + 1];
 
 		output_idx += m_dimensions[i + 1] * num_elements;
-
 		input_idx += i == 0 ? 0 : (m_dimensions[i] * num_elements);
 	}
 }
@@ -318,13 +315,11 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 		float* prev_total = &m_batch_data[d_total_idx - (m_dimensions[i] * num_elements)]; // sub offset to previous element of result total
 
 		// -> mult by activation derivative
-		std::cout << "index: " << i << "\n";
 		(this->*m_activation_data[i - 1].derivative)(prev_total, prev_d_total, m_dimensions[i] * num_elements);
 		
 		d_total_idx -= m_dimensions[i] * num_elements; // -> move back to previous dt
 		weight_idx -= m_dimensions[i] * m_dimensions[i - 1]; // -> move back to previous weight
 	}
-
 
 	int activation_idx = 0;
 	int d_weight_idx = 0;
@@ -374,43 +369,11 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 		activation_idx += i == 0 ? 0 : (m_dimensions[i] * num_elements);
 	}
 
-	//size_t i = 0;
-
-	//// update weights
-	//for (; i + 8 <= m_weights_size; i += 8) {
-	//	_mm256_store_ps(&m_network[i],
-	//		_mm256_fnmadd_ps(
-	//			_s_factor,
-	//			_mm256_load_ps(&m_deriv_w[i]),
-	//			_mm256_load_ps(&m_network[i])
-	//		));
-	//}
-
-	//for (; i < m_weights_size; i++) {
-	//	m_network[i] -= m_deriv_w[i] * s_factor;
-	//}
-
-	//i = 0;
-	//// update biases
-	//for (; i + 8 <= m_biases_size; i += 8) {
-	//	_mm256_store_ps(&m_biases[i],
-	//		_mm256_fnmadd_ps(
-	//			_mm256_load_ps(&m_deriv_b[i]),
-	//			_s_factor,
-	//			_mm256_load_ps(&m_biases[i])
-	//		));
-	//}
-
-	//for (; i < m_biases_size; i ++) {
-	//	m_biases[i] -= m_deriv_b[i] * s_factor;
-	//}
-
-	//#pragma omp parallel for
+	#pragma omp parallel for
 	for (size_t i = 0; i < m_weights_size; i++) {
 		m_network[i] -= m_deriv_w[i] * s_factor;
 
-		if (std::_Is_nan(m_network[i])) { std::cout << "w[" << i << "]: is_nan\n"; }
-
+		//if (std::_Is_nan(m_network[i])) { std::cout << "w[" << i << "]: is_nan\n"; }
 	}
 
 	#pragma omp parallel for 

@@ -40,8 +40,6 @@ void NeuralNetwork::dot_prod(float* a, float* b, float* c, size_t a_r, size_t a_
 	}
 }
 void NeuralNetwork::dot_prod_t_a(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear) {
-	//std::cout << "a: " << a_r << " x " << a_c << "\nb: " << b_r << " x " << b_c << "\n\n";
-
 	#pragma omp parallel for
 	for (size_t i = 0; i < a_c; i++) {
 

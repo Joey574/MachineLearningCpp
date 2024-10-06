@@ -11,7 +11,7 @@ int main()
 	srand(time(0));
 
 	// Model definitions
-	std::vector<int> dims = { 784, 128, 128, 10 };
+	std::vector<int> dims = { 784, 16, 16, 10 };
 
 	// Model compilation parameters
 	NeuralNetwork::loss_metric loss = NeuralNetwork::loss_metric::cross_entropy;
@@ -27,7 +27,7 @@ int main()
 	int batch_size = 320;
 	int epochs = 20;
 	float learning_rate = 0.1f;
-	float weight_decay = 0.01f;
+	float weight_decay = 0.0f;
 	float validation_split = 0.0f;
 	bool shuffle = true;
 	int validation_freq = 1;
