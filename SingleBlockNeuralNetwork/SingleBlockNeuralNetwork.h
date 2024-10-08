@@ -17,7 +17,7 @@ public:
 		mse
 	};
 	static enum class activation_functions {
-		relu, leaky_relu, elu, sigmoid
+		relu, leaky_relu, elu, sigmoid, softmax
 	};
 
 	struct history {
@@ -170,6 +170,7 @@ private:
 	void leaky_relu(float* x, float* y, size_t size);
 	void elu(float* x, float* y, size_t size);
 	void sigmoid(float* x, float* y, size_t size);
+	void softmax(float* x, float* y, size_t size);
 
 	// activation derivatives
 	void relu_derivative(float* x, float* y, size_t size);

@@ -7,8 +7,7 @@ void NeuralNetwork::relu(float* x, float* y, size_t size) {
 	}
 }
 void NeuralNetwork::leaky_relu(float* x, float* y, size_t size) {
-
-	/*#pragma omp parallel for
+	#pragma omp parallel for
 	for (size_t i = 0; i <= size - 8; i += 8) {
 		_mm256_store_ps(&y[i],
 			_mm256_max_ps(
@@ -21,12 +20,12 @@ void NeuralNetwork::leaky_relu(float* x, float* y, size_t size) {
 
 	for (size_t i = size - (size % 8); i < size; i++) {
 		y[i] = x[i] > 0.0f ? x[i] : (0.1f * x[i]);
-	}*/
+	}
 
-	#pragma omp parallel for
+	/*#pragma omp parallel for
 	for (size_t i = 0; i < size; i++) {
 		y[i] = x[i] > 0.0f ? x[i] : (0.1f * x[i]);
-	}
+	}*/
 }
 void NeuralNetwork::elu(float* x, float* y, size_t size) {
 	#pragma omp parallel for
@@ -35,8 +34,7 @@ void NeuralNetwork::elu(float* x, float* y, size_t size) {
 	}
 }
 void NeuralNetwork::sigmoid(float* x, float* y, size_t size) {
-
-	/*#pragma omp parallel for
+	#pragma omp parallel for
 	for (size_t i = 0; i <= size - 8; i += 8) {
 		_mm256_store_ps(&y[i],
 			_mm256_div_ps(
@@ -52,14 +50,31 @@ void NeuralNetwork::sigmoid(float* x, float* y, size_t size) {
 
 	for (size_t i = size - (size % 8); i < size; i++) {
 		y[i] = 1.0f / (std::exp(-x[i]) + 1.0f);
-	}*/
+	}
 
-	#pragma omp parallel for
+	/*#pragma omp parallel for
 	for (size_t i = 0; i < size; i++) {
 		y[i] = 1.0f / (std::exp(-x[i]) + 1.0f);
+	}*/
+}
+void NeuralNetwork::softmax(float* x, float* y, size_t size) {
+	#pragma omp parallel for
+	for (size_t i = 0; i < size / m_dimensions.back(); i++) {
+
+		float max = *std::max_element(&x[i * m_dimensions.back()], &x[i * m_dimensions.back() + m_dimensions.back()]);
+		float sum = 0;
+
+		for (size_t j = 0; j < m_dimensions.back(); j++) {
+			sum += std::exp(x[i * m_dimensions.back() + j] - max);
+		}
+
+		float log_sum = max + std::log(sum);
+
+		for (size_t j = 0; j < m_dimensions.back(); j++) {
+			y[i * m_dimensions.back() + j] = std::exp(x[i * m_dimensions.back() + j] - log_sum);
+		}
 	}
 }
-
 
 void NeuralNetwork::relu_derivative(float* x, float* y, size_t size) {
 	#pragma omp parallel for
