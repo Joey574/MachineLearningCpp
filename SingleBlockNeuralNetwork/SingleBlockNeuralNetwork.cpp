@@ -165,12 +165,12 @@ NeuralNetwork::history NeuralNetwork::fit(Matrix& x_train, Matrix& y_train, Matr
 		}
 	}
 
-	free(m_batch_data); m_batch_data = nullptr;
-	free(m_test_data); m_test_data = nullptr;
-
 	time = std::chrono::high_resolution_clock::now() - start_time;
 
 	std::cout << "Status: training_complete\nAverage Epoch: " << clean_time(time.count() / (double)epochs);
+
+	free(m_batch_data);
+	free(m_test_data);
 
 	return h;
 }
@@ -362,13 +362,31 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 		activation_idx += i == 0 ? 0 : (m_dimensions[i] * num_elements);
 	}
 
+	// update weights
 	#pragma omp parallel for
-	for (size_t i = 0; i < m_weights_size; i++) {
+	for (size_t i = 0; i <= m_weights_size - 8; i += 8) {
+		_mm256_store_ps(&m_network[i], 
+			_mm256_fnmadd_ps(
+				_mm256_load_ps(&m_deriv_w[i]),
+				_s_factor,
+				_mm256_load_ps(&m_network[i])
+		));
+	}
+	for (size_t i = m_weights_size - (m_weights_size % 8); i < m_weights_size; i++) {
 		m_network[i] -= m_deriv_w[i] * s_factor;
 	}
 
-	#pragma omp parallel for 
-	for (size_t i = 0; i < m_biases_size; i ++) {
+	// update biases
+	#pragma omp parallel for
+	for (size_t i = 0; i <= m_biases_size - 8; i += 8) {
+		_mm256_store_ps(&m_biases[i],
+			_mm256_fnmadd_ps(
+				_mm256_load_ps(&m_deriv_b[i]),
+				_s_factor,
+				_mm256_load_ps(&m_biases[i])
+			));
+	}
+	for (size_t i = m_biases_size - (m_biases_size % 8); i < m_biases_size; i ++) {
 		m_biases[i] -= m_deriv_b[i] * s_factor;
 	}
 }
