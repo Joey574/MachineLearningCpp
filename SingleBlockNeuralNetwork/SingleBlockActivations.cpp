@@ -48,20 +48,28 @@ void NeuralNetwork::sigmoid(float* x, float* y, size_t size) {
 	}
 }
 void NeuralNetwork::softmax(float* x, float* y, size_t size) {
+
+	size_t n = size / m_dimensions.back();
+
 	#pragma omp parallel for
 	for (size_t i = 0; i < size / m_dimensions.back(); i++) {
 
-		float max = *std::max_element(&x[i * m_dimensions.back()], &x[i * m_dimensions.back() + m_dimensions.back()]);
-		float sum = 0;
+		float max = x[i];
+		for (size_t j = 1; j < m_dimensions.back(); j++) {
+			if (x[j * n + i] > max) {
+				max = x[j * n + i];
+			}
+		}
 
+		float sum = 0;
 		for (size_t j = 0; j < m_dimensions.back(); j++) {
-			sum += std::exp(x[i * m_dimensions.back() + j] - max);
+			sum += std::exp(x[j * n + i] - max);
 		}
 
 		float log_sum = max + std::log(sum);
 
 		for (size_t j = 0; j < m_dimensions.back(); j++) {
-			y[i * m_dimensions.back() + j] = std::exp(x[i * m_dimensions.back() + j] - log_sum);
+			y[j * n + i] = std::exp(x[j * n + i] - log_sum);
 		}
 	}
 }
