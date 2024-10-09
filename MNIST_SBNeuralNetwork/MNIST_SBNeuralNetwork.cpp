@@ -11,11 +11,10 @@ int main()
 	srand(time(0));
 
 	// Model definitions
-	std::vector<int> dims = { 784, 128, 128, 128, 10 };
+	std::vector<int> dims = { 784, 1024, 1024, 10 };
 	std::vector<NeuralNetwork::activation_functions> act = {
-		NeuralNetwork::activation_functions::elu,
-		NeuralNetwork::activation_functions::elu,
-		NeuralNetwork::activation_functions::elu,
+		NeuralNetwork::activation_functions::leaky_relu,
+		NeuralNetwork::activation_functions::leaky_relu,
 		NeuralNetwork::activation_functions::sigmoid
 	};
 
@@ -26,7 +25,7 @@ int main()
 	Matrix y_test;
 	int batch_size = 320;
 	int epochs = 100;
-	float learning_rate = 0.005f;
+	float learning_rate = 0.01f;
 	float weight_decay = 0.0f;
 	bool shuffle = true;
 	int validation_freq = 1;
@@ -63,6 +62,5 @@ int main()
 		shuffle,
 		validation_freq
 	);
-
 
 }
