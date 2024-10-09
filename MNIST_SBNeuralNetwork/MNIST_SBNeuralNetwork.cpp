@@ -13,9 +13,9 @@ int main()
 	// Model definitions
 	std::vector<int> dims = { 784, 128, 128, 10 };
 	std::vector<NeuralNetwork::activation_functions> act = {
-		NeuralNetwork::activation_functions::leaky_relu, 
 		NeuralNetwork::activation_functions::leaky_relu,
-		NeuralNetwork::activation_functions::softmax
+		NeuralNetwork::activation_functions::leaky_relu,
+		NeuralNetwork::activation_functions::sigmoid
 	};
 
 	// Model fit information
@@ -24,7 +24,7 @@ int main()
 	Matrix x_test;
 	Matrix y_test;
 	int batch_size = 320;
-	int epochs = 100;
+	int epochs = 200;
 	float learning_rate = 0.1f;
 	float weight_decay = 0.0f;
 	bool shuffle = true;
