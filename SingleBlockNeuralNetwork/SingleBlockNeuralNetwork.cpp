@@ -122,6 +122,8 @@ void NeuralNetwork::compile(loss_metric loss, loss_metric metrics, weight_init w
 		break;
 	}
 	}
+
+	std::cout << this->summary();
 }
 
 NeuralNetwork::history NeuralNetwork::fit(Matrix& x_train, Matrix& y_train, Matrix& x_valid, Matrix& y_valid, int batch_size, int epochs, float learning_rate, bool shuffle, int validation_freq) {
@@ -172,8 +174,8 @@ NeuralNetwork::history NeuralNetwork::fit(Matrix& x_train, Matrix& y_train, Matr
 
 	std::cout << "Status: training_complete\nAverage Epoch: " << clean_time(time.count() / (double)epochs);
 
-	free(m_batch_data);
-	free(m_test_data);
+	//free(m_batch_data);
+	//free(m_test_data);
 
 	return h;
 }
@@ -228,7 +230,7 @@ std::string NeuralNetwork::test_network(float* x, float* y, int test_size) {
 
 		// find max value idx in loop
 		for (size_t j = 1; j < m_dimensions.back(); j++) {
-			if (last_activation[i * m_dimensions.back() + j] > last_activation[i * m_dimensions.back() + max_idx]) {
+			if (last_activation[j * test_size + i] > last_activation[max_idx * test_size + i]) {
 				max_idx = j;
 			}
 		}
@@ -282,13 +284,13 @@ void NeuralNetwork::forward_prop(float* x_data, float* result_data, int activati
 }
 void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate, int num_elements) {
 
-	//const float s_factor = std::sqrt(learning_rate) / std::sqrt((float)num_elements);
-	//const __m256 _s_factor = _mm256_set1_ps(s_factor);
-
 	const float factor = learning_rate / (float)num_elements;
 	const __m256 _factor = _mm256_set1_ps(factor);
 
-	
+	// d_total[i - 1] := weight[i].T.dot(d_total[i]) * total[i - 1].activ_derivative
+	// d_weights[i] := d_total[i].dot(x || activation[i - 1].T)
+	// d_biases[i] := d_total[i].row_sums
+
 	float* last_activation = &m_activation[m_batch_activation_size - (m_dimensions.back() * num_elements)];
 	float* last_d_total = &m_deriv_t[m_batch_activation_size - (m_dimensions.back() * num_elements)];
 
@@ -314,14 +316,13 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 		float* cur_d_total = &m_deriv_t[d_total_idx];
 		float* prev_d_total = &m_deriv_t[d_total_idx - (m_dimensions[i] * num_elements)];
 
-		// d_total[i - 1] := weight[i].T.dot(d_total[i]) * total[i - 1].activ_derivative
 		dot_prod_t_a(weight, cur_d_total, prev_d_total, m_dimensions[i + 1], m_dimensions[i], m_dimensions[i + 1], num_elements, true);
 
 		// mult by activation derivative
 		(this->*m_activation_data[i - 1].derivative)(prev_total, prev_d_total, m_dimensions[i] * num_elements);
 		
-		d_total_idx -= m_dimensions[i] * num_elements; // -> move back to previous dt
-		weight_idx -= m_dimensions[i] * m_dimensions[i - 1]; // -> move back to previous weight
+		d_total_idx -= m_dimensions[i] * num_elements;
+		weight_idx -= m_dimensions[i] * m_dimensions[i - 1];
 	}
 
 	int activation_idx = 0;
@@ -339,20 +340,25 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 		float* d_weights = &m_deriv_w[d_weight_idx];
 		float* d_bias = &m_deriv_b[d_bias_idx];
 
-		// d_weights[i] := d_total[i].dot(x || activation[i - 1].T)
 		i == 0 ?
 			dot_prod(d_total, prev_activ, d_weights, m_dimensions[i + 1], num_elements, num_elements, m_dimensions[i], true) :
 			dot_prod_t_b(d_total, prev_activ, d_weights, m_dimensions[i + 1], num_elements, m_dimensions[i], num_elements, true);
 
 		// -> compute d_biases
-		// d_biases[i] := d_total[i].row_sums
 		#pragma omp parallel for
 		for (size_t j = 0; j < m_dimensions[i + 1]; j++) {
+			__m256 sum = _mm256_setzero_ps();
 
-			// clear existing value in b_biases
-			d_bias[j] = d_total[j * num_elements];
+			size_t k = 0;
+			for (; k <= num_elements - 8; k += 8) {
+				sum = _mm256_add_ps(sum, _mm256_load_ps(&d_total[j * num_elements + k]));
+			}
 
-			for (size_t k = 1; k < num_elements; k++) {
+			float t[8];
+			_mm256_store_ps(t, sum);
+			d_bias[j] = t[0] + t[1] + t[2] + t[3] + t[4] + t[5] + t[6] + t[7];
+
+			for (; k < num_elements; k++) {
 				d_bias[j] += d_total[j * num_elements + k];
 			}
 		}
@@ -412,7 +418,42 @@ std::string NeuralNetwork::clean_time(double time) {
 		out = std::to_string(time / second).append(" seconds");
 	}
 	else {
-		out = std::to_string(time).append(" ms");
+		out = std::to_string(time).append("(ms)");
 	}
+	return out;
+}
+std::string NeuralNetwork::summary() {
+
+	std::string out = "summary:\n\tdims: ";
+
+	for (size_t i = 0; i < m_dimensions.size(); i++) {
+		out.append(std::to_string(m_dimensions[i])).append(" ");
+	} 
+	
+	out.append("\n\tactivations: ");
+	for (size_t i = 0; i < m_activation_data.size(); i++) {
+		switch (m_activation_data[i].type) {
+		case activation_functions::relu:
+			out.append("relu ");
+			break;
+		case activation_functions::leaky_relu:
+			out.append("leaky_relu ");
+			break;
+		case activation_functions::elu:
+			out.append("elu ");
+			break;
+		case activation_functions::sigmoid:
+			out.append("sigmoid ");
+			break;
+		case activation_functions::softmax:
+			out.append("softmax ");
+			break;
+		default:
+			out.append("NaN ");
+		}
+	} 
+	out.append("\n");
+
+	out.append("\n");
 	return out;
 }

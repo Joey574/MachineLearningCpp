@@ -50,8 +50,11 @@ public:
 		int validation_freq
 	);
 
+	std::string summary();
+
 	~NeuralNetwork() {
-		if (m_network) { free(m_network); }
+		free(m_network);
+		//if (m_network) { free(m_network); }
 		//if (m_batch_data) { free(m_batch_data); }
 		//if (m_test_data) { free(m_test_data); }
 	}
