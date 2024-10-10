@@ -32,7 +32,6 @@ void NeuralNetwork::define(std::vector<int> dimensions, std::vector<activation_f
 		m_activation_data[i].type = activations[i];
 	}
 }
-
 void NeuralNetwork::compile(loss_metric loss, loss_metric metrics, weight_init weight_initialization) {
 
 	switch (loss) {

@@ -15,20 +15,18 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="SingleBlockCudaNetwork.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="SingleBlockCudaNetwork.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="kernals.cuh">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="kernals.cu">
+    <CudaCompile Include="CudaNetDotProds.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="CudaNetActivations.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="CudaNet.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
   </ItemGroup>

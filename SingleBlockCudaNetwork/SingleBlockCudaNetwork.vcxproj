@@ -128,13 +128,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="SingleBlockCudaNetwork.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <CudaCompile Include="kernals.cu">
-      <FileType>Document</FileType>
-    </CudaCompile>
-    <ClInclude Include="kernals.cuh" />
+    <CudaCompile Include="CudaNet.cu" />
+    <CudaCompile Include="CudaNetActivations.cu" />
+    <CudaCompile Include="CudaNetDotProds.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SingleBlockCudaNetwork.h" />
