@@ -36,6 +36,8 @@ void NeuralNetwork::sigmoid(float* x, float* y, size_t size) {
 				_mm256_set1_ps(1.0f),
 				_mm256_add_ps(
 					_mm256_exp_ps(
+
+						// TODO: optimize out -1.0f mul with bit mask
 						_mm256_mul_ps(
 							_mm256_load_ps(&x[i]),
 							_mm256_set1_ps(-1.0f))),

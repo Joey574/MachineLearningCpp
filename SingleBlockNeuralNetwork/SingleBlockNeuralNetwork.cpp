@@ -1,7 +1,8 @@
 #include "SingleBlockNeuralNetwork.h"
 
-#include "SingleBlockActivations.cpp"
-#include "SingleBlockDotProds.cpp"
+//#include "SingleBlockDotProds.cpp"
+//#include "SingleBlockActivations.cpp"
+//#include "SingleBlockMetrics.cpp"
 
 void NeuralNetwork::define(std::vector<int> dimensions, std::vector<activation_functions> activations) {
 
@@ -35,11 +36,27 @@ void NeuralNetwork::define(std::vector<int> dimensions, std::vector<activation_f
 void NeuralNetwork::compile(loss_metric loss, loss_metric metrics, weight_init weight_initialization) {
 
 	switch (loss) {
-
+	case loss_metric::mae:
+		m_loss = &NeuralNetwork::mae_loss;
+		break;
+	case loss_metric::one_hot:
+		m_loss = &NeuralNetwork::one_hot_loss;
+		break;
+	default:
+		std::cout << "ERROR: LOSS NOT FOUND\n";
+		break;
 	}
 
 	switch (metrics) {
-
+	case loss_metric::mae:
+		m_metric = &NeuralNetwork::mae_score;
+		break;
+	case loss_metric::accuracy:
+		m_metric = &NeuralNetwork::accuracy_score;
+		break;
+	default:
+		std::cout << "ERROR: METRIC NOT FOUND\n";
+		break;
 	}
 
 	// assign pointers to activation functions and respective derivatives
@@ -64,6 +81,9 @@ void NeuralNetwork::compile(loss_metric loss, loss_metric metrics, weight_init w
 		case activation_functions::softmax:
 			m_activation_data[i].activation = &NeuralNetwork::softmax;
 			m_activation_data[i].derivative = &NeuralNetwork::sigmoid_derivative;
+		default:
+			std::cout << "ERROR ACTIVATION FUNCTION NOT FOUND\n";
+			break;
 		}
 	}
 
@@ -77,9 +97,6 @@ void NeuralNetwork::compile(loss_metric loss, loss_metric metrics, weight_init w
 
 	// assign weight values based on init type
 	switch (weight_initialization) {
-
-		
-
 	case weight_init::xavier: {
 		for (size_t i = 0; i < m_dimensions.size() - 1; i++) {
 			lower_rand = -(1.0f / std::sqrt(m_dimensions[i + 1]));
@@ -125,7 +142,7 @@ void NeuralNetwork::compile(loss_metric loss, loss_metric metrics, weight_init w
 	std::cout << this->summary();
 }
 
-NeuralNetwork::history NeuralNetwork::fit(Matrix& x_train, Matrix& y_train, Matrix& x_valid, Matrix& y_valid, int batch_size, int epochs, float learning_rate, bool shuffle, int validation_freq) {
+NeuralNetwork::history NeuralNetwork::fit(Matrix& x_train, Matrix& y_train, Matrix& x_valid, Matrix& y_valid, int batch_size, int epochs, float learning_rate, bool shuffle, int validation_freq, float validation_split) {
 
 	std::cout << "Status: network_training\n";
 
@@ -134,8 +151,10 @@ NeuralNetwork::history NeuralNetwork::fit(Matrix& x_train, Matrix& y_train, Matr
 	auto start_time = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double, std::milli> time;
 
-	const int iterations = x_train.RowCount / batch_size;
+	// do first
+	data_preprocess(x_train, y_train, x_valid, y_valid, validation_split, shuffle);
 
+	const int iterations = x_train.RowCount / batch_size;
 	initialize_batch_data(batch_size);
 	initialize_test_data(x_valid.RowCount);
 
@@ -158,25 +177,57 @@ NeuralNetwork::history NeuralNetwork::fit(Matrix& x_train, Matrix& y_train, Matr
 			back_prop(x, y, learning_rate, batch_size);
 		}
 
+		std::string tmp = "Epoch: " + std::to_string(e).append(" Time: "); int tmp_len = tmp.length();
 		if (e % validation_freq == 0) {
-			std::string score = test_network(x_valid.matrix, y_valid.matrix, x_valid.RowCount);
+			tmp.append(test_network(x_valid.matrix, y_valid.matrix, x_valid.RowCount, h));
+		}
+		time = std::chrono::high_resolution_clock::now() - epoch_start_time;
+		std::cout << tmp.insert(tmp_len, clean_time(time.count()).append(" ")).append("\n");
 
-			time = std::chrono::high_resolution_clock::now() - epoch_start_time;
-			std::cout << "Epoch: " << e << " Time: " << clean_time(time.count()) << " " << score << "\n";
-		} else {
-			time = std::chrono::high_resolution_clock::now() - epoch_start_time;
-			std::cout << "Epoch: " << e << " Time: " << clean_time(time.count()) << "\n";
+	}
+	time = std::chrono::high_resolution_clock::now() - start_time;
+
+	_aligned_free(m_batch_data); m_batch_data = nullptr;
+	_aligned_free(m_test_data); m_test_data = nullptr;
+
+	h.epoch_time = (time / (double)epochs);
+	h.train_time = time;
+
+	std::cout << "Status: training_complete\n";
+
+	return h;
+}
+
+void NeuralNetwork::data_preprocess(Matrix& x_train, Matrix& y_train, Matrix& x_valid, Matrix& y_valid, float validation_split, bool shuffle) {
+
+	if (shuffle) {
+		for (int k = 0; k < x_train.RowCount; k++) {
+
+			int r = k + rand() % (x_train.RowCount - k);
+
+			std::vector<float> tempX = x_train.Row(k);
+			std::vector<float> tempY = y_train.Row(k);
+
+			x_train.SetRow(k, x_train.Row(r));
+			y_train.SetRow(k, y_train.Row(r));
+
+			x_train.SetRow(r, tempX);
+			y_train.SetRow(r, tempY);
 		}
 	}
 
-	time = std::chrono::high_resolution_clock::now() - start_time;
 
-	std::cout << "Status: training_complete\nAverage Epoch: " << clean_time(time.count() / (double)epochs);
+	if (validation_split > 0.0f && x_valid.RowCount == 0 && y_valid.RowCount == 0) {
 
-	//free(m_batch_data);
-	//free(m_test_data);
+		int elements = (float)x_train.RowCount * validation_split;
 
-	return h;
+		x_valid = x_train.SegmentR(x_train.RowCount - elements);
+		y_valid = y_train.SegmentR(y_train.RowCount - elements);
+
+		x_train = x_train.SegmentR(0, x_train.RowCount - elements);
+		y_train = y_train.SegmentR(0, y_train.RowCount - elements);
+
+	}
 }
 
 void NeuralNetwork::initialize_batch_data(int batch_size) {
@@ -204,6 +255,8 @@ void NeuralNetwork::initialize_batch_data(int batch_size) {
 }
 void NeuralNetwork::initialize_test_data(int test_size) {
 	int size = 0;
+
+	m_test_activation_size = 0;
 	for (int i = 1; i < m_dimensions.size(); i++) {
 		// size for activation and total
 		size += 2 * (m_dimensions[i] * test_size);
@@ -215,31 +268,17 @@ void NeuralNetwork::initialize_test_data(int test_size) {
 	m_test_activation = &m_test_data[m_test_activation_size];
 }
 
-std::string NeuralNetwork::test_network(float* x, float* y, int test_size) {
+std::string NeuralNetwork::test_network(float* x, float* y, int test_size, history& h) {
 
 	forward_prop(x, m_test_data, m_test_activation_size, test_size);
 
 	float* last_activation = &m_test_activation[m_test_activation_size - (m_dimensions.back() * test_size)];
 
-	// compute metric data hardcoded to accuracy for now
-	size_t correct = 0;
-	for (size_t i = 0; i < test_size; i++) {
+	// compute metric data 
+	float score = (this->*m_metric)(last_activation, y, m_dimensions.back(), test_size);
 
-		int max_idx = 0;
-
-		// find max value idx in loop
-		for (size_t j = 1; j < m_dimensions.back(); j++) {
-			if (last_activation[j * test_size + i] > last_activation[max_idx * test_size + i]) {
-				max_idx = j;
-			}
-		}
-
-		if (max_idx == y[i]) {
-			correct++;
-		}
-	}
-
-	return "accuracy: " + std::to_string(((float)correct / test_size) * 100.0f);
+	h.metric_history.push_back(score);
+	return "score: " + std::to_string(score);
 }
 
 void NeuralNetwork::forward_prop(float* x_data, float* result_data, int activation_size, int num_elements) {
@@ -271,7 +310,7 @@ void NeuralNetwork::forward_prop(float* x_data, float* result_data, int activati
 			dot_prod(weights_start, input_start, output_start, m_dimensions[i + 1], m_dimensions[i], m_dimensions[i], num_elements, false);
 
 		// -> compute activation
-		(this->*m_activation_data[i].activation)(&output_start[0], &output_start[activation_size], m_dimensions[i + 1] * num_elements);
+		(this->*m_activation_data[i].activation)(output_start, &output_start[activation_size], m_dimensions[i + 1] * num_elements);
 
 		// update pointers
 		weight_idx += m_dimensions[i] * m_dimensions[i + 1];
@@ -294,14 +333,7 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 	float* last_d_total = &m_deriv_t[m_batch_activation_size - (m_dimensions.back() * num_elements)];
 
 	// -> compute loss
-	// hardcoded to log loss at the moment
-	for (size_t i = 0; i < num_elements * m_dimensions.back(); i++) {
-		last_d_total[i] = last_activation[i];
-	}
-	for (size_t i = 0; i < num_elements; i++) {
-		last_d_total[(int)y_data[i] * num_elements + i]--;
-	}
-
+	(this->*m_loss)(last_activation, y_data, last_d_total, m_dimensions.back(), num_elements);
 
 	int weight_idx = m_weights_size - (m_dimensions.back() * m_dimensions[m_dimensions.size() - 2]); // -> initialize to last weight
 	int d_total_idx = m_batch_activation_size - (m_dimensions.back() * num_elements); // -> initialize to last element of dt
@@ -401,6 +433,25 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 	}
 }
 
+std::vector<float> NeuralNetwork::predict(float* x, int num_elements) {
+
+	int activation_size = 0;
+	int malloc_size = 0;
+
+	for (size_t i = 1; i < m_dimensions.size(); i++) {
+		activation_size += m_dimensions[i] * num_elements;
+		malloc_size += 2 * activation_size;
+	}
+	float* results = (float*)_aligned_malloc(malloc_size * sizeof(float), 64);
+
+	forward_prop(x, results, activation_size, num_elements);
+
+	std::vector<float> predictions(&results[malloc_size - (m_dimensions.back() * num_elements)], &results[malloc_size]);
+	_aligned_free(results);
+
+	return predictions;
+}
+
 std::string NeuralNetwork::clean_time(double time) {
 	const double hour = 3600000.00;
 	const double minute = 60000.00;
@@ -423,32 +474,32 @@ std::string NeuralNetwork::clean_time(double time) {
 }
 std::string NeuralNetwork::summary() {
 
-	std::string out = "summary:\n\tdims: ";
+	std::string out = "summary:\n\tdims := | ";
 
 	for (size_t i = 0; i < m_dimensions.size(); i++) {
-		out.append(std::to_string(m_dimensions[i])).append(" ");
+		out.append(std::to_string(m_dimensions[i])).append(" | ");
 	} 
 	
-	out.append("\n\tactivations: ");
+	out.append("\n\tactivations := | ");
 	for (size_t i = 0; i < m_activation_data.size(); i++) {
 		switch (m_activation_data[i].type) {
 		case activation_functions::relu:
-			out.append("relu ");
+			out.append("relu | ");
 			break;
 		case activation_functions::leaky_relu:
-			out.append("leaky_relu ");
+			out.append("leaky_relu | ");
 			break;
 		case activation_functions::elu:
-			out.append("elu ");
+			out.append("elu | ");
 			break;
 		case activation_functions::sigmoid:
-			out.append("sigmoid ");
+			out.append("sigmoid | ");
 			break;
 		case activation_functions::softmax:
-			out.append("softmax ");
+			out.append("softmax | ");
 			break;
 		default:
-			out.append("NaN ");
+			out.append("NaN | ");
 		}
 	} 
 	out.append("\n");

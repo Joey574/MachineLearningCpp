@@ -142,6 +142,7 @@
   <ItemGroup>
     <ClCompile Include="SingleBlockActivations.cpp" />
     <ClCompile Include="SingleBlockDotProds.cpp" />
+    <ClCompile Include="SingleBlockMetrics.cpp" />
     <ClCompile Include="SingleBlockNeuralNetwork.cpp" />
   </ItemGroup>
   <ItemGroup>

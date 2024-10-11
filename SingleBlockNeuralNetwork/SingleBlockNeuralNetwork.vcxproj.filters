@@ -24,6 +24,9 @@
     <ClCompile Include="SingleBlockActivations.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SingleBlockMetrics.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SingleBlockNeuralNetwork.h">

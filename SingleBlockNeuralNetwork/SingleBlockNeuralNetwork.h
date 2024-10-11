@@ -14,7 +14,7 @@ public:
 		he, normalize, xavier
 	};
 	static enum class loss_metric {
-		mse
+		mae, accuracy, one_hot
 	};
 	static enum class activation_functions {
 		relu, leaky_relu, elu, sigmoid, softmax
@@ -23,8 +23,7 @@ public:
 	struct history {
 		std::chrono::duration<double, std::milli> train_time;
 		std::chrono::duration<double, std::milli> epoch_time;
-		std::vector<float> metric_history;
-		std::vector<float> loss_history;
+		std::vector<double> metric_history;
 	};
 
 	void define(
@@ -47,16 +46,18 @@ public:
 		int epochs,
 		float learning_rate,
 		bool shuffle,
-		int validation_freq
+		int validation_freq,
+		float validation_split
 	);
+
+	std::vector<float> predict(float* x, int num_elements);
 
 	std::string summary();
 
 	~NeuralNetwork() {
-		free(m_network);
-		//if (m_network) { free(m_network); }
-		//if (m_batch_data) { free(m_batch_data); }
-		//if (m_test_data) { free(m_test_data); }
+		_aligned_free(m_network);
+		if (m_batch_data) { _aligned_free(m_batch_data); }
+		if (m_test_data) { _aligned_free(m_test_data); }
 	}
 
 private:
@@ -110,15 +111,10 @@ private:
 
 	// pointer to start network -> weights and biases
 	float* m_network;
+	float* m_batch_data;
+	float* m_test_data;
 
 	float* m_biases;
-
-	int m_network_size;
-	int m_weights_size;
-	int m_biases_size;
-
-	// pointer to start of batch data -> results and derivs
-	float* m_batch_data;
 
 	float* m_activation;
 
@@ -126,20 +122,25 @@ private:
 	float* m_deriv_w;
 	float* m_deriv_b;
 
-	int m_batch_data_size;
-	int m_batch_activation_size;
-
-	// pointer to start of test data -> results
-	float* m_test_data;
-
 	float* m_test_activation;
 
-	int m_test_activation_size;
+	size_t m_network_size;
+	size_t m_weights_size;
+	size_t m_biases_size;
+
+	size_t m_batch_data_size;
+	size_t m_batch_activation_size;
+
+	size_t m_test_activation_size;
 
 	// misc
 	std::vector<int> m_dimensions;
 	std::vector<activation_data> m_activation_data;
 
+	void (NeuralNetwork::* m_loss)(float*, float*, float*, size_t, size_t);
+	float (NeuralNetwork::* m_metric)(float* a, float* b, size_t a_r, size_t a_c);
+
+	void data_preprocess(Matrix& x_train, Matrix& y_train, Matrix& x_valid, Matrix& y_valid, float validation_split, bool shuffle);
 
 	void forward_prop(
 		float* x_data,
@@ -158,13 +159,17 @@ private:
 	std::string test_network(
 		float* x,
 		float* y,
-		int test_size
+		int test_size,
+		history& h
 	);
 
+
+	// dot prods
 	void dot_prod(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear);
 	void dot_prod_t_a(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear);
 	void dot_prod_t_b(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear);
 
+	// mem init
 	void initialize_batch_data(int batch_size);
 	void initialize_test_data(int test_size);
 
@@ -180,6 +185,14 @@ private:
 	void leaky_relu_derivative(float* x, float* y, size_t size);
 	void elu_derivative(float* x, float* y, size_t size);
 	void sigmoid_derivative(float* x, float* y, size_t size);
+
+	// score
+	float mae_score(float* x, float* y, size_t x_r, size_t x_c);
+	float accuracy_score(float* x, float* y, size_t x_r, size_t x_c);
+
+	// loss
+	void mae_loss(float* x, float* y, float* c, size_t x_r, size_t x_c);
+	void one_hot_loss(float* x, float* y, float* c, size_t x_r, size_t x_c);
 
 	std::string clean_time(double time);
 };

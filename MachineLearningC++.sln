@@ -35,6 +35,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SBNN_Tests", "SBNN_Tests\SB
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SingleBlockCudaNetwork", "SingleBlockCudaNetwork\SingleBlockCudaNetwork.vcxproj", "{05EA3DB7-B79B-4D29-BE16-8DEA4A1077CB}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Mandlebrot_SBNN", "Mandlebrot_SBNN\Mandlebrot_SBNN.vcxproj", "{719551B7-0087-48A8-AD17-E971B024891D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -171,6 +173,14 @@ Global
 		{05EA3DB7-B79B-4D29-BE16-8DEA4A1077CB}.Release|x64.Build.0 = Release|x64
 		{05EA3DB7-B79B-4D29-BE16-8DEA4A1077CB}.Release|x86.ActiveCfg = Release|Win32
 		{05EA3DB7-B79B-4D29-BE16-8DEA4A1077CB}.Release|x86.Build.0 = Release|Win32
+		{719551B7-0087-48A8-AD17-E971B024891D}.Debug|x64.ActiveCfg = Debug|x64
+		{719551B7-0087-48A8-AD17-E971B024891D}.Debug|x64.Build.0 = Debug|x64
+		{719551B7-0087-48A8-AD17-E971B024891D}.Debug|x86.ActiveCfg = Debug|Win32
+		{719551B7-0087-48A8-AD17-E971B024891D}.Debug|x86.Build.0 = Debug|Win32
+		{719551B7-0087-48A8-AD17-E971B024891D}.Release|x64.ActiveCfg = Release|x64
+		{719551B7-0087-48A8-AD17-E971B024891D}.Release|x64.Build.0 = Release|x64
+		{719551B7-0087-48A8-AD17-E971B024891D}.Release|x86.ActiveCfg = Release|Win32
+		{719551B7-0087-48A8-AD17-E971B024891D}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
