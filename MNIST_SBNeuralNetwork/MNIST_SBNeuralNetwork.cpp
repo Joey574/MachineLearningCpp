@@ -33,7 +33,7 @@ int main()
 	srand(time(0));
 
 	// Model definitions
-	std::vector<int> dims = { 784, 1024, 1024, 10 };
+	std::vector<int> dims = { 784, 128, 128, 10 };
 	std::vector<NeuralNetwork::activation_functions> act = {
 		NeuralNetwork::activation_functions::leaky_relu,
 		NeuralNetwork::activation_functions::leaky_relu,
@@ -46,7 +46,7 @@ int main()
 	Matrix x_test;
 	Matrix y_test;
 	int batch_size = 320;
-	int epochs = 500;
+	int epochs = 50;
 	float learning_rate = 0.05f;
 	bool shuffle = true;
 	int validation_freq = 1;
@@ -91,6 +91,6 @@ int main()
 	double min_score = *std::min_element(h.metric_history.begin(), h.metric_history.end());
 	double max_score = *std::max_element(h.metric_history.begin(), h.metric_history.end());
 
-	std::cout << "\nMin Score: " << min_score << "\nMax Score: " << max_score << "\n";
+	std::cout << "\nMin score: " << min_score << "\nMax score: " << max_score << "\n";
 
 }

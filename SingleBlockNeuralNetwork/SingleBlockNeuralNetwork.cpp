@@ -92,8 +92,7 @@ void NeuralNetwork::compile(loss_metric loss, loss_metric metrics, weight_init w
 
 	int idx = 0;
 
-	std::random_device rd;
-	std::mt19937 gen(rd());
+	std::default_random_engine gen(0);
 
 	// assign weight values based on init type
 	switch (weight_initialization) {

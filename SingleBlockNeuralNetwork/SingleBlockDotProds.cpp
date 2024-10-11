@@ -89,27 +89,32 @@ void NeuralNetwork::dot_prod_t_b(float* a, float* b, float* c, size_t a_r, size_
 
 			__m256 sum = _mm256_setzero_ps();
 			size_t j = clear ? 1 : 0;
-			for (; j + 8 <= b_c; j += 8) {
+			for (; j + 16 <= b_c; j += 16) {
 				sum = _mm256_fmadd_ps(
 					_mm256_load_ps(&a[i * a_c + j]),
 					_mm256_load_ps(&b[k * b_c + j]),
 					sum);
+
+				sum = _mm256_fmadd_ps(
+					_mm256_load_ps(&a[i * a_c + j + 8]),
+					_mm256_load_ps(&b[k * b_c + j + 8]),
+					sum);
 			}
 
-			float temp[8];
+			const __m128 hi_four = _mm256_extractf128_ps(sum, 1);
+			const __m128 lo_four = _mm256_extractf128_ps(sum, 0);
+			const __m128 sum_four = _mm_add_ps(lo_four, hi_four);
 
-			_mm256_store_ps(temp, sum);
+			const __m128 lo_dual = sum_four;
+			const __m128 hi_dual = _mm_movehl_ps(lo_dual, sum_four);
+			const __m128 sum_dual = _mm_add_ps(lo_dual, hi_dual);
 
-			c[i * b_r + k] +=
-				temp[0] +
-				temp[1] +
-				temp[2] +
-				temp[3] +
-				temp[4] +
-				temp[5] +
-				temp[6] +
-				temp[7];
+			const __m128 lo = sum_dual;
+			const __m128 hi = _mm_shuffle_ps(sum_dual, sum_dual, 0x1);
+			const __m128 fsum = _mm_add_ss(lo, hi);
 
+			c[i * b_r + k] += _mm_cvtss_f32(fsum);
+			
 			for (; j < b_c; j++) {
 				c[i * b_r + k] += a[i * a_c + j] * b[k * b_c + j];
 			}
