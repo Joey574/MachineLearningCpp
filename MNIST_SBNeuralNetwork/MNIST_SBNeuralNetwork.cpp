@@ -46,7 +46,7 @@ int main()
 	Matrix x_test;
 	Matrix y_test;
 	int batch_size = 320;
-	int epochs = 50;
+	int epochs = 150;
 	float learning_rate = 0.05f;
 	bool shuffle = true;
 	int validation_freq = 1;

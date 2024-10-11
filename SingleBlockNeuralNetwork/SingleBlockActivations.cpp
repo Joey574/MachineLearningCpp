@@ -2,20 +2,23 @@
 
 void NeuralNetwork::relu(float* x, float* y, size_t size) {
 	#pragma omp parallel for
-	for (size_t i = 0; i < size; i++) {
-		y[i] = x[i] > 0.0f ? x[i] : 0.0f;
+	for (size_t i = 0; i <= size - 8; i += 8) {
+		const __m256 _x = _mm256_load_ps(&x[i]);
+
+		_mm256_store_ps(&y[i], _mm256_max_ps(_x, _mm256_setzero_ps()));
+	}
+
+	for (size_t i = size - (size % 8); i < size; i++) {
+		y[i] = x[i] > 0.0f ? x[i] : (0.0f);
 	}
 }
 void NeuralNetwork::leaky_relu(float* x, float* y, size_t size) {
 	#pragma omp parallel for
 	for (size_t i = 0; i <= size - 8; i += 8) {
-		_mm256_store_ps(&y[i],
-			_mm256_max_ps(
-				_mm256_load_ps(&x[i]),
-				_mm256_mul_ps(
-					_mm256_load_ps(&x[i]),
-					_mm256_set1_ps(0.1f)
-				)));
+		const __m256 _x = _mm256_load_ps(&x[i]);
+		const __m256 _x2 = _mm256_mul_ps(_x, _mm256_set1_ps(0.1f));
+
+		_mm256_store_ps(&y[i], _mm256_max_ps(_x, _x2));
 	}
 
 	for (size_t i = size - (size % 8); i < size; i++) {
@@ -83,6 +86,23 @@ void NeuralNetwork::relu_derivative(float* x, float* y, size_t size) {
 	}
 }
 void NeuralNetwork::leaky_relu_derivative(float* x, float* y, size_t size) {
+
+	// compiler seems to have found better way to do this, need to look into that
+	/*#pragma omp parallel for
+	for (size_t i = 0; i <= size - 8; i += 8) {
+		const __m256 _x = _mm256_load_ps(&x[i]);
+		const __m256 _y = _mm256_load_ps(&y[i]);
+
+		const __m256 mask = _mm256_cmp_ps(_x, _mm256_setzero_ps(), _CMP_LT_OQ);
+
+		const __m256 deriv = _mm256_blendv_ps(_mm256_set1_ps(1.0f), _mm256_set1_ps(0.1f), mask);
+
+		_mm256_store_ps(&y[i], _mm256_mul_ps(_y, deriv));
+	}
+
+	for (size_t i = size - (size % 8); i < size; i++) {
+		y[i] = x[i] > 0.0f ? y[i] : (y[i] * 0.1f);
+	}*/
 
 	#pragma omp parallel for
 	for (size_t i = 0; i < size; i++) {
