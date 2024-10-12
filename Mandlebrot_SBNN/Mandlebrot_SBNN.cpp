@@ -42,7 +42,7 @@ int main()
 	srand(time(0));
 
 	// Model definitions
-	std::vector<int> dims = { 2, 512, 512, 512, 1 };
+	std::vector<int> dims = { 2, 256, 256, 256, 1 };
 	std::vector<NeuralNetwork::activation_functions> act = {
 		NeuralNetwork::activation_functions::leaky_relu,
 		NeuralNetwork::activation_functions::leaky_relu,
@@ -55,7 +55,7 @@ int main()
 	Matrix y;
 	int batch_size = 320;
 	int epochs = 20;
-	float learning_rate = 0.001f;
+	float learning_rate = 0.0001f;
 	bool shuffle = true;
 	int validation_freq = 1;
 	float validation_split = 0.1f;
@@ -63,7 +63,7 @@ int main()
 	// Feature engineering and dataset processing
 	Mandlebrot mandlebrot;
 
-	int fourier = 64;
+	int fourier = 32;
 	int taylor = 0;
 	int chebyshev = 0;
 	int legendre = 0;
@@ -72,13 +72,12 @@ int main()
 	float lower_norm = 0.0f;
 	float upper_norm = 1.0f;
 
-	std::tie(x, y) = mandlebrot.make_dataset(200000, 250, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
+	std::tie(x, y) = mandlebrot.make_dataset(100000, 250, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
 	dims[0] = x.ColumnCount;
 
-	NeuralNetwork model;
+	NeuralNetwork model = *new NeuralNetwork();
 
 	model.define(dims, act);
-
 	model.compile(NeuralNetwork::loss_metric::mae, NeuralNetwork::loss_metric::mae, NeuralNetwork::weight_init::he);
 
 	int width = 160;

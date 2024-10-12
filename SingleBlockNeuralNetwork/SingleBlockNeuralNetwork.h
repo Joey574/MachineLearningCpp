@@ -38,10 +38,10 @@ public:
 	);
 
 	history fit(
-		Matrix& x_train,
-		Matrix& y_train,
-		Matrix& x_valid,
-		Matrix& y_valid,
+		Matrix x_train,
+		Matrix y_train,
+		Matrix x_valid,
+		Matrix y_valid,
 		int batch_size,
 		int epochs,
 		float learning_rate,
@@ -55,9 +55,10 @@ public:
 	std::string summary();
 
 	~NeuralNetwork() {
-		_aligned_free(m_network);
-		if (m_batch_data) { _aligned_free(m_batch_data); }
-		if (m_test_data) { _aligned_free(m_test_data); }
+		//std::cout << "decon network\n";
+		//_aligned_free(m_network);
+		//if (m_batch_data) { _aligned_free(m_batch_data); }
+		//if (m_test_data) { _aligned_free(m_test_data); }
 	}
 
 private:

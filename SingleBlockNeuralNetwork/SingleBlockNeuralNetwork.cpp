@@ -1,9 +1,5 @@
 #include "SingleBlockNeuralNetwork.h"
 
-//#include "SingleBlockDotProds.cpp"
-//#include "SingleBlockActivations.cpp"
-//#include "SingleBlockMetrics.cpp"
-
 void NeuralNetwork::define(std::vector<int> dimensions, std::vector<activation_functions> activations) {
 
 	m_network_size = 0;
@@ -24,7 +20,7 @@ void NeuralNetwork::define(std::vector<int> dimensions, std::vector<activation_f
 
 	// allocate memory for network
 	m_network = (float*)_aligned_malloc(m_network_size * sizeof(float), 64);
-	m_biases = &m_network[m_weights_size];
+
 
 	m_dimensions = dimensions;
 	m_activation_data = std::vector<activation_data>(activations.size());
@@ -142,12 +138,11 @@ void NeuralNetwork::compile(loss_metric loss, loss_metric metrics, weight_init w
 	std::cout << this->summary();
 }
 
-NeuralNetwork::history NeuralNetwork::fit(Matrix& x_train, Matrix& y_train, Matrix& x_valid, Matrix& y_valid, int batch_size, int epochs, float learning_rate, bool shuffle, int validation_freq, float validation_split) {
+NeuralNetwork::history NeuralNetwork::fit(Matrix x_train, Matrix y_train, Matrix x_valid, Matrix y_valid, int batch_size, int epochs, float learning_rate, bool shuffle, int validation_freq, float validation_split) {
 
 	std::cout << "Status: network_training\n";
 
 	history h;
-
 	auto start_time = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double, std::milli> time;
 
@@ -199,7 +194,6 @@ NeuralNetwork::history NeuralNetwork::fit(Matrix& x_train, Matrix& y_train, Matr
 }
 
 void NeuralNetwork::data_preprocess(Matrix& x_train, Matrix& y_train, Matrix& x_valid, Matrix& y_valid, float validation_split, bool shuffle) {
-
 	if (shuffle) {
 		for (int k = 0; k < x_train.RowCount; k++) {
 
@@ -216,7 +210,6 @@ void NeuralNetwork::data_preprocess(Matrix& x_train, Matrix& y_train, Matrix& x_
 		}
 	}
 
-
 	if (validation_split > 0.0f && x_valid.RowCount == 0 && y_valid.RowCount == 0) {
 
 		int elements = (float)x_train.RowCount * validation_split;
@@ -232,10 +225,13 @@ void NeuralNetwork::data_preprocess(Matrix& x_train, Matrix& y_train, Matrix& x_
 
 void NeuralNetwork::initialize_batch_data(int batch_size) {
 
+	m_biases = &m_network[m_weights_size];
+
 	m_batch_activation_size = 0;
 
 	// size for dw and db
 	m_batch_data_size = m_network_size;
+
 	for (int i = 1; i < m_dimensions.size(); i++) {
 		// size for activation, total, and deriv_t
 		m_batch_data_size += 3 * (m_dimensions[i] * batch_size);
@@ -251,7 +247,6 @@ void NeuralNetwork::initialize_batch_data(int batch_size) {
 
 	m_deriv_w = &m_deriv_t[m_batch_activation_size];
 	m_deriv_b = &m_deriv_w[m_weights_size];
- 
 }
 void NeuralNetwork::initialize_test_data(int test_size) {
 	int size = 0;
