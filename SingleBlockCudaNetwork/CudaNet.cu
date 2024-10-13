@@ -1,8 +1,5 @@
 #include "SingleBlockCudaNetwork.h"
 
-#include "CudaNetActivations.cu"
-#include "CudaNetDotProds.cu"
-
 __global__ void CudaNetwork::horizontal_add(float* a, float* b, size_t a_r, size_t a_c) {
 	int i = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -24,29 +21,29 @@ __global__ void CudaNetwork::horizontal_sum(float* a, float* b, size_t a_r, size
 	}
 }
 
-__global__ void CudaNetwork::update_weights(float* a, float* b, float lr, size_t n) {
+__global__ void CudaNetwork::update_weights(float* weight, float* d_weight, float lr, size_t n) {
 	int i = blockDim.x * blockIdx.x + threadIdx.x;
 
 	if (i < n) {
-		b[i] -= a[i] * lr;
+		weight[i] -= d_weight[i] * lr;
 	}
 }
-__global__ void CudaNetwork::update_bias(float* a, float* b, float lr, size_t n) {
+__global__ void CudaNetwork::update_bias(float* bias, float* d_bias, float lr, size_t n) {
 	int i = blockDim.x * blockIdx.x + threadIdx.x;
 
 	if (i < n) {
-		b[i] -= a[i] * lr;
+		bias[i] -= d_bias[i] * lr;
 	}
 }
 
-__global__ void CudaNetwork::log_loss(float* a, float* b, float* y, size_t a_r, size_t a_c) {
+__global__ void CudaNetwork::one_hot_loss(float* pred, float* loss, float* y, size_t rows, size_t columns) {
 	int i = blockDim.x * blockIdx.x + threadIdx.x;
 
-	if (i < a_c) {
-		for (int j = 0; j < a_r; j++) {
-			b[i * a_r + j] = a[i * a_r + j];
+	if (i < columns) {
+		for (int j = 0; j < rows; j++) {
+			loss[j * columns + i] = pred[j * columns + i];
 		}
-		b[i * a_r + (int)y[i]]--;
+		loss[(int)y[i] * columns + i]--;
 	}
 }
 
@@ -92,7 +89,7 @@ void CudaNetwork::fit(float* x_train, float* y_train, float* x_valid, float* y_v
 
 }
 
-void CudaNetwork::forward_prop(float* x_data, float* result_data, int activation_size, int num_elements) {
+void CudaNetwork::forward_prop(float* x_data, float* result_data, size_t activation_size, size_t num_elements) {
 
 	const dim3 w_block(8, 8, 1);
 	const dim3 b_block(8, 1, 1);
@@ -134,7 +131,7 @@ void CudaNetwork::forward_prop(float* x_data, float* result_data, int activation
 		output_idx += m_dimensions[i + 1] * num_elements;
 	}
 }
-void CudaNetwork::back_prop(float* x_data, float* y_data, float learning_rate, int num_elements) {
+void CudaNetwork::back_prop(float* x_data, float* y_data, float learning_rate, size_t num_elements) {
 
 	// -> compute loss
 	{
@@ -144,7 +141,7 @@ void CudaNetwork::back_prop(float* x_data, float* y_data, float learning_rate, i
 		float* last_d_total = &m_d_total[m_batch_activation_size - (m_dimensions.back() * num_elements)];
 		float* last_activation = &m_activation[m_batch_activation_size - (m_dimensions.back() * num_elements)];
 
-		log_loss(last_d_total, last_activation, y_data, m_dimensions.back(), num_elements);
+		one_hot_loss(last_d_total, last_activation, y_data, m_dimensions.back(), num_elements);
 	}
 
 	// -> compute d_total
@@ -219,10 +216,10 @@ void CudaNetwork::back_prop(float* x_data, float* y_data, float learning_rate, i
 		dim3 block(8, 1, 1);
 		dim3 grid(ceil(m_weights_size / 8), 1, 1);
 
-		update_weights << < grid, block >> > (m_d_weights, m_network, m_weights_size);
+		update_weights << < grid, block >> > (m_network, m_d_weights, m_weights_size);
 
 		grid = (ceil(m_bias_size / 8), 1, 1);
-		update_bias << < grid, block >> > (m_d_bias, m_bias, m_bias_size);
+		update_bias << < grid, block >> > (m_bias, m_d_bias, m_bias_size);
 	}
 }
 

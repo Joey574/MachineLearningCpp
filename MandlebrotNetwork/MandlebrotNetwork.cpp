@@ -12,7 +12,7 @@ int main()
 	srand(time(0));
 
 	// Model definitions
-	std::vector<int> dims = { 2, 512, 512, 512, 512, 512, 512, 512, 512, 1 };
+	std::vector<int> dims = { 2, 128, 128, 1 };
 
 	// Model compilation parameters
 	NeuralNetwork::loss_metric loss = NeuralNetwork::loss_metric::mae;
@@ -24,7 +24,7 @@ int main()
 	Matrix x;
 	Matrix y;
 	int batch_size = 320;
-	int epochs = 25;
+	int epochs = 5;
 	float learning_rate = 0.001f;
 	float weight_decay = 0.0f;
 	float validation_split = 0.1f;
@@ -34,7 +34,7 @@ int main()
 	// Feature engineering and dataset processing
 	Mandlebrot mandlebrot;
 
-	int fourier = 128;
+	int fourier = 64;
 	int taylor = 0;
 	int chebyshev = 0;
 	int legendre = 0;
@@ -55,8 +55,7 @@ int main()
 
 	model.Define(
 		dims,
-		{ NeuralNetwork::activations::ELU, NeuralNetwork::activations::ELU, NeuralNetwork::activations::ELU, NeuralNetwork::activations::ELU, NeuralNetwork::activations::ELU, 
-		NeuralNetwork::activations::ELU, NeuralNetwork::activations::ELU, NeuralNetwork::activations::ELU, NeuralNetwork::activations::Sigmoid }
+		{ NeuralNetwork::activations::ELU, NeuralNetwork::activations::ELU, NeuralNetwork::activations::Sigmoid }
 	);
 
 	// Compile the model

@@ -50,7 +50,7 @@ public:
 		float validation_split
 	);
 
-	std::vector<float> predict(float* x, int num_elements);
+	std::vector<float> predict(const Matrix& x);
 
 	std::string summary();
 

@@ -14,7 +14,7 @@ public:
 		he, normalize, xavier
 	};
 
-	void define(std::vector<int> dimensions);
+	void define(std::vector<size_t> dimensions);
 
 	void compile(weight_init init);
 
@@ -34,7 +34,7 @@ public:
 
 private:
 
-	std::vector<int> m_dimensions;
+	std::vector<size_t> m_dimensions;
 
 	float* m_network;
 	float* m_batch_data;
@@ -60,11 +60,14 @@ private:
 	__global__ void horizontal_add(float* a, float* b, size_t a_r, size_t a_c);
 	__global__ void horizontal_sum(float* a, float* b, size_t a_r, size_t a_c);
 
-	__global__ void update_weights(float* a, float* b, float lr, size_t n);
-	__global__ void update_bias(float* a, float* b, float lr, size_t n);
+	__global__ void update_weights(float* weight, float* d_weight, float lr, size_t n);
+	__global__ void update_bias(float* bias, float* d_bias, float lr, size_t n);
 
+	// score functions
+	float accuracy_score();
 
-	__global__ void log_loss(float* a, float* b, float* y, size_t a_r, size_t a_c);
+	// loss functions
+	__global__ void one_hot_loss(float* pred, float* loss, float* y, size_t rows, size_t columns);
 
 
 	// activation functions
@@ -74,10 +77,9 @@ private:
 	__global__ void leaky_relu_derivative(float* x, float* y, size_t r, size_t c);
 
 
-	void forward_prop(float* x_data, float* result_data, int activation_size, int num_elements);
-	void back_prop(float* x_data, float* y_data, float learning_rate, int num_elements);
+	void forward_prop(float* x_data, float* result_data, size_t activation_size, size_t num_elements);
+	void back_prop(float* x_data, float* y_data, float learning_rate, size_t num_elements);
 
-	std::string test_network(float* x, float* y, int test_size);
-
+	std::string test_network(float* x, float* y, size_t test_size);
 	std::string clean_time(double time);
 };

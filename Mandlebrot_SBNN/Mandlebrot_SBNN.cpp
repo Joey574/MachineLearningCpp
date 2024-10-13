@@ -17,7 +17,7 @@ void make_bmp(std::string filename, int width, int height, float confidence_thre
 	image.Create(width, height, 24);
 
 	for (int y = 0; y < height; y++) {
-		std::vector<float> pixel_data = model.predict(image_data.SegmentR((y * width), (y * width) + width).matrix, width);
+		std::vector<float> pixel_data = model.predict(image_data.SegmentR((y * width), (y * width) + width));
 
 		for (int x = 0; x < width; x++) {
 
@@ -42,8 +42,10 @@ int main()
 	srand(time(0));
 
 	// Model definitions
-	std::vector<int> dims = { 2, 256, 256, 256, 1 };
+	std::vector<int> dims = { 2, 512, 512, 512, 512, 512, 1 };
 	std::vector<NeuralNetwork::activation_functions> act = {
+		NeuralNetwork::activation_functions::leaky_relu,
+		NeuralNetwork::activation_functions::leaky_relu,
 		NeuralNetwork::activation_functions::leaky_relu,
 		NeuralNetwork::activation_functions::leaky_relu,
 		NeuralNetwork::activation_functions::leaky_relu,
@@ -54,8 +56,8 @@ int main()
 	Matrix x;
 	Matrix y;
 	int batch_size = 320;
-	int epochs = 20;
-	float learning_rate = 0.0001f;
+	int epochs = 5;
+	float learning_rate = 0.005f;
 	bool shuffle = true;
 	int validation_freq = 1;
 	float validation_split = 0.1f;
@@ -63,7 +65,7 @@ int main()
 	// Feature engineering and dataset processing
 	Mandlebrot mandlebrot;
 
-	int fourier = 32;
+	int fourier = 128;
 	int taylor = 0;
 	int chebyshev = 0;
 	int legendre = 0;
@@ -75,15 +77,15 @@ int main()
 	std::tie(x, y) = mandlebrot.make_dataset(100000, 250, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
 	dims[0] = x.ColumnCount;
 
-	NeuralNetwork model = *new NeuralNetwork();
+	NeuralNetwork model;
 
 	model.define(dims, act);
 	model.compile(NeuralNetwork::loss_metric::mae, NeuralNetwork::loss_metric::mae, NeuralNetwork::weight_init::he);
 
-	int width = 160;
-	int height = 90;
+	int width = 320;
+	int height = 180;
 
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < 200; i++) {
 		model.fit(
 			x,
 			y,
@@ -97,12 +99,12 @@ int main()
 			validation_split
 		);
 
-		make_bmp("NetworkImages/test_" + std::to_string(i).append(".bmp"), width, height, 0.95f, model, mandlebrot.create_image_features(width, height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
+		make_bmp("NetworkImages/image_" + std::to_string(i).append(".bmp"), width, height, 0.95f, model, mandlebrot.create_image_features(width, height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
 	}
 	
 	int f_width = 1920;
 	int f_height = 1080;
 
-	make_bmp("NetworkImages/final.bmp", f_width, f_height, 0.95f, model, mandlebrot.create_image_features(f_width, f_height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
+	make_bmp("NetworkImages/image_final.bmp", f_width, f_height, 0.95f, model, mandlebrot.create_image_features(f_width, f_height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
 
 }

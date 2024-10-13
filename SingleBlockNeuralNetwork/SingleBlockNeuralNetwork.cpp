@@ -428,20 +428,21 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 	}
 }
 
-std::vector<float> NeuralNetwork::predict(float* x, int num_elements) {
+std::vector<float> NeuralNetwork::predict(const Matrix& x) {
 
 	int activation_size = 0;
 	int malloc_size = 0;
 
 	for (size_t i = 1; i < m_dimensions.size(); i++) {
-		activation_size += m_dimensions[i] * num_elements;
-		malloc_size += 2 * activation_size;
+		activation_size += m_dimensions[i] * x.RowCount;
+		malloc_size += 2 * m_dimensions[i] * x.RowCount;
 	}
 	float* results = (float*)_aligned_malloc(malloc_size * sizeof(float), 64);
 
-	forward_prop(x, results, activation_size, num_elements);
+	forward_prop(x.matrix, results, activation_size, x.RowCount);
 
-	std::vector<float> predictions(&results[malloc_size - (m_dimensions.back() * num_elements)], &results[malloc_size]);
+	std::vector<float> predictions(&results[malloc_size - (m_dimensions.back() * x.RowCount)], &results[malloc_size]);
+
 	_aligned_free(results);
 
 	return predictions;

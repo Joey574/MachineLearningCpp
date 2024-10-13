@@ -101,6 +101,7 @@ void NeuralNetwork::dot_prod_t_b(float* a, float* b, float* c, size_t a_r, size_
 					sum);
 			}
 
+			// sum values into one location
 			const __m128 hi_four = _mm256_extractf128_ps(sum, 1);
 			const __m128 lo_four = _mm256_extractf128_ps(sum, 0);
 			const __m128 sum_four = _mm_add_ps(lo_four, hi_four);
