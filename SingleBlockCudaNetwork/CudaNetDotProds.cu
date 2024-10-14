@@ -1,6 +1,6 @@
-#include "SingleBlockCudaNetwork.h"
+#include "CudaKernals.cuh"
 
-__global__ void CudaNetwork::dot_prod(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c) {
+__global__ void dot_prod(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c) {
 	int i = blockDim.y * blockIdx.y + threadIdx.y;
 	int j = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -14,7 +14,7 @@ __global__ void CudaNetwork::dot_prod(float* a, float* b, float* c, size_t a_r, 
 		c[i * b_c + j] = sum;
 	}
 }
-__global__ void CudaNetwork::dot_prod_t_a(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c) {
+__global__ void dot_prod_t_a(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c) {
 	int i = blockDim.y * blockIdx.y + threadIdx.y;
 	int j = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -28,7 +28,7 @@ __global__ void CudaNetwork::dot_prod_t_a(float* a, float* b, float* c, size_t a
 		c[i * b_c + j] = sum;
 	}
 }
-__global__ void CudaNetwork::dot_prod_t_b(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c) {
+__global__ void dot_prod_t_b(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c) {
 	int i = blockDim.y * blockIdx.y + threadIdx.y;
 	int j = blockDim.x * blockIdx.x + threadIdx.x;
 

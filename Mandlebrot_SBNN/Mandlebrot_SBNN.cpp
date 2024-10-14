@@ -42,8 +42,10 @@ int main()
 	srand(time(0));
 
 	// Model definitions
-	std::vector<int> dims = { 2, 512, 512, 512, 512, 512, 1 };
+	std::vector<int> dims = { 2, 512, 512, 512, 512, 512, 512, 512, 1 };
 	std::vector<NeuralNetwork::activation_functions> act = {
+		NeuralNetwork::activation_functions::leaky_relu,
+		NeuralNetwork::activation_functions::leaky_relu,
 		NeuralNetwork::activation_functions::leaky_relu,
 		NeuralNetwork::activation_functions::leaky_relu,
 		NeuralNetwork::activation_functions::leaky_relu,
@@ -56,8 +58,8 @@ int main()
 	Matrix x;
 	Matrix y;
 	int batch_size = 320;
-	int epochs = 5;
-	float learning_rate = 0.005f;
+	int epochs = 50;
+	float learning_rate = 0.001f;
 	bool shuffle = true;
 	int validation_freq = 1;
 	float validation_split = 0.1f;
@@ -80,12 +82,13 @@ int main()
 	NeuralNetwork model;
 
 	model.define(dims, act);
+	model.deserialize("network.txt");
 	model.compile(NeuralNetwork::loss_metric::mae, NeuralNetwork::loss_metric::mae, NeuralNetwork::weight_init::he);
 
 	int width = 320;
 	int height = 180;
 
-	for (int i = 0; i < 200; i++) {
+	for (int i = 0; i < 10; i++) {
 		model.fit(
 			x,
 			y,
@@ -99,12 +102,14 @@ int main()
 			validation_split
 		);
 
-		make_bmp("NetworkImages/image_" + std::to_string(i).append(".bmp"), width, height, 0.95f, model, mandlebrot.create_image_features(width, height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
+		make_bmp("NetworkImages/4_image_" + std::to_string(i).append(".bmp"), width, height, 0.95f, model, mandlebrot.create_image_features(width, height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
 	}
 	
 	int f_width = 1920;
 	int f_height = 1080;
 
-	make_bmp("NetworkImages/image_final.bmp", f_width, f_height, 0.95f, model, mandlebrot.create_image_features(f_width, f_height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
+	//make_bmp("NetworkImages/image_final.bmp", f_width, f_height, 0.95f, model, mandlebrot.create_image_features(f_width, f_height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
+
+	model.serialize("network.txt");
 
 }

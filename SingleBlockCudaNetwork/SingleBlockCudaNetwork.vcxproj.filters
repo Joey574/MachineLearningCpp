@@ -18,6 +18,9 @@
     <ClInclude Include="SingleBlockCudaNetwork.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="CudaKernals.cuh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="CudaNetDotProds.cu">
@@ -27,6 +30,12 @@
       <Filter>Source Files</Filter>
     </CudaCompile>
     <CudaCompile Include="CudaNet.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="CudaNetMetrics.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="CudaNetMathUtil.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
   </ItemGroup>

@@ -33,8 +33,9 @@ int main()
 	srand(time(0));
 
 	// Model definitions
-	std::vector<int> dims = { 784, 128, 128, 10 };
+	std::vector<int> dims = { 784, 1024, 1024, 1024, 10 };
 	std::vector<NeuralNetwork::activation_functions> act = {
+		NeuralNetwork::activation_functions::leaky_relu,
 		NeuralNetwork::activation_functions::leaky_relu,
 		NeuralNetwork::activation_functions::leaky_relu,
 		NeuralNetwork::activation_functions::sigmoid
@@ -46,8 +47,8 @@ int main()
 	Matrix x_test;
 	Matrix y_test;
 	int batch_size = 320;
-	int epochs = 15;
-	float learning_rate = 0.05f;
+	int epochs = 1400;
+	float learning_rate = 0.001f;
 	bool shuffle = true;
 	int validation_freq = 1;
 
@@ -70,6 +71,8 @@ int main()
 	NeuralNetwork model;
 
 	model.define(dims, act);
+	model.deserialize("3_1024_netork.txt");
+
 	model.compile(NeuralNetwork::loss_metric::one_hot, NeuralNetwork::loss_metric::accuracy, NeuralNetwork::weight_init::he);
 
 	NeuralNetwork::history h = model.fit(
@@ -84,6 +87,8 @@ int main()
 		validation_freq,
 		0.0f
 	);
+
+	model.serialize("3_1024_netork.txt");
 
 	std::cout << "\nTotal training time: " << clean_time(h.train_time.count()) << "\n";
 	std::cout << "Average epoch time: " << clean_time(h.epoch_time.count()) << "\n";

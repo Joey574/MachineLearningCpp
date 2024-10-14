@@ -130,6 +130,8 @@
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <FloatingPointModel>Fast</FloatingPointModel>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <AdditionalOptions>-openmp:llvm %(AdditionalOptions)</AdditionalOptions>
+      <IntelJCCErratum>true</IntelJCCErratum>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -143,6 +145,7 @@
     <ClCompile Include="SingleBlockDotProds.cpp" />
     <ClCompile Include="SingleBlockMetrics.cpp" />
     <ClCompile Include="SingleBlockNeuralNetwork.cpp" />
+    <ClCompile Include="SingleBlockUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SingleBlockNeuralNetwork.h" />

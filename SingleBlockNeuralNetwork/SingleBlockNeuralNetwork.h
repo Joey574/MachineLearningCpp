@@ -4,6 +4,7 @@
 #include <random>
 #include <chrono>
 #include <numeric>
+#include <fstream>
 
 #include "Matrix.h"
 
@@ -54,8 +55,10 @@ public:
 
 	std::string summary();
 
+	void serialize(std::string filepath);
+	void deserialize(std::string filepath);
+
 	~NeuralNetwork() {
-		//std::cout << "decon network\n";
 		//_aligned_free(m_network);
 		//if (m_batch_data) { _aligned_free(m_batch_data); }
 		//if (m_test_data) { _aligned_free(m_test_data); }
@@ -133,6 +136,8 @@ private:
 	size_t m_batch_activation_size;
 
 	size_t m_test_activation_size;
+
+	bool loaded = false;
 
 	// misc
 	std::vector<int> m_dimensions;
