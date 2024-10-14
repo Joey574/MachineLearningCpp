@@ -140,22 +140,18 @@ void NeuralNetwork::dot_prod_t_b(float* a, float* b, float* c, size_t a_r, size_
 	#pragma omp parallel for
 	for (size_t i = 0; i < a_r; i++) {
 		for (size_t k = 0; k < b_r; k++) {
+			size_t j = clear ? 1 : 0;
 
 			if (clear) {
 				c[i * b_r + k] = a[i * a_c + 0] * b[k * b_c + 0];
 			}
 
 			__m256 sum = _mm256_setzero_ps();
-			size_t j = clear ? 1 : 0;
-			for (; j + 16 <= b_c; j += 16) {
-				const __m256 _a1 = _mm256_load_ps(&a[i * a_c + j]);
-				const __m256 _a2 = _mm256_load_ps(&a[i * a_c + j + 8]);
+			for (; j + 8 <= b_c; j += 8) {
+				const __m256 _a = _mm256_load_ps(&a[i * a_c + j]);
+				const __m256 _b = _mm256_load_ps(&b[k * b_c + j]);
 
-				const __m256 _b1 = _mm256_load_ps(&b[k * b_c + j]);
-				const __m256 _b2 = _mm256_load_ps(&b[k * b_c + j + 8]);
-
-				sum = _mm256_fmadd_ps(_a1, _b1, sum);
-				sum = _mm256_fmadd_ps(_a2, _b2, sum);
+				sum = _mm256_fmadd_ps(_a, _b, sum);
 			}
 
 			// sum values into one location
