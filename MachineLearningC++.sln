@@ -23,8 +23,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Snake", "Snake\Snake.vcxpro
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SnakeNetwork", "SnakeNetwork\SnakeNetwork.vcxproj", "{9277E1ED-CE7E-43E7-B3F6-6A6B545E96BD}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CudaNeuralNetwork", "CudaNeuralNetwork\CudaNeuralNetwork.vcxproj", "{86B85A7D-629B-41BA-A507-1BA8765DE39D}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NeuralNetwork_2", "NeuralNetwork_2\NeuralNetwork_2.vcxproj", "{D48795A9-6196-4231-9A04-797AEB2AA172}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MNIST_SBNeuralNetwork", "MNIST_SBNeuralNetwork\MNIST_SBNeuralNetwork.vcxproj", "{E65543DC-1190-4A7D-B67F-1CCAAA7340F1}"
@@ -127,14 +125,6 @@ Global
 		{9277E1ED-CE7E-43E7-B3F6-6A6B545E96BD}.Release|x64.Build.0 = Release|x64
 		{9277E1ED-CE7E-43E7-B3F6-6A6B545E96BD}.Release|x86.ActiveCfg = Release|Win32
 		{9277E1ED-CE7E-43E7-B3F6-6A6B545E96BD}.Release|x86.Build.0 = Release|Win32
-		{86B85A7D-629B-41BA-A507-1BA8765DE39D}.Debug|x64.ActiveCfg = Debug|x64
-		{86B85A7D-629B-41BA-A507-1BA8765DE39D}.Debug|x64.Build.0 = Debug|x64
-		{86B85A7D-629B-41BA-A507-1BA8765DE39D}.Debug|x86.ActiveCfg = Debug|Win32
-		{86B85A7D-629B-41BA-A507-1BA8765DE39D}.Debug|x86.Build.0 = Debug|Win32
-		{86B85A7D-629B-41BA-A507-1BA8765DE39D}.Release|x64.ActiveCfg = Release|x64
-		{86B85A7D-629B-41BA-A507-1BA8765DE39D}.Release|x64.Build.0 = Release|x64
-		{86B85A7D-629B-41BA-A507-1BA8765DE39D}.Release|x86.ActiveCfg = Release|Win32
-		{86B85A7D-629B-41BA-A507-1BA8765DE39D}.Release|x86.Build.0 = Release|Win32
 		{D48795A9-6196-4231-9A04-797AEB2AA172}.Debug|x64.ActiveCfg = Debug|x64
 		{D48795A9-6196-4231-9A04-797AEB2AA172}.Debug|x64.Build.0 = Debug|x64
 		{D48795A9-6196-4231-9A04-797AEB2AA172}.Debug|x86.ActiveCfg = Debug|Win32
