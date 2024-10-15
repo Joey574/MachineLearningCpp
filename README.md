@@ -13,7 +13,7 @@ With future plans for datasets being
 * N-body simulation data
 
 Datasets are currently stored in just a .cpp file that can be included into new projects pretty easily.
-There are many different iterations of neural networks in the solution, these are built as .lib files and stored in Dependencies\lib the following are the names of the aformentioned neural networks.
+There are many different iterations of neural networks in the solution, these are built as .lib files and stored in Dependencies\lib the following are the names of the aforementioned neural networks.
 * NeuralNetwork
 * NeuralNetwork_2
 * SingleBlockNeuralNetwork
