@@ -19,22 +19,24 @@ There are many different iterations of neural networks in the solution, these ar
 * SingleBlockNeuralNetwork
 * SingleBlockCudaNetwork
 
-# NeuralNetwork
+## NeuralNetwork
 This was my first attempt at a neural network class in c++, I've made function-based networks in the past, although these relied heavily on global variables and c++ malpractice. This was my first attempt to move away from that and standardize my use of neural networks and machine learning techniques.
 
-# NeuralNetwork_2
-CURRENTLY NOT COMPLETE
+## NeuralNetwork_2
+CURRENTLY NOT COMPLETE (or even started truthfully)
 This project aims to take the organization I learned from NeuralNetwork and lobotomize it with template metaprogramming and other eldritch techniques
 
-# SingleBlockNeuralNetwork
-This project completely does away with the Matrix class I poured my soul into, instead it opts for the ever loved, pointers, we malloc 3 different pointers
+## SingleBlockNeuralNetwork
+This project completely does away with the Matrix class I poured my soul into, instead it opts for the ever loved pointers. Specifically, I malloc 3 different pointers
 * m_network
 * m_batch_data
 * m_test_data
 
-each of which have the following layout
+which are structured as follows
+
+
 // TODO
 
-# SingleBlockCudaNetwork
+## SingleBlockCudaNetwork
 CURRENTLY NOT WORKING
 This project is my first attempt at running a neural network completely on cuda, I hope to use a similair design to SingleBlockNeuralNetwork
