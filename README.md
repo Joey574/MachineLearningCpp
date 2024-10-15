@@ -13,8 +13,28 @@ With future plans for datasets being
 * N-body simulation data
 
 Datasets are currently stored in just a .cpp file that can be included into new projects pretty easily.
-There are many different iterations of neural networks in the solution, which are located in the following projects
+There are many different iterations of neural networks in the solution, these are built as .lib files and stored in Dependencies\lib the following are the names of the aformentioned neural networks.
 * NeuralNetwork
 * NeuralNetwork_2
 * SingleBlockNeuralNetwork
 * SingleBlockCudaNetwork
+
+# NeuralNetwork
+This was my first attempt at a neural network class in c++, I've made function-based networks in the past, although these relied heavily on global variables and c++ malpractice. This was my first attempt to move away from that and standardize my use of neural networks and mahcine learning techniques.
+
+# NeuralNetwork_2
+CURRENTLY NOT COMPLETE
+This project aims to take the organization I learned from NeuralNetwork and lobotomize it with template metaprogramming and other eldritch techniques
+
+# SingleBlockNeuralNetwork
+This project completely does away with the Matrix class I poured my soul into, instead it opts for the ever loved, pointers, we malloc 3 different pointers
+* m_network
+* m_batch_data
+* m_test_data
+
+each of which have the following layout
+// TODO
+
+# SingleBlockCudaNetwork
+CURRENTLY NOT WORKING
+This project is my first attempt at running a neural network completely on cuda, I hope to use a similair design to SingleBlockNeuralNetwork
