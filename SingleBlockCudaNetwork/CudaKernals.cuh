@@ -25,3 +25,6 @@ __global__ void leaky_relu_derivative(float* x, float* y, size_t r, size_t c);
 // loss
 __global__ void one_hot_loss(float* pred, float* loss, float* y, size_t rows, size_t columns);
 __global__ void mae_loss(float* pred, float* loss, float* y, size_t rows, size_t columns);
+
+// score
+__global__ void accuracy_score(float* pred, float* y, int* correct, size_t rows, size_t columns);

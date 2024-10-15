@@ -2,6 +2,7 @@
 #include <vector>
 #include <iostream>
 #include <chrono>
+#include <random>
 #include <string>
 
 #include "CudaKernals.cuh"
@@ -61,10 +62,6 @@ private:
 	// mem init
 	void initialize_batch_data(size_t batch_size);
 	void initialize_test_data(size_t test_size);
-
-	// score functions
-	float accuracy_score(float* pred, float* y, size_t r, size_t c);
-	float mae_score(float* pred, float* y, size_t r, size_t c);
 
 	void forward_prop(float* x_data, float* result_data, size_t activation_size, size_t num_elements);
 	void back_prop(float* x_data, float* y_data, float learning_rate, size_t num_elements);
