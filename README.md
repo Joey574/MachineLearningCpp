@@ -20,7 +20,7 @@ There are many different iterations of neural networks in the solution, these ar
 * SingleBlockCudaNetwork
 
 # NeuralNetwork
-This was my first attempt at a neural network class in c++, I've made function-based networks in the past, although these relied heavily on global variables and c++ malpractice. This was my first attempt to move away from that and standardize my use of neural networks and mahcine learning techniques.
+This was my first attempt at a neural network class in c++, I've made function-based networks in the past, although these relied heavily on global variables and c++ malpractice. This was my first attempt to move away from that and standardize my use of neural networks and machine learning techniques.
 
 # NeuralNetwork_2
 CURRENTLY NOT COMPLETE
