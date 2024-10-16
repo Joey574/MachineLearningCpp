@@ -33,17 +33,31 @@ This project completely does away with the Matrix class I poured my soul into, i
 * m_test_data
 
 which are structured as follows <br>
-// TODO
 
 ```mermaid
-graph TD
-    A[Memory Layout] --> B[Weights]
-    A --> C[Biases]
-    A --> D[Activations]
-    A --> E[Derivatives]
-    A --> F[Total Data]
-
-<br>
+block-beta
+    block
+        columns 1
+        a(["Network"]):1
+        b["Weights"]:1
+        c["Biases"]:1
+    end
+    block
+        columns 1
+        d(["Batch Data"]):1
+        e["Total"]:1
+        f["Activation"]:1
+        g["Total Derivatives"]:1
+        h["Weight Derivatives"]:1
+        i["Bias Derivatives"]:1
+    end
+block
+        columns 1
+        j(["Test Data"]):1
+        k["Total"]:1
+        l["Activation"]:1
+    end
+```
 
 ## SingleBlockCudaNetwork
 CURRENTLY NOT WORKING <br>
