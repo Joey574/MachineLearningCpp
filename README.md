@@ -59,6 +59,8 @@ block
     end
 ```
 
+I also make heavy use of offset pointers to make my life easier, such as m_biases which points to biases, m_test_activation which points to... you guessed it, test_activation, and so on so forth.
+
 ## SingleBlockCudaNetwork
 CURRENTLY NOT WORKING <br>
 This project is my first attempt at running a neural network completely on cuda, I hope to use a similair design to SingleBlockNeuralNetwork
