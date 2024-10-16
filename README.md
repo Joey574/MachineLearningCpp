@@ -23,16 +23,16 @@ There are many different iterations of neural networks in the solution, these ar
 * **SingleBlockNeuralNetwork**
 * **SingleBlockCudaNetwork**
 
-### NeuralNetwork
+### Neural Network
 This was my first attempt at a neural network class in c++, I've made function-based networks in the past, although these relied heavily on global variables and c++ malpractice. This was my first attempt to move away from that and standardize my use of neural networks and machine learning techniques.
 <br><br>
 This network makes use of the **Matrix** class to do most of the arithmetic, under the hood the **Matrix** class uses omp to parallelize most loops and simd intrinsics for the extra boost
 
-### NeuralNetwork_2
+### Neural Network_2
 CURRENTLY NOT COMPLETE (or even started truthfully) <br>
 This project aims to take the organization I learned from NeuralNetwork and lobotomize it with template metaprogramming and other eldritch techniques
 
-### SingleBlockNeuralNetwork
+### Single-Block Neural Network
 This project completely does away with the Matrix class I poured my soul into, instead it opts for the ever loved pointers. Specifically, I malloc 3 different pointers
 * m_network
 * m_batch_data
@@ -69,6 +69,48 @@ I also make heavy use of pointer arithmetic to make my life easier, such as m_bi
 <br><br>
 The main optimizations included in this version are similair to the ones in **NeuralNetwork**, however, simply by having the data *physically* closer to each other in memory, I observed a 3-4x speedup on my machine.
 
-### SingleBlockCudaNetwork
+### Single-Block Cuda Network
 CURRENTLY NOT WORKING <br>
 This project is my first attempt at running a neural network completely on cuda, I hope to use a similair design to SingleBlockNeuralNetwork
+
+
+## Actual Projects
+Ok so now we've convered the stuff that does all the math, I'd like to mention the stuff that actually does stuff, specifically
+* **MNISTNetwork**
+* **MNIST_SBNeuralNetwork**
+* **MNIST_CNN**
+* **MandlebrotNetwork**
+* **Mandlebrot_SBNN**
+<br>
+
+### MNISTNetwork
+This network trains on the MNIST dataset using the **NeuralNetwork** lib file, truly machine learning 101, nothing all that special to say about it.
+<br>
+
+### MNIST_SBNeuralNetwork
+This one, while quite a mouthful, trains on the MNIST dataset, using the **SingleBlockNeuralNetwork** lib file, this project currently holds my record on mnist of **98.47%** which was achieved using 3 hidden layers of size 1024, and leaky_relu activation in the hidden layers, and sigmoid for the final.
+<br>
+
+### MNIST_CNN
+This network trains on... yet again, kinda in the name, the MNIST dataset, using the **SingleBlockCudaNetwork** lib file, although at time of writing, is still not functional.
+<br>
+
+### MandlebrotNetwork
+This network is what really got me into fractals and neural networks alike, taking inspiration from <br>https://www.youtube.com/watch?v=TkwXa7Cvfr8<br>
+(great video by the way you should totally watch it) I took the idea of approximating mandlebrot with neural networks and ran with it, this specific version uses the **NeuralNetwork** class, some of the better images it produced being<br><br>
+
+![Mandlebrot approximation](https://github.com/Joey574/MLImageLearning/blob/main/Mandlebrot%20Aproximations/4-27-24%20Big%20Network%202/5_9_24_final(19).bmp)
+*This bad boy was trained on and off over the course of a couple weeks* <br><br>
+
+![Mandlebrot approximation](https://github.com/Joey574/MLImageLearning/blob/main/Mandlebrot%20Aproximations/4-25-24%20Big%20Network%201/4_27_24_epoch1.bmp)
+*This guy probably took closer to a month, although it used a smaller network than in the previous image*<br><br>
+
+*Oh and just for reference heres what a "perfect" mandlebrot would look like* <br>
+![Perfect mandlebrot](https://github.com/Joey574/MLImageLearning/blob/main/Mandlebrot%20Aproximations/PerfectMandlebrots/1920_1080_500_0.95.bmp)
+
+### Mandlebrot_SBNN
+Thinking about how much time I spent using the old network pains me, with the performance improvements I managed with the **SingleBlockNeuralNetwork** perhaps I could've actually touched grass. At any rate this uses the aforementioned network and approximates the mandlebrot, as this one is much more recent, and I kind of exhausted myself on the mandlebrot already, I haven't trained with this one anywhere near as much, however, heres the best one I got
+
+![Mandlebrot lesser approximation](https://github.com/Joey574/MLImageLearning/blob/main/Mandlebrot%20Aproximations/9-12-24%20Desktop/big%20net%2C%20new%20system/final.bmp)
+
+## Honorable Mentions
