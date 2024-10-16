@@ -33,10 +33,15 @@ This project completely does away with the Matrix class I poured my soul into, i
 * m_test_data
 
 which are structured as follows <br>
-
 // TODO
 
-
+```mermaid
+graph TD
+    A[Memory Layout] --> B[Weights]
+    A --> C[Biases]
+    A --> D[Activations]
+    A --> E[Derivatives]
+    A --> F[Total Data]
 
 <br>
 
