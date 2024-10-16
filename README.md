@@ -67,6 +67,6 @@ I also make heavy use of pointer arithmetic to make my life easier, such as m_bi
 <br><br>
 The main optimizations included in this version are similair to the ones in **NeuralNetwork**, however, simply by having the data *physically* closer to each other in memory, I observed a 3-4x speedup on my machine.
 
-## SingleBlockCudaNetwork
+### SingleBlockCudaNetwork
 CURRENTLY NOT WORKING <br>
 This project is my first attempt at running a neural network completely on cuda, I hope to use a similair design to SingleBlockNeuralNetwork
