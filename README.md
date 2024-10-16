@@ -1,8 +1,8 @@
 # MachineLearningC++
 ## Solution for me to experiment and test various kinds of neural networks and simulate cool fractals
+This project contains various different kinds of neural networks and datasets. Code is written more or less from scratch, from the matrix class to dot prod.
 
 ## Datasets
-This project contains various different kinds of neural networks and datasets. Code is written more or less from scratch, from the matrix class to dot prod.
 Some of the datasets / fractals included are
 
 * **MNIST**
@@ -13,11 +13,11 @@ With future plans for datasets being
 * **Barnsley ferns**
 * **N-body simulation data**
 
-Datasets are currently stored in just a .cpp file that can be included into new projects pretty easily.
+Datasets are currently stored in static classes in a .cpp file (yeah I know, let me be). Easy enough to include.
 <br>
 
 ## Neural Networks
-There are many different iterations of neural networks in the solution, these are built as .lib files and stored in Dependencies\lib the following are the names of the aforementioned neural network projects.
+There are many different iterations of neural networks in the solution, these are built as .lib files and stored in *Dependencies\lib* the following are the names of the aforementioned neural network projects.
 * **NeuralNetwork**
 * **NeuralNetwork_2**
 * **SingleBlockNeuralNetwork**
@@ -26,17 +26,20 @@ There are many different iterations of neural networks in the solution, these ar
 ### Neural Network
 This was my first attempt at a neural network class in c++, I've made function-based networks in the past, although these relied heavily on global variables and c++ malpractice. This was my first attempt to move away from that and standardize my use of neural networks and machine learning techniques.
 <br><br>
-This network makes use of the **Matrix** class to do most of the arithmetic, under the hood the **Matrix** class uses omp to parallelize most loops and simd intrinsics for the extra boost
+This network makes use of the **Matrix** class to do most of the arithmetic, and doesn't implement too many optimizations in of itself, some of the ones it does include being **Bias.h** to handle calculations regarding biases, keeping them all in one location in memory. Also uses a custom update loop for weights and biases that takes better advantage of simd intrinsics.
+<br><br>
+Major performance problems with this network are mostly tied to the matrix class itself, which I'll go more in depth in a dedicated section, however, just know, theres's a lot of unnecessary memory allocations and copies. *who doesn't love temp objects?* 
+<br>
 
 ### Neural Network_2
-CURRENTLY NOT COMPLETE (or even started truthfully) <br>
+**CURRENTLY NOT COMPLETE** (or even started truthfully) <br>
 This project aims to take the organization I learned from NeuralNetwork and lobotomize it with template metaprogramming and other eldritch techniques
 
 ### Single-Block Neural Network
-This project completely does away with the Matrix class I poured my soul into, instead it opts for the ever loved pointers. Specifically, I malloc 3 different pointers
-* m_network
-* m_batch_data
-* m_test_data
+This project completely does away with the Matrix class I poured my soul into, instead it opts for the ever loved pointers. Specifically, I allocate memory for three different pointers
+* *m_network*
+* *m_batch_data*
+* *m_test_data*
 
 which are structured as follows <br>
 
@@ -65,12 +68,35 @@ block
     end
 ```
 
-I also make heavy use of pointer arithmetic to make my life easier, such as m_biases which points to biases, m_test_activation which points to... you guessed it, test_activation, and so on so forth.
+I also make heavy use of pointer arithmetic to make my life easier, such as *m_biases* which points to **_biases_**, *m_test_activation* which points to... you guessed it, **_test_activation_**, and so on so forth.
 <br><br>
-The main optimizations included in this version are similair to the ones in **NeuralNetwork**, however, simply by having the data *physically* closer to each other in memory, I observed a 3-4x speedup on my machine.
+The main benefit of this network over the **NeuralNetwork class** is that it allocates all the memory it needs up front. By doing this, we avoid the creation of temp objects and massive copies, instead just storing the data directly where we want it to be in the first place. Another benefit of doing this is we can chain operations together much better, for exmaple, if we wanted to do **_A = B + (C * D)_** where A, B, C, D are all matrices of the same size (element-wise operations as well), in the **matrix class** that would look something like this
+
+```mermaid
+    flowchart TD
+    a(Create temp1) --> b(Store C * D in temp1)
+    b --> c(Create temp2) -->d(Store B + temp1 in temp2)
+    d --> e(Copy data to A)
+```
+
+Quite a lot of work, and most of it is pointless too. Instead, if we apply a minimal amount of thinking, we can do this.
+
+```mermaid
+    flowchart TD
+    a(Store the result in A)
+```
+
+Woah! That's insane! As it turns out, if we know we want the data to be in A from the beginning, we can just directly store data into A, on top of that, in this specific example, we can directly compute **_B + (C * D)_** with a fmadd simd instrinsic leaving us with just a few instructions, much better than all the temp objects and copies we were previously doing.
+<br><br>
+Transposes are also a big part of forward_prop and back_prop, however, these transposes are only really used in dot products with other matrices, as such, if we just *read* the data in a transposed manner, we can get the right result, without having to bother with actually transposing the matrix. Changing around a couple for loops also ensures we maintain decent cache access.
+<br><br>
+Of course, this class also make use of optimizations already present in the **matrix class**, like omp for parallelization, and simd intrinsics.
+<br><br>
+Overall I observed a 3-4x performance boost using this class over the **NeuralNetwork class** below are a couple results on various network sizes for **_MNIST_**
+<br>
 
 ### Single-Block Cuda Network
-CURRENTLY NOT WORKING <br>
+**CURRENTLY NOT WORKING** <br>
 This project is my first attempt at running a neural network completely on cuda, I hope to use a similair design to SingleBlockNeuralNetwork
 
 
