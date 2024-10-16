@@ -1,6 +1,6 @@
 #include "SingleBlockNeuralNetwork.h"
 
-void NeuralNetwork::define(std::vector<int> dimensions, std::vector<activation_functions> activations) {
+void NeuralNetwork::define(std::vector<size_t> dimensions, std::vector<activation_functions> activations) {
 
 	m_network_size = 0;
 	m_weights_size = 0;
@@ -141,7 +141,7 @@ void NeuralNetwork::compile(loss_metric loss, loss_metric metrics, weight_init w
 	std::cout << this->summary();
 }
 
-NeuralNetwork::history NeuralNetwork::fit(Matrix x_train, Matrix y_train, Matrix x_valid, Matrix y_valid, int batch_size, int epochs, float learning_rate, bool shuffle, int validation_freq, float validation_split) {
+NeuralNetwork::history NeuralNetwork::fit(Matrix x_train, Matrix y_train, Matrix x_valid, Matrix y_valid, size_t batch_size, size_t epochs, float learning_rate, bool shuffle, int validation_freq, float validation_split) {
 
 	m_biases = &m_network[m_weights_size];
 
@@ -228,44 +228,36 @@ void NeuralNetwork::data_preprocess(Matrix& x_train, Matrix& y_train, Matrix& x_
 	}
 }
 
-void NeuralNetwork::initialize_batch_data(int batch_size) {
+void NeuralNetwork::initialize_batch_data(size_t batch_size) {
 	m_batch_activation_size = 0;
 
-	// size for dw and db
-	m_batch_data_size = m_network_size;
-
 	for (int i = 1; i < m_dimensions.size(); i++) {
-		// size for activation, total, and deriv_t
-		m_batch_data_size += 3 * (m_dimensions[i] * batch_size);
-
 		m_batch_activation_size += m_dimensions[i] * batch_size;
 	}
+	m_batch_data_size = (3 * m_batch_activation_size) + m_network_size;
 
 	// allocate memory for m_batch_data
 	m_batch_data = (float*)_aligned_malloc(m_batch_data_size * sizeof(float), 64);
 
 	m_activation = &m_batch_data[m_batch_activation_size];
-	m_deriv_t = &m_activation[m_batch_activation_size];
 
-	m_deriv_w = &m_deriv_t[m_batch_activation_size];
-	m_deriv_b = &m_deriv_w[m_weights_size];
+	m_d_total = &m_activation[m_batch_activation_size];
+	m_d_weights = &m_d_total[m_batch_activation_size];
+	m_d_biases = &m_d_weights[m_weights_size];
 }
-void NeuralNetwork::initialize_test_data(int test_size) {
-	int size = 0;
-
+void NeuralNetwork::initialize_test_data(size_t test_size) {
 	m_test_activation_size = 0;
-	for (int i = 1; i < m_dimensions.size(); i++) {
-		// size for activation and total
-		size += 2 * (m_dimensions[i] * test_size);
 
+	for (int i = 1; i < m_dimensions.size(); i++) {
 		m_test_activation_size += m_dimensions[i] * test_size;
 	}
 
-	m_test_data = (float*)_aligned_malloc(size * sizeof(float), 64);
+	m_test_data = (float*)_aligned_malloc(m_test_activation_size * 2 * sizeof(float), 64);
+
 	m_test_activation = &m_test_data[m_test_activation_size];
 }
 
-std::string NeuralNetwork::test_network(float* x, float* y, int test_size, history& h) {
+std::string NeuralNetwork::test_network(float* x, float* y, size_t test_size, history& h) {
 
 	forward_prop(x, m_test_data, m_test_activation_size, test_size);
 
@@ -278,7 +270,7 @@ std::string NeuralNetwork::test_network(float* x, float* y, int test_size, histo
 	return "score: " + std::to_string(score);
 }
 
-void NeuralNetwork::forward_prop(float* x_data, float* result_data, int activation_size, int num_elements) {
+void NeuralNetwork::forward_prop(float* x_data, float* result_data, int activation_size, size_t num_elements) {
 
 	int weight_idx = 0;
 	int bias_idx = 0;
@@ -317,7 +309,7 @@ void NeuralNetwork::forward_prop(float* x_data, float* result_data, int activati
 		input_idx += i == 0 ? 0 : (m_dimensions[i] * num_elements);
 	}
 }
-void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate, int num_elements) {
+void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate, size_t num_elements) {
 
 	const float factor = learning_rate / (float)num_elements;
 	const __m256 _factor = _mm256_set1_ps(factor);
@@ -327,7 +319,7 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 	// d_biases[i] := d_total[i].row_sums
 
 	float* last_activation = &m_activation[m_batch_activation_size - (m_dimensions.back() * num_elements)];
-	float* last_d_total = &m_deriv_t[m_batch_activation_size - (m_dimensions.back() * num_elements)];
+	float* last_d_total = &m_d_total[m_batch_activation_size - (m_dimensions.back() * num_elements)];
 
 	// -> compute loss
 	(this->*m_loss)(last_activation, y_data, last_d_total, m_dimensions.back(), num_elements);
@@ -341,8 +333,8 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 		float* weight = &m_network[weight_idx];
 		float* prev_total = &m_batch_data[d_total_idx - (m_dimensions[i] * num_elements)];
 
-		float* cur_d_total = &m_deriv_t[d_total_idx];
-		float* prev_d_total = &m_deriv_t[d_total_idx - (m_dimensions[i] * num_elements)];
+		float* cur_d_total = &m_d_total[d_total_idx];
+		float* prev_d_total = &m_d_total[d_total_idx - (m_dimensions[i] * num_elements)];
 
 		dot_prod_t_a(weight, cur_d_total, prev_d_total, m_dimensions[i + 1], m_dimensions[i], m_dimensions[i + 1], num_elements, true);
 
@@ -364,9 +356,9 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 
 		float* prev_activ = i == 0 ? &x_data[0] : &m_activation[activation_idx];
 
-		float* d_total = &m_deriv_t[d_total_idx];
-		float* d_weights = &m_deriv_w[d_weight_idx];
-		float* d_bias = &m_deriv_b[d_bias_idx];
+		float* d_total = &m_d_total[d_total_idx];
+		float* d_weights = &m_d_weights[d_weight_idx];
+		float* d_bias = &m_d_biases[d_bias_idx];
 
 		i == 0 ?
 			dot_prod(d_total, prev_activ, d_weights, m_dimensions[i + 1], num_elements, num_elements, m_dimensions[i], true) :
@@ -403,14 +395,14 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 	for (size_t i = 0; i <= m_weights_size - 8; i += 8) {
 		_mm256_store_ps(&m_network[i], 
 			_mm256_fnmadd_ps(
-				_mm256_load_ps(&m_deriv_w[i]),
+				_mm256_load_ps(&m_d_weights[i]),
 				_factor,
 				_mm256_load_ps(&m_network[i])
 			));
 	}
 
 	for (size_t i = m_weights_size - (m_weights_size % 8); i < m_weights_size; i++) {
-		m_network[i] -= m_deriv_w[i] * factor;
+		m_network[i] -= m_d_weights[i] * factor;
 	}
 
 
@@ -419,14 +411,14 @@ void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate,
 	for (size_t i = 0; i <= m_biases_size - 8; i += 8) {
 		_mm256_store_ps(&m_biases[i],
 			_mm256_fnmadd_ps(
-				_mm256_load_ps(&m_deriv_b[i]),
+				_mm256_load_ps(&m_d_biases[i]),
 				_factor,
 				_mm256_load_ps(&m_biases[i])
 			));
 	}
 
 	for (size_t i = m_biases_size - (m_biases_size % 8); i < m_biases_size; i ++) {
-		m_biases[i] -= m_deriv_b[i] * factor;
+		m_biases[i] -= m_d_biases[i] * factor;
 	}
 }
 

@@ -28,7 +28,7 @@ public:
 	};
 
 	void define(
-		std::vector<int> dimensions,
+		std::vector<size_t> dimensions,
 		std::vector<activation_functions> activations
 	);
 
@@ -43,8 +43,8 @@ public:
 		Matrix y_train,
 		Matrix x_valid,
 		Matrix y_valid,
-		int batch_size,
-		int epochs,
+		size_t batch_size,
+		size_t epochs,
 		float learning_rate,
 		bool shuffle,
 		int validation_freq,
@@ -72,48 +72,63 @@ private:
 		void (NeuralNetwork::* derivative)(float*, float*, size_t);
 	};
 
-	/* Memory Structure for network
-	* 
-	* M_NETWORK -> contains weights and biases
-	* w0 -> w1 ... wn
-	* b0 -> b1 ... bn
-	* 
-	* m_biases := pointer to b0
-	* 
-	* m_weights_size := size of weights
-	* m_biases_size := size of biases
-	* 
-	* m_network_size := total size of network
-	* 
-	* 
-	* M_BATCH_DATA -> contains activation and derivatives
-	* t0 -> t1 ... tn
-	* a0 -> a1 ... an
-	* 
-	* dt0 -> dt1 ... dtn
-	* dw0 -> dw1 ... dwn
-	* db0 -> db1 ... dbn
-	* 
-	* m_activation := pointer to a0
-	* 
-	* m_deriv_t := pointer to dt0
-	* m_deriv_w := pointer to dw0
-	* m_deriv_b := pointer to db0
-	* 
-	* m_batch_activation_size := size of t0 t1 ... (a0 a1 ... , are of the same size) (dt0 dt1 ... , are of the same size)
-	* 
-	* m_batch_data_size := total size of batch_data
-	* 
-	* M_TEST_DATA -> contains activation for test data
-	* t0 -> t1 ... tn
-	* a0 -> a1 ... an
-	* 
-	* m_test_activation := pointer to a0 in m_test_data
-	* 
-	* m_test_activation_size := size of t0 t1 ... in m_test_data, a0 a1 ... is of equal size
+	/* Memory Layout
+
+
+	 _____|m_network|_____ 
+	|					  |
+	|		weights		  |  <- m_weights_size
+	|					  |
+	|------|m_biases|-----|
+	|					  |
+	|		 biases		  |  <- m_bias_size
+	|					  |
+	 ---------------------
+
+	 m_network_size := m_weights_size + m_bias_size
+
+
+
+	 ____|m_batch_data|____
+	|					   |
+	|		  total		   |  <- m_batch_activation_size
+	|					   |
+	|----|m_activation|----|
+	|					   |
+	|	   activation	   |  <- m_batch_activation_size
+	|					   |
+	|------|m_d_total|-----|
+	|					   |
+	|		d_total		   |  <- m_batch_activation_size
+	|					   |
+	|-----|m_d_weights|----|
+	|					   |
+	|	   d_weights	   |  <- m_weights_size
+	|					   |
+	|-----|m_d_biases|-----|
+	|					   |
+	|	    d_biases	   |  <- m_bias_size
+	|					   |
+	 ----------------------
+
+	 m_batch_data_size := (3 * m_batch_activation_size) + m_network_size
+
+
+
+	 _____|m_test_data|_____
+	|					    |
+	|		  total		    |  <- m_test_activation_size
+	|					    |
+	|--|m_test_activation|--|
+	|					    |
+	|	   activation	    |  <- m_test_activation_size
+	|					    |
+	 -----------------------
+
+
 	*/
 
-	// pointer to start network -> weights and biases
+	// pointers
 	float* m_network;
 	float* m_batch_data;
 	float* m_test_data;
@@ -122,12 +137,13 @@ private:
 
 	float* m_activation;
 
-	float* m_deriv_t;
-	float* m_deriv_w;
-	float* m_deriv_b;
+	float* m_d_total;
+	float* m_d_weights;
+	float* m_d_biases;
 
 	float* m_test_activation;
 
+	// size for various pointers
 	size_t m_network_size;
 	size_t m_weights_size;
 	size_t m_biases_size;
@@ -137,10 +153,11 @@ private:
 
 	size_t m_test_activation_size;
 
+
 	bool loaded = false;
 
 	// misc
-	std::vector<int> m_dimensions;
+	std::vector<size_t> m_dimensions;
 	std::vector<activation_data> m_activation_data;
 
 	void (NeuralNetwork::* m_loss)(float*, float*, float*, size_t, size_t);
@@ -152,20 +169,20 @@ private:
 		float* x_data,
 		float* result_data,
 		int activation_size,
-		int num_elements
+		size_t num_elements
 	);
 
 	void back_prop(
 		float* x_data,
 		float* y_data,
 		float learning_rate,
-		int num_elements
+		size_t num_elements
 	);
 
 	std::string test_network(
 		float* x,
 		float* y,
-		int test_size,
+		size_t test_size,
 		history& h
 	);
 
@@ -176,8 +193,8 @@ private:
 	void dot_prod_t_b(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear);
 
 	// mem init
-	void initialize_batch_data(int batch_size);
-	void initialize_test_data(int test_size);
+	void initialize_batch_data(size_t batch_size);
+	void initialize_test_data(size_t test_size);
 
 	// activation functions
 	void relu(float* x, float* y, size_t size);
@@ -193,12 +210,12 @@ private:
 	void sigmoid_derivative(float* x, float* y, size_t size);
 
 	// score
-	float mae_score(float* x, float* y, size_t x_r, size_t x_c);
-	float accuracy_score(float* x, float* y, size_t x_r, size_t x_c);
+	float mae_score(float* x, float* y, size_t rows, size_t columns);
+	float accuracy_score(float* x, float* y, size_t rows, size_t columns);
 
 	// loss
-	void mae_loss(float* x, float* y, float* c, size_t x_r, size_t x_c);
-	void one_hot_loss(float* x, float* y, float* c, size_t x_r, size_t x_c);
+	void mae_loss(float* x, float* y, float* c, size_t rows, size_t columns);
+	void one_hot_loss(float* x, float* y, float* c, size_t rows, size_t columns);
 
 	std::string clean_time(double time);
 };
