@@ -63,7 +63,9 @@ block
     end
 ```
 
-I also make heavy use of offset pointers to make my life easier, such as m_biases which points to biases, m_test_activation which points to... you guessed it, test_activation, and so on so forth.
+I also make heavy use of pointer arithmetic to make my life easier, such as m_biases which points to biases, m_test_activation which points to... you guessed it, test_activation, and so on so forth.
+<br><br>
+The main optimizations included in this version are similair to the ones in **NeuralNetwork**, however, simply by having the data *physically* closer to each other in memory, I observed a 3-4x speedup on my machine.
 
 ## SingleBlockCudaNetwork
 CURRENTLY NOT WORKING <br>
