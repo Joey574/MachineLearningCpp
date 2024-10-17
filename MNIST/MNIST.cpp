@@ -11,10 +11,10 @@ public:
 	/// Returns a dataset such that each row is another entry in the MNIST dataset
 	/// </summary>
 	/// <returns></returns>
-	std::tuple<Matrix, Matrix, Matrix, Matrix> load_data(int fourier, int taylor, int chebyshev, int legendre, int laguarre, float lower_norm, float upper_norm) {
+	static std::tuple<Matrix, Matrix, Matrix, Matrix> load_data(int fourier, int taylor, int chebyshev, int legendre, int laguarre, float lower_norm, float upper_norm) {
 		// Train Data
-		std::string trainingImages = "Training Data\\train-images.idx3-ubyte";
-		std::string trainingLabels = "Training Data\\train-labels.idx1-ubyte";
+		std::string trainingImages = "..\\Dependencies\\datasets\\mnist\\Training Data\\train-images.idx3-ubyte";
+		std::string trainingLabels = "..\\Dependencies\\datasets\\mnist\\Training Data\\train-labels.idx1-ubyte";
 
 		std::ifstream trainingFR = std::ifstream(trainingImages, std::ios::binary);
 		std::ifstream trainingLabelsFR = std::ifstream(trainingLabels, std::ios::binary);
@@ -51,8 +51,8 @@ public:
 		trainingLabelsFR.close();
 
 		// Test Data
-		std::string testingImages = "Testing Data\\t10k-images.idx3-ubyte";
-		std::string testingLabels = "Testing Data\\t10k-labels.idx1-ubyte";
+		std::string testingImages = "..\\Dependencies\\datasets\\mnist\\Testing Data\\t10k-images.idx3-ubyte";
+		std::string testingLabels = "..\\Dependencies\\datasets\\mnist\\Testing Data\\t10k-labels.idx1-ubyte";
 
 		std::ifstream testingFR = std::ifstream(testingImages, std::ios::binary);
 		std::ifstream testingLabelFR = std::ifstream(testingLabels, std::ios::binary);
@@ -102,7 +102,7 @@ public:
 
 	private:
 
-	int read_big_int(std::ifstream* fr) {
+	static int read_big_int(std::ifstream* fr) {
 
 		int littleInt;
 		fr->read(reinterpret_cast<char*>(&littleInt), sizeof(int));

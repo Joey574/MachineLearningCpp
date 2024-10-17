@@ -11,13 +11,19 @@ public:
 	/// Returns a dataset such that each row is another entry in the FMNIST dataset
 	/// </summary>
 	/// <returns></returns>
-	std::tuple<Matrix, Matrix, Matrix, Matrix> load_data(int fourier, int taylor, int chebyshev, int legendre, int laguarre, float lower_norm, float upper_norm) {
-		// Train Data
-		std::string trainingImages = "..\\Dependencies\\datasets\\fmnist\\Training Data\\train-images.idx3-ubyte";
-		std::string trainingLabels = "..\\Dependencies\\datasets\\fmnist\\Training Data\\train-labels.idx1-ubyte";
+	static std::tuple<Matrix, Matrix, Matrix, Matrix> load_data(int fourier, int taylor, int chebyshev, int legendre, int laguarre, float lower_norm, float upper_norm) {
+
+		std::string trainingImages = "..\\Dependencies\\datasets\\fmnist\\Training Data\\train-images-idx3-ubyte";
+		std::string trainingLabels = "..\\Dependencies\\datasets\\fmnist\\Training Data\\train-labels-idx1-ubyte";
 
 		std::ifstream trainingFR = std::ifstream(trainingImages, std::ios::binary);
 		std::ifstream trainingLabelsFR = std::ifstream(trainingLabels, std::ios::binary);
+
+		if (trainingFR.is_open() && trainingLabelsFR.is_open()) {
+			std::cout << "loading training data\n";
+		} else {
+			std::cout << "file not found\n";
+		}
 
 		// Discard
 		int magicNum = read_big_int(&trainingLabelsFR);
@@ -51,18 +57,11 @@ public:
 		trainingLabelsFR.close();
 
 		// Test Data
-		std::string testingImages = "..\\Dependencies\\datasets\\fmnist\\Testing Data\\t10k-images.idx3-ubyte";
-		std::string testingLabels = "..\\Dependencies\\datasets\\fmnist\\Testing Data\\t10k-labels.idx1-ubyte";
+		std::string testingImages = "..\\Dependencies\\datasets\\fmnist\\Testing Data\\t10k-images-idx3-ubyte";
+		std::string testingLabels = "..\\Dependencies\\datasets\\fmnist\\Testing Data\\t10k-labels-idx1-ubyte";
 
 		std::ifstream testingFR = std::ifstream(testingImages, std::ios::binary);
 		std::ifstream testingLabelFR = std::ifstream(testingLabels, std::ios::binary);
-
-		if (testingFR.is_open() && testingLabelFR.is_open()) {
-			std::cout << "loading training data\n";
-		}
-		else {
-			std::cout << "file not found\n";
-		}
 
 		// Discard
 		magicNum = read_big_int(&testingLabelFR);
@@ -92,6 +91,7 @@ public:
 		testingFR.close();
 		testingLabelFR.close();
 
+		// this is stupid and needs to be fixed someday
 		data = data.Transpose().extract_features(fourier, taylor, chebyshev, legendre,
 			laguarre, lower_norm, upper_norm).Transpose();
 
@@ -104,7 +104,7 @@ public:
 
 private:
 
-	int read_big_int(std::ifstream* fr) {
+	static int read_big_int(std::ifstream* fr) {
 
 		int littleInt;
 		fr->read(reinterpret_cast<char*>(&littleInt), sizeof(int));
