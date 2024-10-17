@@ -42,9 +42,8 @@ int main()
 	srand(time(0));
 
 	// Model definitions
-	std::vector<int> dims = { 2, 512, 512, 512, 512, 512, 512, 512, 1 };
+	std::vector<size_t> dims = { 2, 512, 512, 512, 512, 512, 512, 1 };
 	std::vector<NeuralNetwork::activation_functions> act = {
-		NeuralNetwork::activation_functions::leaky_relu,
 		NeuralNetwork::activation_functions::leaky_relu,
 		NeuralNetwork::activation_functions::leaky_relu,
 		NeuralNetwork::activation_functions::leaky_relu,
@@ -57,9 +56,9 @@ int main()
 	// Model fit information
 	Matrix x;
 	Matrix y;
-	int batch_size = 320;
-	int epochs = 50;
-	float learning_rate = 0.001f;
+	size_t batch_size = 320;
+	size_t epochs = 50;
+	float learning_rate = 0.0005f;
 	bool shuffle = true;
 	int validation_freq = 1;
 	float validation_split = 0.1f;
@@ -76,7 +75,8 @@ int main()
 	float lower_norm = 0.0f;
 	float upper_norm = 1.0f;
 
-	std::tie(x, y) = mandlebrot.make_dataset(100000, 250, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
+	// sample dataset
+	std::tie(x, y) = mandlebrot.make_dataset(1, 1, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
 	dims[0] = x.ColumnCount;
 
 	NeuralNetwork model;
@@ -88,7 +88,10 @@ int main()
 	int width = 320;
 	int height = 180;
 
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < 20; i++) {
+
+		std::tie(x, y) = mandlebrot.make_dataset(100000, 250, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
+
 		model.fit(
 			x,
 			y,

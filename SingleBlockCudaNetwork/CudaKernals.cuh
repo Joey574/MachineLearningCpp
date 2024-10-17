@@ -16,7 +16,7 @@ __global__ void update_bias(float* bias, float* d_bias, float lr, size_t n);
 
 
 // activations
-__global__ void leaky_relu(float* x, float* y, size_t r, size_t c);
+__global__ void leaky_relu(float* x, float* y, size_t rows, size_t columns);
 
 // derivatives
 __global__ void leaky_relu_derivative(float* x, float* y, size_t r, size_t c);

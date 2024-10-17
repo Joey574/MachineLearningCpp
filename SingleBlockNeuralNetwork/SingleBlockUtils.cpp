@@ -60,9 +60,9 @@ void NeuralNetwork::serialize(std::string filepath) {
 	std::ofstream fw(filepath, std::ios::binary);
 
 	// write dims of network
-	int dims = m_dimensions.size();
-	fw.write(reinterpret_cast<const char*>(&dims), sizeof(int));
-	fw.write(reinterpret_cast<const char*>(m_dimensions.data()), dims * sizeof(int));
+	size_t dims = m_dimensions.size();
+	fw.write(reinterpret_cast<const char*>(&dims), sizeof(size_t));
+	fw.write(reinterpret_cast<const char*>(m_dimensions.data()), dims * sizeof(size_t));
 
 	// write network
 	fw.write(reinterpret_cast<const char*>(m_network), m_network_size * sizeof(float));
@@ -77,12 +77,12 @@ void NeuralNetwork::deserialize(std::string filepath) {
 	}
 
 	// read dims size
-	int dims;
-	fr.read(reinterpret_cast<char*>(&dims), sizeof(int));
-	m_dimensions = std::vector<int>(dims);
+	size_t dims;
+	fr.read(reinterpret_cast<char*>(&dims), sizeof(size_t));
+	m_dimensions = std::vector<size_t>(dims);
 
 	// read dims
-	fr.read(reinterpret_cast<char*>(m_dimensions.data()), dims * sizeof(int));
+	fr.read(reinterpret_cast<char*>(m_dimensions.data()), dims * sizeof(size_t));
 
 	// compute m_network_size
 	m_network_size = 0;

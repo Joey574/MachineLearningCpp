@@ -21,8 +21,8 @@ public:
 	void fit(
 		float* x_train, 
 		float* y_train, 
-		float* x_valid, 
-		float* y_valid, 
+		float* x_test, 
+		float* y_test, 
 		size_t train_samples, 
 		size_t test_samples, 
 		size_t batch_size, 
@@ -60,6 +60,11 @@ private:
 	size_t m_test_activation_size;
 
 	// mem init
+	void initialize_train_data(
+		float* d_x_train, float* d_y_train, float* d_x_test, float* d_y_test, 
+		float* h_x_train, float* h_y_train, float* h_x_test, float* h_y_test, 
+		size_t train_samples, size_t test_samples
+	);
 	void initialize_batch_data(size_t batch_size);
 	void initialize_test_data(size_t test_size);
 
@@ -67,5 +72,6 @@ private:
 	void back_prop(float* x_data, float* y_data, float learning_rate, size_t num_elements);
 
 	std::string test_network(float* x, float* y, size_t test_size);
+	std::string verbose(float* d_x_test, float* d_y_test, size_t test_samples, size_t epoch, int validation_freq, std::chrono::steady_clock::time_point start_time);
 	std::string clean_time(double time);
 };

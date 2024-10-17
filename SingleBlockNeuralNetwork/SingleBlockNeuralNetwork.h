@@ -168,7 +168,7 @@ private:
 	void forward_prop(
 		float* x_data,
 		float* result_data,
-		int activation_size,
+		size_t activation_size,
 		size_t num_elements
 	);
 

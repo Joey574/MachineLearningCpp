@@ -1,17 +1,20 @@
 #include "CudaKernals.cuh"
+#include <stdio.h>
 
 __global__ void dot_prod(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c) {
-	int i = blockDim.y * blockIdx.y + threadIdx.y;
-	int j = blockDim.x * blockIdx.x + threadIdx.x;
+	int i = blockDim.x * blockIdx.x + threadIdx.x;
 
-	if (i < a_r && j < b_c) {
+	int row = i / (int)a_c;
+	int col = i % (int)a_c;
+
+	if (row < a_r) {
 		float sum = 0.0f;
 
-		for (int k = 0; k < b_c; k++) {
-			sum += a[i * a_c + k] * b[k * b_c + j];
+		for (int k = 0; k < b_r; k++) {
+			sum += a[row * a_c + k] * b[k * b_c + col];
 		}
 
-		c[i * b_c + j] = sum;
+		c[row * b_c + col] = sum;
 	}
 }
 __global__ void dot_prod_t_a(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c) {
@@ -29,16 +32,23 @@ __global__ void dot_prod_t_a(float* a, float* b, float* c, size_t a_r, size_t a_
 	}
 }
 __global__ void dot_prod_t_b(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c) {
-	int i = blockDim.y * blockIdx.y + threadIdx.y;
-	int j = blockDim.x * blockIdx.x + threadIdx.x;
+	int i = blockDim.x * blockIdx.x + threadIdx.x;
 
-	if (i < a_r && j < b_c) {
+	int row = i / (int)a_c;
+	int col = i % (int)a_c;
+
+	if (row < a_r) {
 		float sum = 0.0f;
 
-		for (int k = 0; k < b_r; k++) {
-			sum += a[i * a_c + k] * b[i * b_c + k];
+		for (int k = 0; k < b_c; k++) {
+			//sum += a[row * a_c + k] * b[col * b_c + k];
+			sum += a[row * a_c + k];
 		}
 
-		c[i * b_r + j] = sum;
+		c[row * b_r + col] = sum;
+		
+		//c[row * b_r + col] = 0.0f;
+		//a[row * a_c + b_c] = 1.0f;
+		//b[col * b_c + b_c - 1] = 1.0f;
 	}
 }

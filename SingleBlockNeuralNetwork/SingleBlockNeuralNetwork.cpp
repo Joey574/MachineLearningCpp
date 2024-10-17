@@ -270,7 +270,7 @@ std::string NeuralNetwork::test_network(float* x, float* y, size_t test_size, hi
 	return "score: " + std::to_string(score);
 }
 
-void NeuralNetwork::forward_prop(float* x_data, float* result_data, int activation_size, size_t num_elements) {
+void NeuralNetwork::forward_prop(float* x_data, float* result_data, size_t activation_size, size_t num_elements) {
 
 	int weight_idx = 0;
 	int bias_idx = 0;
