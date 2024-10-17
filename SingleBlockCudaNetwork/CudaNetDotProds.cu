@@ -18,17 +18,19 @@ __global__ void dot_prod(float* a, float* b, float* c, size_t a_r, size_t a_c, s
 	}
 }
 __global__ void dot_prod_t_a(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c) {
-	int i = blockDim.y * blockIdx.y + threadIdx.y;
-	int j = blockDim.x * blockIdx.x + threadIdx.x;
+	int i = blockDim.x * blockIdx.x + threadIdx.x;
 
-	if (i < a_c && j < b_c) {
+	int row = i / (int)a_r;
+	int col = i % (int)a_r;
+
+	if (row < a_c) {
 		float sum = 0.0f;
 
-		for (int k = 0; k < b_c; k++) {
-			sum += a[k * a_c + i] * b[k * b_c + j];
+		for (int k = 0; k < b_r; k++) {
+			sum += a[k * a_c + row] * b[k * b_c + col];
 		}
 
-		c[i * b_c + j] = sum;
+		c[row * b_c + col] = sum;
 	}
 }
 __global__ void dot_prod_t_b(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c) {

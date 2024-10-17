@@ -1,19 +1,19 @@
 #include "SingleBlockCudaNetwork.h"
 
-void CudaNetwork::initialize_train_data(float* d_x_train, float* d_y_train, float* d_x_test, float* d_y_test, float* h_x_train, float* h_y_train, float* h_x_test, float* h_y_test, size_t train_samples, size_t test_samples) {
+void CudaNetwork::initialize_train_data(float* d_x_train, float* d_y_train, float* d_x_test, float* d_y_test, matrix h_x_train, matrix h_y_train, matrix h_x_test, matrix h_y_test) {
 	// initialize training data on the gpu
-	cudaMalloc(&d_x_train, train_samples * m_dimensions[0] * sizeof(float));
-	cudaMalloc(&d_y_train, train_samples * sizeof(float));
+	cudaMalloc(&d_x_train, h_x_train.rows * h_x_train.cols * sizeof(float));
+	cudaMalloc(&d_y_train, h_y_train.rows * h_y_train.cols * sizeof(float));
 
-	cudaMalloc(&d_x_test, test_samples * m_dimensions[0] * sizeof(float));
-	cudaMalloc(&d_y_test, test_samples * sizeof(float));
+	cudaMalloc(&d_x_test, h_x_test.rows * h_x_test.cols * sizeof(float));
+	cudaMalloc(&d_y_test, h_y_test.rows * h_y_test.cols * sizeof(float));
 
 
-	cudaMemcpy(d_x_train, h_x_train, train_samples * m_dimensions[0] * sizeof(float), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_y_train, h_y_train, train_samples * sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(d_x_train, &h_x_train.mat[0], h_x_train.rows * h_x_train.cols * sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(d_y_train, &h_y_train.mat[0], h_y_train.rows * h_y_train.cols * sizeof(float), cudaMemcpyHostToDevice);
 
-	cudaMemcpy(d_x_test, h_x_test, test_samples * m_dimensions[0] * sizeof(float), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_y_test, h_y_test, test_samples * sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(d_x_test, &h_x_test.mat[0], h_x_test.rows * h_x_test.cols * sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(d_y_test, &h_y_test.mat[0], h_y_test.rows * h_y_test.cols * sizeof(float), cudaMemcpyHostToDevice);
 }
 void CudaNetwork::initialize_batch_data(size_t batch_size) {
 	m_batch_activation_size = 0;
@@ -33,7 +33,6 @@ void CudaNetwork::initialize_batch_data(size_t batch_size) {
 	m_d_weights = &m_d_total[m_batch_activation_size];
 	m_d_bias = &m_d_weights[m_weights_size];
 
-	m_bias = &m_network[m_weights_size];
 }
 void CudaNetwork::initialize_test_data(size_t test_size) {
 	size_t size = 0;
@@ -115,6 +114,8 @@ void CudaNetwork::compile(CudaNetwork::weight_init init) {
 	cudaMalloc(&m_network, m_network_size * sizeof(float));
 	cudaMemcpy(m_network, net, m_network_size * sizeof(float), cudaMemcpyHostToDevice);
 
+	m_bias = m_network + m_weights_size;
+
 	free(net);
 
 
@@ -126,24 +127,24 @@ void CudaNetwork::compile(CudaNetwork::weight_init init) {
 	}
 }
  
-void CudaNetwork::fit(float* x_train, float* y_train, float* x_test, float* y_test, size_t train_samples, size_t test_samples, size_t batch_size, size_t epochs, float learning_rate, bool shuffle, int validation_freq) {
+void CudaNetwork::fit(matrix x_train, matrix y_train, matrix x_test, matrix y_test, size_t batch_size, size_t epochs, float learning_rate, bool shuffle, int validation_freq) {
 	std::cout << "Status: network_training\n";
 
 	auto start_time = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double, std::milli> time;
 
 	float* d_x_train, * d_y_train, * d_x_test, * d_y_test;
-	const size_t iterations = train_samples / batch_size;
+	const size_t iterations = x_train.rows / batch_size;
 
-	initialize_train_data(d_x_train, d_y_train, d_x_test, d_y_test, x_train, y_train, x_test, y_test, train_samples, test_samples);
+	initialize_train_data(d_x_train, d_y_train, d_x_test, d_y_test, x_train, y_train, x_test, y_test);
 	initialize_batch_data(batch_size);
-	initialize_test_data(test_samples);
+	initialize_test_data(x_test.rows);
 
 	cudaError_t err = cudaGetLastError();
 	if (err != cudaSuccess) {
 		std::cout << "Status: cuda memory failed to initialize: " << cudaGetErrorString(err) << "\n";
 	} else {
-		std::cout << "Status: cuda memory initialized\n";
+		std::cout << "Status: cuda_memory_initialized\n";
 	}
 
 	for (size_t e = 0; e < epochs; e++) {
@@ -153,14 +154,18 @@ void CudaNetwork::fit(float* x_train, float* y_train, float* x_test, float* y_te
 
 			cudaError_t err;
 
-			float* x = &d_x_train[(i * batch_size) * m_dimensions[0]];
-			float* y = &d_y_train[(i * batch_size) * m_dimensions[0]];
+			float* x = d_x_train + (i * batch_size) * x_train.cols;
+			float* y = d_y_train + (i * batch_size) * y_train.cols;
 
 			forward_prop(x, m_batch_data, m_batch_activation_size, batch_size);
+
+			// idk if this is needed here again :/
+			x = &d_x_train[(i * batch_size) * m_dimensions[0]];
+
 			back_prop(x, y, learning_rate, batch_size);
 		}
 
-		std::cout << verbose(d_x_test, d_y_test, test_samples, e, validation_freq, epoch_start_time);
+		std::cout << verbose(d_x_test, d_y_test, x_test.rows, e, validation_freq, epoch_start_time);
 	}
 	time = std::chrono::high_resolution_clock::now() - start_time;
 
@@ -241,11 +246,13 @@ void CudaNetwork::back_prop(float* x_data, float* y_data, float learning_rate, s
 		float* last_activation = &m_activation[m_batch_activation_size - (m_dimensions.back() * num_elements)];
 
 		void* args[5] = { &last_activation, &last_d_total, &y_data, &m_dimensions.back(), &num_elements };
+		
+		std::cout << "\nloss info:\n" << last_activation << "\n" << last_d_total << "\n" << num_elements << "\n" << m_dimensions.back() << "\n";
 
 		cudaLaunchKernel(one_hot_loss, ceil(num_elements / 8), 8, args, 0, nullptr);
 		cudaDeviceSynchronize();
 
-		std::cout << "loss: " << cudaGetErrorString(cudaGetLastError()) << "\n";
+		std::cout << "loss: " << cudaGetErrorString(cudaGetLastError()) << "\n\n";
 	}
 
 
@@ -264,17 +271,22 @@ void CudaNetwork::back_prop(float* x_data, float* y_data, float learning_rate, s
 			float* cur_d_total = &m_d_total[d_total_idx];
 			float* prev_d_total = &m_d_total[d_total_idx - (m_dimensions[i] * num_elements)];
 
-			dot_prod_t_a << <(ceil(m_dimensions[i + 1] / 8), ceil(num_elements / 8)), (8, 8) >> > (weight, cur_d_total, prev_d_total, m_dimensions[i + 1], m_dimensions[i], m_dimensions[i + 1], num_elements);
+			void* dp_args[7] = { &weight, &cur_d_total, &prev_d_total, &m_dimensions[i + 1], &m_dimensions[i], &m_dimensions[i + 1], &num_elements };
+			void* af_args[4] = { &prev_total, &prev_d_total, &m_dimensions[i], &num_elements };
+
+			cudaLaunchKernel(dot_prod_t_a, ceil(m_dimensions[i + 1]), 8, dp_args, 0, nullptr);
 			cudaDeviceSynchronize();
 
+			std::cout << "dp_d_total: " << cudaGetErrorString(cudaGetLastError()) << "\n";
+
 			// multiply by activation function derivative
-			leaky_relu_derivative << <(ceil(m_dimensions[i + 1] / 8), ceil(num_elements / 8)), (8, 8) >> > (prev_total, prev_d_total, m_dimensions[i], num_elements);
+			cudaLaunchKernel(leaky_relu_derivative, ceil(m_dimensions[i + 1] / 8), 8, af_args, 0, nullptr);
 			cudaDeviceSynchronize();
+
+			std::cout << "af_deriv: " << cudaGetErrorString(cudaGetLastError()) << "\n";
 
 			d_total_idx -= m_dimensions[i] * num_elements;
 			weight_idx -= m_dimensions[i] * m_dimensions[i - 1];
-
-			std::cout << "d_total: " << cudaGetErrorString(cudaGetLastError()) << "\n";
 		}
 	}
 

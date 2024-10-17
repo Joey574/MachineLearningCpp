@@ -38,8 +38,8 @@ int main()
 	// Model fit information
 	Matrix x;
 	Matrix y;
-	Matrix x_test;
-	Matrix y_test;
+	Matrix x_t;
+	Matrix y_t;
 	size_t batch_size = 320;
 	size_t epochs = 20;
 	float learning_rate = 0.01f;
@@ -58,23 +58,26 @@ int main()
 	float lower_norm = 0.0f;
 	float upper_norm = 1.0f;
 
-	std::tie(x, y, x_test, y_test) = mnist.load_data(fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
+	std::tie(x, y, x_t, y_t) = mnist.load_data(fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
 	dims[0] = x.ColumnCount;
 
+	// construct data as CudaNet matrices
+	CudaNetwork::matrix x_train; x_train.rows = x.RowCount; x_train.cols = x.ColumnCount; x_train.mat = std::vector<float>(x.matrix, x.matrix + (x.RowCount * x.ColumnCount));
+	CudaNetwork::matrix y_train; y_train.rows = y.RowCount; y_train.cols = y.ColumnCount; y_train.mat = std::vector<float>(y.matrix, y.matrix + (y.RowCount * y.ColumnCount));
+
+	CudaNetwork::matrix x_test; x_test.rows = x_t.RowCount; x_test.cols = x_t.ColumnCount; x_test.mat = std::vector<float>(x_t.matrix, x_t.matrix + (x_t.RowCount * x_t.ColumnCount));
+	CudaNetwork::matrix y_test; y_test.rows = y_t.RowCount; y_test.cols = y_t.ColumnCount; y_test.mat = std::vector<float>(y_t.matrix, y_t.matrix + (y_t.RowCount * y_t.ColumnCount));
 
 	CudaNetwork model;
 
 	model.define(dims);
-
 	model.compile(CudaNetwork::weight_init::he);
 
 	model.fit(
-		x.matrix,
-		y.matrix,
-		x_test.matrix,
-		y_test.matrix,
-		x.RowCount,
-		x_test.RowCount,
+		x_train,
+		y_train,
+		x_test,
+		y_test,
 		batch_size,
 		epochs,
 		learning_rate,

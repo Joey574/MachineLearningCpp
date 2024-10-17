@@ -14,17 +14,21 @@ public:
 		he, normalize, xavier
 	};
 
+	struct matrix {
+		size_t rows;
+		size_t cols;
+		std::vector<float> mat;
+	};
+
 	void define(std::vector<size_t> dimensions);
 
 	void compile(weight_init init);
 
 	void fit(
-		float* x_train, 
-		float* y_train, 
-		float* x_test, 
-		float* y_test, 
-		size_t train_samples, 
-		size_t test_samples, 
+		matrix x_train,
+		matrix y_train,
+		matrix x_test,
+		matrix y_test,
 		size_t batch_size, 
 		size_t epochs,
 		float learning_rate,
@@ -61,9 +65,8 @@ private:
 
 	// mem init
 	void initialize_train_data(
-		float* d_x_train, float* d_y_train, float* d_x_test, float* d_y_test, 
-		float* h_x_train, float* h_y_train, float* h_x_test, float* h_y_test, 
-		size_t train_samples, size_t test_samples
+		float* d_x_train, float* d_y_train, float* d_x_test, float* d_y_test,
+		matrix h_x_train, matrix h_y_train, matrix h_x_test, matrix h_y_test
 	);
 	void initialize_batch_data(size_t batch_size);
 	void initialize_test_data(size_t test_size);

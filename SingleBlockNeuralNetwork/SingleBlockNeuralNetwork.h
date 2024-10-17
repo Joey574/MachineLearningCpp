@@ -59,9 +59,9 @@ public:
 	void deserialize(std::string filepath);
 
 	~NeuralNetwork() {
-		//_aligned_free(m_network);
-		//if (m_batch_data) { _aligned_free(m_batch_data); }
-		//if (m_test_data) { _aligned_free(m_test_data); }
+		//_aligned_free(m_network); m_network = nullptr;
+		//if (m_batch_data) { _aligned_free(m_batch_data); m_batch_data = nullptr; }
+		//if (m_test_data) { _aligned_free(m_test_data); m_test_data = nullptr; }
 	}
 
 private:

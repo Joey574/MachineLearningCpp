@@ -57,7 +57,7 @@ int main()
 	Matrix x;
 	Matrix y;
 	size_t batch_size = 320;
-	size_t epochs = 50;
+	size_t epochs = 180;
 	float learning_rate = 0.0005f;
 	bool shuffle = true;
 	int validation_freq = 1;
@@ -111,7 +111,7 @@ int main()
 	int f_width = 1920;
 	int f_height = 1080;
 
-	//make_bmp("NetworkImages/image_final.bmp", f_width, f_height, 0.95f, model, mandlebrot.create_image_features(f_width, f_height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
+	make_bmp("NetworkImages/image_final.bmp", f_width, f_height, 0.95f, model, mandlebrot.create_image_features(f_width, f_height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
 
 	model.serialize("network.txt");
 
