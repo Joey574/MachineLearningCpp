@@ -16,7 +16,7 @@ Dataset loaders are just stored in a static class in a .cpp file, easy enough to
 <br>
 
 ## Neural Networks
-There are many different iterations of neural networks in the solution, these are built as .lib files and stored in *Dependencies\lib* the following are the names of the aforementioned neural network projects.
+There are many different iterations of neural networks in the solution, these are built as .lib files and stored in **_Dependencies\lib_** the following are the names of the aforementioned neural network projects.
 * **NeuralNetwork**
 * **NeuralNetwork_2**
 * **SingleBlockNeuralNetwork**
