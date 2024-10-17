@@ -4,20 +4,19 @@ This project contains various different kinds of neural networks and datasets. C
 
 ## Datasets
 Some of the datasets / fractals included are
-
 * **MNIST**
 * **Mandlebrot**
+* **FMNIST**
 
 With future plans for datasets being
-* **fMNIST**
 * **Barnsley ferns**
 * **N-body simulation data**
 
-Datasets are currently stored in static classes in a .cpp file (yeah I know, let me be). Easy enough to include.
+Dataset loaders are just stored in a static class in a .cpp file, easy enough to include. The actual datasets are located in **_Dependencies\lib_**
 <br>
 
 ## Neural Networks
-There are many different iterations of neural networks in the solution, these are built as .lib files and stored in *Dependencies\lib* the following are the names of the aforementioned neural network projects.
+There are many different iterations of neural networks in the solution, these are built as .lib files and stored in **_Dependencies\lib_** the following are the names of the aforementioned neural network projects.
 * **NeuralNetwork**
 * **NeuralNetwork_2**
 * **SingleBlockNeuralNetwork**

@@ -50,7 +50,25 @@ std::string NeuralNetwork::summary() {
 			out.append("NaN | ");
 		}
 	}
-	out.append("\n");
+
+	out.append("\n\tparameters := ").append(std::to_string(m_network_size));
+	out.append("\n\tnetwork_size := ");
+
+	double net_size = m_network_size * sizeof(float);
+
+	const double gb = 1000000000.00;
+	const double mb = 1000000.00;
+	const double kb = 1000.00;
+
+	if (net_size > gb) {
+		out.append(std::to_string(net_size / gb)).append(" gb\n");
+	} else if (net_size > mb) {
+		out.append(std::to_string(net_size / mb)).append(" mb\n");
+	} else if (net_size > kb) {
+		out.append(std::to_string(net_size / kb)).append(" kb\n");
+	} else {
+		out.append(std::to_string(net_size)).append(" bytes\n");
+	}
 
 	out.append("\n");
 	return out;
