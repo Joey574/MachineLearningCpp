@@ -1,26 +1,26 @@
 #include "SingleBlockCudaNetwork.h"
 
-void CudaNetwork::initialize_train_data(float* d_x_train, float* d_y_train, float* d_x_test, float* d_y_test, matrix h_x_train, matrix h_y_train, matrix h_x_test, matrix h_y_test) {
+void CudaNetwork::initialize_train_data(float** d_x_train, float** d_y_train, float** d_x_test, float** d_y_test, matrix h_x_train, matrix h_y_train, matrix h_x_test, matrix h_y_test) {
 	// initialize training data on the gpu
-	cudaMalloc(&d_x_train, h_x_train.rows * h_x_train.cols * sizeof(float));
-	cudaMalloc(&d_y_train, h_y_train.rows * h_y_train.cols * sizeof(float));
+	cudaMalloc(d_x_train, h_x_train.rows * h_x_train.cols * sizeof(float));
+	cudaMalloc(d_y_train, h_y_train.rows * h_y_train.cols * sizeof(float));
 
-	cudaMalloc(&d_x_test, h_x_test.rows * h_x_test.cols * sizeof(float));
-	cudaMalloc(&d_y_test, h_y_test.rows * h_y_test.cols * sizeof(float));
+	cudaMalloc(d_x_test, h_x_test.rows * h_x_test.cols * sizeof(float));
+	cudaMalloc(d_y_test, h_y_test.rows * h_y_test.cols * sizeof(float));
 
 
-	cudaMemcpy(d_x_train, &h_x_train.mat[0], h_x_train.rows * h_x_train.cols * sizeof(float), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_y_train, &h_y_train.mat[0], h_y_train.rows * h_y_train.cols * sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(*d_x_train, h_x_train.mat.data(), h_x_train.rows * h_x_train.cols * sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(*d_y_train, h_y_train.mat.data(), h_y_train.rows * h_y_train.cols * sizeof(float), cudaMemcpyHostToDevice);
 
-	cudaMemcpy(d_x_test, &h_x_test.mat[0], h_x_test.rows * h_x_test.cols * sizeof(float), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_y_test, &h_y_test.mat[0], h_y_test.rows * h_y_test.cols * sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(*d_x_test, h_x_test.mat.data(), h_x_test.rows * h_x_test.cols * sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(*d_y_test, h_y_test.mat.data(), h_y_test.rows * h_y_test.cols * sizeof(float), cudaMemcpyHostToDevice);
 }
 void CudaNetwork::initialize_batch_data(size_t batch_size) {
 	m_batch_activation_size = 0;
 
 	m_batch_data_size = m_network_size;
 
-	for (size_t i = 0; i < m_dimensions.size(); i++) {
+	for (size_t i = 1; i < m_dimensions.size(); i++) {
 		m_batch_data_size += 3 * (m_dimensions[i] * batch_size);
 		m_batch_activation_size += m_dimensions[i] * batch_size;
 	}
@@ -35,18 +35,14 @@ void CudaNetwork::initialize_batch_data(size_t batch_size) {
 
 }
 void CudaNetwork::initialize_test_data(size_t test_size) {
-	size_t size = 0;
-
 	m_test_activation_size = 0;
 
 	for (size_t i = 1; i < m_dimensions.size(); i++) {
-		size += 2 * (m_dimensions[i] * test_size);
-
 		m_test_activation_size += m_dimensions[i] * test_size;
 	}
 
-	cudaMalloc(&m_test_data, size * sizeof(float));
-	m_test_activation = &m_test_data[m_test_activation_size];
+	cudaMalloc(&m_test_data, 2 * m_test_activation_size * sizeof(float));
+	m_test_activation = m_test_data + m_test_activation_size;
 }
 
 void CudaNetwork::define(std::vector<size_t> dimensions) {
@@ -133,38 +129,30 @@ void CudaNetwork::fit(matrix x_train, matrix y_train, matrix x_test, matrix y_te
 	auto start_time = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double, std::milli> time;
 
-	float* d_x_train, * d_y_train, * d_x_test, * d_y_test;
+	float *d_x_train, *d_y_train, *d_x_test, *d_y_test;
 	const size_t iterations = x_train.rows / batch_size;
 
-	initialize_train_data(d_x_train, d_y_train, d_x_test, d_y_test, x_train, y_train, x_test, y_test);
+	initialize_train_data(&d_x_train, &d_y_train, &d_x_test, &d_y_test, x_train, y_train, x_test, y_test);
 	initialize_batch_data(batch_size);
 	initialize_test_data(x_test.rows);
 
-	cudaError_t err = cudaGetLastError();
-	if (err != cudaSuccess) {
-		std::cout << "Status: cuda memory failed to initialize: " << cudaGetErrorString(err) << "\n";
-	} else {
-		std::cout << "Status: cuda_memory_initialized\n";
-	}
+	std::cout << "w_ptr: " << m_network << "\n";
+	std::cout << "b_ptr: " << m_bias << "\n";
+	std::cout << "x_test_ptr: " << d_x_test << "\n";
+	std::cout << "y_test_ptr: " << d_y_test << "\n";
 
 	for (size_t e = 0; e < epochs; e++) {
 		auto epoch_start_time = std::chrono::high_resolution_clock::now();
 
 		for (size_t i = 0; i < iterations; i++) {
 
-			cudaError_t err;
+			float* d_x = d_x_train + (i * batch_size * x_train.cols);
+			float* d_y = d_y_train + (i * batch_size * y_train.cols);
 
-			float* x = d_x_train + (i * batch_size) * x_train.cols;
-			float* y = d_y_train + (i * batch_size) * y_train.cols;
-
-			forward_prop(x, m_batch_data, m_batch_activation_size, batch_size);
-
-			// idk if this is needed here again :/
-			x = &d_x_train[(i * batch_size) * m_dimensions[0]];
-
-			back_prop(x, y, learning_rate, batch_size);
+			forward_prop(d_x, m_batch_data, m_batch_activation_size, batch_size);
+			back_prop(d_x, d_y, learning_rate, batch_size);
 		}
-
+		std::cout << "\niter: " << cudaGetErrorString(cudaGetLastError()) << "\n";
 		std::cout << verbose(d_x_test, d_y_test, x_test.rows, e, validation_freq, epoch_start_time);
 	}
 	time = std::chrono::high_resolution_clock::now() - start_time;
@@ -193,40 +181,30 @@ void CudaNetwork::forward_prop(float* x_data, float* result_data, size_t activat
 
 		dim3 grid(ceil((num_elements * m_dimensions[i + 1]) / 8));
 
-		float* weights = &m_network[weight_idx];
-		float* bias = &m_bias[bias_idx];
+		float* weights = m_network + weight_idx;
+		float* bias = m_bias + bias_idx;
 
-		float* input = i == 0 ? &x_data[0] : &result_data[input_idx + activation_size];
-		float* output = &result_data[output_idx];
+		float* input = i == 0 ? x_data : (result_data + input_idx + activation_size);
+		float* output = result_data + output_idx;
+		float* activation = &output[activation_size];
 
 		// arguments
 		void* dp_args[7] = { &weights, &input, &output, &m_dimensions[i + 1], &m_dimensions[i],(i == 0 ? &num_elements : &m_dimensions[i]), (i == 0 ? &m_dimensions[i] : &num_elements) };
 		void* ba_args[4] = { &output, &bias, &m_dimensions[i + 1], &num_elements };
-		void* af_args[4] = { &output, &output[activation_size], &m_dimensions[i + 1], &num_elements };
-
-		cudaGetLastError();
-
-		std::cout << "\n" << i << "\n";
-		std::cout << "grid: (" << grid.x << ", " << grid.y << ", " << grid.z << ")\n";
+		void* af_args[4] = { &output, &activation, &m_dimensions[i + 1], &num_elements };
 
 		i == 0 ? cudaLaunchKernel(dot_prod_t_b, grid, 8, dp_args, 0, nullptr) :
 				 cudaLaunchKernel(dot_prod, grid, 8, dp_args, 0, nullptr);
 		cudaDeviceSynchronize();
 
-		std::cout << "dot_prod: " << cudaGetErrorString(cudaGetLastError()) << "\n";
-
 		// add bias
 		cudaLaunchKernel(horizontal_add, ceil(m_dimensions[i + 1] / 8), 8, ba_args, 0, nullptr);
 		cudaDeviceSynchronize();
 
-		std::cout << "bias_add: " << cudaGetErrorString(cudaGetLastError()) << "\n";
-
 		// activation funciton
-		//cudaLaunchKernel(leaky_relu, grid, 8, af_args, 0, nullptr);
-		leaky_relu << <grid, 8 >> > (output, &output[activation_size], m_dimensions[i + 1], num_elements);
+		cudaLaunchKernel(leaky_relu, grid, 8, af_args, 0, nullptr);
+		//leaky_relu << <grid, 8 >> > (output, &output[activation_size], m_dimensions[i + 1], num_elements);
 		cudaDeviceSynchronize();
-
-		std::cout << "activation_function: " << cudaGetErrorString(cudaGetLastError()) << "\n";
 
 		weight_idx += m_dimensions[i] * m_dimensions[i + 1];
 		bias_idx += m_dimensions[i + 1];
@@ -247,12 +225,8 @@ void CudaNetwork::back_prop(float* x_data, float* y_data, float learning_rate, s
 
 		void* args[5] = { &last_activation, &last_d_total, &y_data, &m_dimensions.back(), &num_elements };
 		
-		std::cout << "\nloss info:\n" << last_activation << "\n" << last_d_total << "\n" << num_elements << "\n" << m_dimensions.back() << "\n";
-
 		cudaLaunchKernel(one_hot_loss, ceil(num_elements / 8), 8, args, 0, nullptr);
 		cudaDeviceSynchronize();
-
-		std::cout << "loss: " << cudaGetErrorString(cudaGetLastError()) << "\n\n";
 	}
 
 
@@ -277,13 +251,9 @@ void CudaNetwork::back_prop(float* x_data, float* y_data, float learning_rate, s
 			cudaLaunchKernel(dot_prod_t_a, ceil(m_dimensions[i + 1]), 8, dp_args, 0, nullptr);
 			cudaDeviceSynchronize();
 
-			std::cout << "dp_d_total: " << cudaGetErrorString(cudaGetLastError()) << "\n";
-
 			// multiply by activation function derivative
 			cudaLaunchKernel(leaky_relu_derivative, ceil(m_dimensions[i + 1] / 8), 8, af_args, 0, nullptr);
 			cudaDeviceSynchronize();
-
-			std::cout << "af_deriv: " << cudaGetErrorString(cudaGetLastError()) << "\n";
 
 			d_total_idx -= m_dimensions[i] * num_elements;
 			weight_idx -= m_dimensions[i] * m_dimensions[i - 1];
@@ -373,6 +343,12 @@ void CudaNetwork::back_prop(float* x_data, float* y_data, float learning_rate, s
 
 std::string CudaNetwork::test_network(float* x, float* y, size_t test_size) {
 
+	std::cout << "w_ptr: " << m_network << "\n";
+	std::cout << "b_ptr: " << m_bias << "\n";
+	std::cout << "x_ptr: " << x << "\n";
+	std::cout << "y_ptr: " << y << "\n";
+	std::cout << "test_activ_size: " << m_test_activation_size << "\n";
+
 	forward_prop(x, m_test_data, m_test_activation_size, test_size);
 
 	int* d_correct;
@@ -381,13 +357,10 @@ std::string CudaNetwork::test_network(float* x, float* y, size_t test_size) {
 	cudaMalloc(&d_correct, sizeof(int));
 	cudaMemset(d_correct, 0, sizeof(int));
 
-	cudaError_t err = cudaGetLastError();
+	float* prediction = m_test_activation + m_test_activation_size - (m_dimensions.back() * test_size);
+	void* args[5] = { &prediction, &y, &d_correct, &m_dimensions.back(), &test_size };
 
-	if (err != cudaSuccess) {
-		std::cout << "ERROR: " << cudaGetErrorString(err) << "\n";
-	}
-
-	accuracy_score << <(ceil(test_size / 8)), 8 >> > (&m_test_activation[m_test_activation_size - (m_dimensions.back() * test_size)], y, d_correct, m_dimensions.back(), test_size);
+	cudaLaunchKernel(accuracy_score, ceil(test_size / 8), 7, args, 0, nullptr);
 
 	cudaMemcpy(&correct, d_correct, sizeof(int), cudaMemcpyDeviceToHost);
 	cudaDeviceSynchronize();

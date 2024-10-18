@@ -65,7 +65,7 @@ private:
 
 	// mem init
 	void initialize_train_data(
-		float* d_x_train, float* d_y_train, float* d_x_test, float* d_y_test,
+		float** d_x_train, float** d_y_train, float** d_x_test, float** d_y_test, 
 		matrix h_x_train, matrix h_y_train, matrix h_x_test, matrix h_y_test
 	);
 	void initialize_batch_data(size_t batch_size);
