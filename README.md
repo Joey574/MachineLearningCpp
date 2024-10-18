@@ -12,7 +12,7 @@ With future plans for datasets being
 * **Barnsley ferns**
 * **N-body simulation data**
 
-Dataset loaders are just stored in a static class in a .cpp file, easy enough to include. The actual datasets are located in **_Dependencies\lib_**
+Dataset loaders are just stored in a static class in a .cpp file, easy enough to include. The actual datasets are located in **_Dependencies\datasets_**
 <br>
 
 ## Neural Networks
