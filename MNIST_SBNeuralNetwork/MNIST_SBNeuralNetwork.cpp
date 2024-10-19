@@ -33,8 +33,9 @@ int main()
 	srand(time(0));
 
 	// Model definitions
-	std::vector<size_t> dims = { 784, 2048, 2048, 10 };
+	std::vector<size_t> dims = { 784, 1024, 1024, 1024, 10 };
 	std::vector<NeuralNetwork::activation_functions> act = {
+		NeuralNetwork::activation_functions::leaky_relu,
 		NeuralNetwork::activation_functions::leaky_relu,
 		NeuralNetwork::activation_functions::leaky_relu,
 		NeuralNetwork::activation_functions::sigmoid

@@ -90,7 +90,7 @@ int main()
 
 	for (int i = 0; i < 20; i++) {
 
-		std::tie(x, y) = mandlebrot.make_dataset(100000, 250, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
+		std::tie(x, y) = mandlebrot.make_dataset(100000, 500, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
 
 		model.fit(
 			x,
@@ -105,13 +105,13 @@ int main()
 			validation_split
 		);
 
-		make_bmp("NetworkImages/5_image_" + std::to_string(i).append(".bmp"), width, height, 0.95f, model, mandlebrot.create_image_features(width, height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
+		make_bmp("NetworkImages/6_image_" + std::to_string(i).append(".bmp"), width, height, 0.95f, model, mandlebrot.create_image_features(width, height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
 	}
 	
 	int f_width = 1920;
 	int f_height = 1080;
 
-	make_bmp("NetworkImages/5_image_final.bmp", f_width, f_height, 0.95f, model, mandlebrot.create_image_features(f_width, f_height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
+	make_bmp("NetworkImages/6_image_final.bmp", f_width, f_height, 0.95f, model, mandlebrot.create_image_features(f_width, f_height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
 
 	model.serialize("network.txt");
 
