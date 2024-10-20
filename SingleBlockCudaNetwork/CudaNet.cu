@@ -158,8 +158,8 @@ void CudaNetwork::fit(matrix x_train, matrix y_train, matrix x_test, matrix y_te
 	time = std::chrono::high_resolution_clock::now() - start_time;
 
 
-	cudaFree(m_batch_data);
-	cudaFree(m_test_data);
+	cudaFree(m_batch_data); m_batch_data = nullptr;
+	cudaFree(m_test_data); m_test_data = nullptr;
 
 	cudaFree(d_x_train);
 	cudaFree(d_y_train);
@@ -193,9 +193,24 @@ void CudaNetwork::forward_prop(float* x_data, float* result_data, size_t activat
 		void* ba_args[4] = { &output, &bias, &m_dimensions[i + 1], &num_elements };
 		void* af_args[4] = { &output, &activation, &m_dimensions[i + 1], &num_elements };
 
+		if (num_elements == 10000) {
+			std::cout << "\n" << i << "\n";
+			std::cout << cudaGetErrorString(cudaGetLastError()) << "\n";
+			std::cout << "input: " << input << "\n";
+			std::cout << "output: " << output << "\n";
+			std::cout << "weights: " << weights << "\n";
+			std::cout << "m_dim[i]: " << m_dimensions[i] << "\nm_dim[i + 1]: " << m_dimensions[i + 1] << "\n";
+			std::cout << "input_idx: " << input_idx << "\n";
+			std::cout << "activation_size: " << activation_size << "\n";
+		} 
+
 		i == 0 ? cudaLaunchKernel(dot_prod_t_b, grid, 8, dp_args, 0, nullptr) :
 				 cudaLaunchKernel(dot_prod, grid, 8, dp_args, 0, nullptr);
 		cudaDeviceSynchronize();
+		
+		if (num_elements == 10000) {
+			std::cout << cudaGetErrorString(cudaGetLastError()) << "\n";
+		}
 
 		// add bias
 		cudaLaunchKernel(horizontal_add, ceil(m_dimensions[i + 1] / 8), 8, ba_args, 0, nullptr);
@@ -338,6 +353,7 @@ void CudaNetwork::back_prop(float* x_data, float* y_data, float learning_rate, s
 	{
 		update_weights << < ceil(m_weights_size / 8), 8 >> > (m_network, m_d_weights, factor, m_weights_size);
 		update_bias << < ceil(m_bias_size / 8), 8 >> > (m_bias, m_d_bias, factor, m_bias_size);
+		cudaDeviceSynchronize();
 	}
 }
 
@@ -348,8 +364,11 @@ std::string CudaNetwork::test_network(float* x, float* y, size_t test_size) {
 	std::cout << "x_ptr: " << x << "\n";
 	std::cout << "y_ptr: " << y << "\n";
 	std::cout << "test_activ_size: " << m_test_activation_size << "\n";
+	std::cout << "test_size: " << test_size << "\n";
 
 	forward_prop(x, m_test_data, m_test_activation_size, test_size);
+
+	std::cout << "fp error: " << cudaGetErrorString(cudaGetLastError()) << "\n";
 
 	int* d_correct;
 	int correct = -1;
