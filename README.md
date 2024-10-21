@@ -69,13 +69,13 @@ block
 
 I also make heavy use of pointer arithmetic to make my life easier, such as *m_biases* which points to **_biases_**, *m_test_activation* which points to... you guessed it, **_test_activation_**, and so on so forth.
 <br><br>
-The main benefit of this network over the **NeuralNetwork class** is that it allocates all the memory it needs up front. By doing this, we avoid the creation of temp objects and massive copies, instead just storing the data directly where we want it to be in the first place. Another benefit of doing this is we can chain operations together much better, for exmaple, if we wanted to do **_A = B + (C * D)_** where A, B, C, D are all matrices of the same size (element-wise operations as well), in the **matrix class** that would look something like this
+The main benefit of this network over the **NeuralNetwork class** is that it allocates all the memory it needs up front. By doing this, we avoid the creation of temp objects and massive copies, instead just storing the data directly where we want it to be in the first place. Another benefit of doing this is we can chain operations together much better, for exmaple, if we wanted to do **_A = B * C + D_** where A, B, C, D are all matrices of the same size (element-wise operations as well), in the **matrix class** that would look something like this
 
 ```mermaid
     flowchart TD
-    a(Create temp1) --> b(Store C * D in temp1)
-    b --> c(Create temp2) -->d(Store B + temp1 in temp2)
-    d --> e(Copy data to A)
+    a(Create temp1) --> b(Store B * C in temp1)
+    b --> c(Create temp2) -->d(Store temp1 + D in temp2)
+    d --> e(Copy temp2 to A)
 ```
 
 Quite a lot of work, and most of it is pointless too. Instead, if we apply a minimal amount of thinking, we can do this.
@@ -85,7 +85,7 @@ Quite a lot of work, and most of it is pointless too. Instead, if we apply a min
     a(Store the result in A)
 ```
 
-Woah! That's insane! As it turns out, if we know we want the data to be in A from the beginning, we can just directly store data into A, on top of that, in this specific example, we can directly compute **_B + (C * D)_** with a fmadd simd instrinsic leaving us with just a few instructions, much better than all the temp objects and copies we were previously doing.
+Woah! That's insane! As it turns out, if we know we want the data to be in A from the beginning, we can just directly store data into A, on top of that, in this specific example, we can directly compute **_B * C + D_** with a fmadd simd instrinsic leaving us with just a few instructions, much better than all the temp objects and copies we were previously doing.
 <br><br>
 Transposes are also a big part of forward_prop and back_prop, however, these transposes are only really used in dot products with other matrices, as such, if we just *read* the data in a transposed manner, we can get the right result, without having to bother with actually transposing the matrix. Changing around a couple for loops also ensures we maintain decent cache access.
 <br><br>
