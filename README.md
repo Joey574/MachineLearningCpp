@@ -63,12 +63,13 @@ end
 This project aims to take the organization I learned from NeuralNetwork and lobotomize it with template metaprogramming and other eldritch techniques
 
 ### Single-Block Neural Network
-This project completely does away with the Matrix class I poured my soul into, instead it opts for the ever loved pointers. Specifically, I allocate memory for three different pointers
+This project completely does away with the **Matrix** class I poured my soul into, instead it opts for the ever loved pointers. Specifically, I allocate memory for three different pointers
 * *m_network*
 * *m_batch_data*
 * *m_test_data*
 
-which are structured as follows <br>
+which are structured as follows 
+<br>
 
 ```mermaid
 block-beta
@@ -124,7 +125,7 @@ Overall I observed a 3-4x performance boost using this class over the **NeuralNe
 
 ### Single-Block Cuda Network
 **CURRENTLY NOT WORKING** <br>
-This project is my first attempt at running a neural network completely on cuda, I hope to use a similair design to SingleBlockNeuralNetwork
+This project is my first attempt at running a neural network completely on cuda, I hope to use a similair design to **SingleBlockNeuralNetwork**
 
 
 ## Actual Projects
@@ -137,21 +138,22 @@ Ok so now we've convered the stuff that does all the math, I'd like to mention t
 <br>
 
 ### MNISTNetwork
-This network trains on the MNIST dataset using the **NeuralNetwork** lib file, truly machine learning 101, nothing all that special to say about it.
+This network trains on the **MNIST** dataset using the **NeuralNetwork** class, truly machine learning 101, nothing all that special to say about it.
 <br>
 
 ### MNIST_SBNeuralNetwork
-This one, while quite a mouthful, trains on the MNIST dataset, using the **SingleBlockNeuralNetwork** lib file, this project currently holds my record on mnist of **98.47%** which was achieved using 3 hidden layers of size 1024, and leaky_relu activation in the hidden layers, and sigmoid for the final.
+This one, while quite a mouthful, trains on the **MNIST** dataset, using the **SingleBlockNeuralNetwork** class, this project currently holds my record on mnist of **98.47%** which was achieved using 3 hidden layers of size 1024, and leaky_relu activation in the hidden layers, and sigmoid for the final.
 <br>
 
 ### MNIST_CNN
-This network trains on... yet again, kinda in the name, the MNIST dataset, using the **SingleBlockCudaNetwork** lib file, although at time of writing, is still not functional.
+This network trains on, yet again, the **MNIST** dataset using the **SingleBlockCudaNetwork** class, although at time of writing, is still not functional.
 <br>
 
 ### MandlebrotNetwork
 This network is what really got me into fractals and neural networks alike, taking inspiration from 
 <br>
-https://www.youtube.com/watch?v=TkwXa7Cvfr8 (great video by the way you should totally watch it)<br>
+https://www.youtube.com/watch?v=TkwXa7Cvfr8 (great video by the way you should totally watch it)
+<br>
 I took the idea of approximating the mandlebrot with neural networks and ran with it, this specific version uses the **NeuralNetwork** class, some of the better images it produced being
 <br><br>
 
@@ -167,10 +169,11 @@ I took the idea of approximating the mandlebrot with neural networks and ran wit
 ### Mandlebrot_SBNN
 Thinking about how much time I spent using the old network pains me, with the performance improvements I managed with the **SingleBlockNeuralNetwork** perhaps I could've actually touched grass. At any rate this uses the aforementioned network and approximates the mandlebrot. 
 <br><br>
-As I finished this one much more recently, and I kind of exhausted myself on the mandlebrot already, I haven't trained with this one anywhere near as much, however, heres the best one I got
+As I finished this one much more recently, and I kind of exhausted myself on the mandlebrot already, I haven't trained with this one anywhere near as much, as such predictions are much lower quality.
 
 ![Mandlebrot lesser approximation](https://github.com/Joey574/MLImageLearning/blob/main/Mandlebrot%20Aproximations/9-12-24%20Desktop/big%20net%2C%20new%20system/final.bmp)
 
 ## Honorable Mentions
 
 ### Matrix
+Truly this is where it began
