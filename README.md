@@ -40,7 +40,7 @@ Fit --> fp{{Forward Prop}} & bp{{Back Prop}}
 ```mermaid
 flowchart TD
 subgraph ForwardProp
-fpa{{Compute total values}} --> fpb{{Apply activation}}
+fpa{{Compute total values}} --> fpb{{Apply activation function}}
 end
 
 subgraph BackProp
@@ -52,7 +52,7 @@ da{{Set dimensions, sizes, and activation data}}
 end
 
 subgraph Compile
-ca{{Initialize pointer to loss and activation functions}} --> cb{{Allocate and initialize weights and biases}}
+ca{{Set pointers to loss and activation functions}} --> cb{{Allocate and initialize weights and biases}}
 end
 ```
 
