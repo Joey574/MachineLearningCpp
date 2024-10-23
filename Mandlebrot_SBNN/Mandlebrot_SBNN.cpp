@@ -4,7 +4,7 @@
 #include "SingleBlockNeuralNetwork.h"
 #include "Mandlebrot.cpp"
 
-void make_bmp(std::string filename, int width, int height, float confidence_threshold, NeuralNetwork model, Matrix image_data) {
+void make_bmp(std::string filename, int width, int height, float confidence_threshold, NeuralNetwork& model, const Matrix& image_data) {
 
 	auto start = std::chrono::high_resolution_clock::now();
 
@@ -17,14 +17,10 @@ void make_bmp(std::string filename, int width, int height, float confidence_thre
 	image.Create(width, height, 24);
 
 	for (int y = 0; y < height; y++) {
+
 		std::vector<float> pixel_data = model.predict(image_data.SegmentR((y * width), (y * width) + width));
 
-		for (int x = 0; x < width; x++) {
-
-			std::vector<float> color = Mandlebrot::gradient(x, y, pixel_data[x], confidence_threshold, Mandlebrot::gradient_type::red_secondary);
-
-			image.SetPixel(x, y, RGB(color[0], color[1], color[2]));
-		}
+		Mandlebrot::fill_gradient(y, pixel_data, (BYTE*)image.GetPixelAddress(0, y), confidence_threshold, Mandlebrot::gradient_type::red_secondary);
 	}
 
 	image.Save(wideStr.c_str(), Gdiplus::ImageFormatBMP);
@@ -42,8 +38,11 @@ int main()
 	srand(time(0));
 
 	// Model definitions
-	std::vector<size_t> dims = { 2, 512, 512, 512, 512, 512, 512, 1 };
+	std::vector<size_t> dims = { 2, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1 };
 	std::vector<NeuralNetwork::activation_functions> act = {
+		NeuralNetwork::activation_functions::leaky_relu,
+		NeuralNetwork::activation_functions::leaky_relu,
+		NeuralNetwork::activation_functions::leaky_relu,
 		NeuralNetwork::activation_functions::leaky_relu,
 		NeuralNetwork::activation_functions::leaky_relu,
 		NeuralNetwork::activation_functions::leaky_relu,
@@ -57,8 +56,8 @@ int main()
 	Matrix x;
 	Matrix y;
 	size_t batch_size = 640;
-	size_t epochs = 180;
-	float learning_rate = 0.0001f;
+	size_t epochs = 5;
+	float learning_rate = 0.00001f;
 	bool shuffle = true;
 	int validation_freq = 1;
 	float validation_split = 0.1f;
@@ -82,14 +81,26 @@ int main()
 	NeuralNetwork model;
 
 	model.define(dims, act);
-	model.deserialize("network.txt");
+	//model.deserialize("network.txt");
 	model.compile(NeuralNetwork::loss_metric::mae, NeuralNetwork::loss_metric::mae, NeuralNetwork::weight_init::he);
 
-	int width = 320;
-	int height = 180;
+	/* 16:9 resolutions
+	
+	160 x 90
+	320 x 180
+	960 x 540
+	1280 x 720
+	1920 x 1080
+	
+	*/
 
-	for (int i = 0; i < 20; i++) {
+	int width = 960;
+	int height = 540;
 
+	const Matrix image_features = mandlebrot.create_image_features(width, height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
+
+
+	for (int i = 0; i < 500; i++) {
 		std::tie(x, y) = mandlebrot.make_dataset(100000, 500, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
 
 		model.fit(
@@ -105,14 +116,15 @@ int main()
 			validation_split
 		);
 
-		make_bmp("NetworkImages/6_image_" + std::to_string(i).append(".bmp"), width, height, 0.95f, model, mandlebrot.create_image_features(width, height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
+		make_bmp("NetworkImages/1_image_" + std::to_string(i).append(".bmp"), width, height, 0.95f, model, image_features);
 	}
 	
+
 	int f_width = 1920;
 	int f_height = 1080;
 
-	make_bmp("NetworkImages/6_image_final.bmp", f_width, f_height, 0.95f, model, mandlebrot.create_image_features(f_width, f_height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
+	//make_bmp("NetworkImages/image_final.bmp", f_width, f_height, 0.95f, model, mandlebrot.create_image_features(f_width, f_height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
 
-	model.serialize("network.txt");
+	model.serialize("128_1024_9_network.txt");
 
 }

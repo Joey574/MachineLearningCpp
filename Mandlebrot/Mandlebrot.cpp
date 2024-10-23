@@ -178,6 +178,21 @@ public:
          
      }
 
+     static void fill_gradient(int y, const std::vector<float>& pred, BYTE* store, float conf_thresh, gradient_type type) {
+         switch (type) {
+         case gradient_type::red_secondary:
+
+             #pragma omp parallel for
+             for (size_t i = 0; i < pred.size(); i++) {
+                 store[i * 3 + 1] = pred[i] > conf_thresh ? 0xFF : 0x00;
+                 store[i * 3] = pred[i] > conf_thresh ? 0xFF : 0x00;
+                 store[i * 3 + 2] = (BYTE)(pred[i] * 255.0f);
+                     // { value * 255.0f, value > conf_thresh ? 255.0f : 0.0f, value > conf_thresh ? 255.0f : value };
+             }
+             break;
+         }
+     }
+
 private:
     float xMin = -2.5f;
     float xMax = 1.0f;
