@@ -85,6 +85,7 @@ void NeuralNetwork::serialize(std::string filepath) {
 	// write network
 	fw.write(reinterpret_cast<const char*>(m_network), m_network_size * sizeof(float));
 
+	fw.close();
 }
 void NeuralNetwork::deserialize(std::string filepath) {
 	loaded = true;
@@ -111,4 +112,6 @@ void NeuralNetwork::deserialize(std::string filepath) {
 
 	// read network
 	fr.read(reinterpret_cast<char*>(m_network), m_network_size * sizeof(float));
+
+	fr.close();
 }

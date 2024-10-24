@@ -81,7 +81,7 @@ int main()
 	NeuralNetwork model;
 
 	model.define(dims, act);
-	//model.deserialize("network.txt");
+	model.deserialize("128_1024_9_network.txt");
 	model.compile(NeuralNetwork::loss_metric::mae, NeuralNetwork::loss_metric::mae, NeuralNetwork::weight_init::he);
 
 	/* 16:9 resolutions
@@ -116,7 +116,9 @@ int main()
 			validation_split
 		);
 
-		make_bmp("NetworkImages/1_image_" + std::to_string(i).append(".bmp"), width, height, 0.95f, model, image_features);
+		make_bmp("NetworkImages/2_image_" + std::to_string(i).append(".bmp"), width, height, 0.95f, model, image_features);
+
+		model.serialize("128_1024_9_network.txt");
 	}
 	
 
@@ -125,6 +127,5 @@ int main()
 
 	//make_bmp("NetworkImages/image_final.bmp", f_width, f_height, 0.95f, model, mandlebrot.create_image_features(f_width, f_height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
 
-	model.serialize("128_1024_9_network.txt");
 
 }
