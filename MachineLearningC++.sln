@@ -41,6 +41,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FMNIST", "FMNIST\FMNIST.vcx
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FMNIST_SBNN", "FMNIST_SBNN\FMNIST_SBNN.vcxproj", "{69462A3F-1907-4089-AE5A-170DECA0AC9B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SBNN_GeneralMenu", "SBNN_GeneralMenu\SBNN_GeneralMenu.vcxproj", "{F34585A7-6814-4FBC-B9B8-3E960C5A590A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -201,6 +203,14 @@ Global
 		{69462A3F-1907-4089-AE5A-170DECA0AC9B}.Release|x64.Build.0 = Release|x64
 		{69462A3F-1907-4089-AE5A-170DECA0AC9B}.Release|x86.ActiveCfg = Release|Win32
 		{69462A3F-1907-4089-AE5A-170DECA0AC9B}.Release|x86.Build.0 = Release|Win32
+		{F34585A7-6814-4FBC-B9B8-3E960C5A590A}.Debug|x64.ActiveCfg = Debug|x64
+		{F34585A7-6814-4FBC-B9B8-3E960C5A590A}.Debug|x64.Build.0 = Debug|x64
+		{F34585A7-6814-4FBC-B9B8-3E960C5A590A}.Debug|x86.ActiveCfg = Debug|Win32
+		{F34585A7-6814-4FBC-B9B8-3E960C5A590A}.Debug|x86.Build.0 = Debug|Win32
+		{F34585A7-6814-4FBC-B9B8-3E960C5A590A}.Release|x64.ActiveCfg = Release|x64
+		{F34585A7-6814-4FBC-B9B8-3E960C5A590A}.Release|x64.Build.0 = Release|x64
+		{F34585A7-6814-4FBC-B9B8-3E960C5A590A}.Release|x86.ActiveCfg = Release|Win32
+		{F34585A7-6814-4FBC-B9B8-3E960C5A590A}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

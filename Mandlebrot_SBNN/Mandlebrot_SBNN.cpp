@@ -38,14 +38,8 @@ int main()
 	srand(time(0));
 
 	// Model definitions
-	std::vector<size_t> dims = { 2, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1 };
+	std::vector<size_t> dims = { 2, 512, 512, 512, 1 };
 	std::vector<NeuralNetwork::activation_functions> act = {
-		NeuralNetwork::activation_functions::leaky_relu,
-		NeuralNetwork::activation_functions::leaky_relu,
-		NeuralNetwork::activation_functions::leaky_relu,
-		NeuralNetwork::activation_functions::leaky_relu,
-		NeuralNetwork::activation_functions::leaky_relu,
-		NeuralNetwork::activation_functions::leaky_relu,
 		NeuralNetwork::activation_functions::leaky_relu,
 		NeuralNetwork::activation_functions::leaky_relu,
 		NeuralNetwork::activation_functions::leaky_relu,
@@ -57,7 +51,7 @@ int main()
 	Matrix y;
 	size_t batch_size = 640;
 	size_t epochs = 5;
-	float learning_rate = 0.00001f;
+	float learning_rate = 0.001f;
 	bool shuffle = true;
 	int validation_freq = 1;
 	float validation_split = 0.1f;
@@ -65,7 +59,7 @@ int main()
 	// Feature engineering and dataset processing
 	Mandlebrot mandlebrot;
 
-	int fourier = 128;
+	int fourier = 92;
 	int taylor = 0;
 	int chebyshev = 0;
 	int legendre = 0;
@@ -81,7 +75,7 @@ int main()
 	NeuralNetwork model;
 
 	model.define(dims, act);
-	model.deserialize("128_1024_9_network.txt");
+	//model.deserialize("128_1024_9_network.txt");
 	model.compile(NeuralNetwork::loss_metric::mae, NeuralNetwork::loss_metric::mae, NeuralNetwork::weight_init::he);
 
 	/* 16:9 resolutions
@@ -101,7 +95,7 @@ int main()
 
 
 	for (int i = 0; i < 500; i++) {
-		std::tie(x, y) = mandlebrot.make_dataset(100000, 500, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
+		if (i % 5 == 0) { std::tie(x, y) = mandlebrot.make_dataset(100000, 500, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm); }
 
 		model.fit(
 			x,
@@ -116,9 +110,9 @@ int main()
 			validation_split
 		);
 
-		make_bmp("NetworkImages/2_image_" + std::to_string(i).append(".bmp"), width, height, 0.95f, model, image_features);
+		make_bmp("NetworkImages/image_" + std::to_string(i).append(".bmp"), width, height, 0.95f, model, image_features);
 
-		model.serialize("128_1024_9_network.txt");
+		model.serialize("gif_network.txt");
 	}
 	
 
