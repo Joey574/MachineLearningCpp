@@ -26,7 +26,13 @@ public:
 	/// <param name="lower_norm"></param>
 	/// <param name="upper_norm"></param>
 	/// <returns></returns>
-	std::tuple<Matrix, Matrix> make_dataset(int size, int max_it, int fourier, int taylor, int chebyshev, int legendre, int laguarre, float lower_norm, float upper_norm) {
+	static std::tuple<Matrix, Matrix> make_dataset(int size, int max_it, int fourier, int taylor, int chebyshev, int legendre, int laguarre, float lower_norm, float upper_norm) {
+
+        const float xMin = -2.5f;
+        const float xMax = 1.0f;
+
+        const float yMin = -1.1f;
+        const float yMax = 1.1f;
 
         std::random_device rd;
         std::mt19937 gen(rd());
@@ -54,7 +60,7 @@ public:
 		return std::make_tuple(x, y);
 	}
 
-    float in_mandlebrot(float x, float y, int max_it) {
+    static float in_mandlebrot(float x, float y, int max_it) {
         std::complex<double> c(x, y);
         std::complex<double> z = 0;
 
@@ -80,7 +86,13 @@ public:
     /// <param name="lower_norm"></param>
     /// <param name="upper_norm"></param>
     /// <returns></returns>
-    Matrix create_image_features(int width, int height, int fourier, int taylor, int chebyshev, int legendre, int laguarre, float lower_norm, float upper_norm) {
+    static Matrix create_image_features(int width, int height, int fourier, int taylor, int chebyshev, int legendre, int laguarre, float lower_norm, float upper_norm) {
+
+        const float xMin = -2.5f;
+        const float xMax = 1.0f;
+
+        const float yMin = -1.1f;
+        const float yMax = 1.1f;
 
         float scaleX = (std::abs(xMin - xMax)) / (width - 1);
         float scaleY = (std::abs(yMin - yMax)) / (height - 1);
@@ -192,11 +204,5 @@ public:
              break;
          }
      }
-
-private:
-    float xMin = -2.5f;
-    float xMax = 1.0f;
-
-    float yMin = -1.1f;
-    float yMax = 1.1f;
+    
 };

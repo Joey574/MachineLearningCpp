@@ -2,14 +2,24 @@
 #include <Windows.h>
 
 #include "SingleBlockNeuralNetwork.h"
+#include "Matrix.h"
 
 // datasets
 #include "MNIST.cpp"
 #include "FMNIST.cpp"
 #include "Mandlebrot.cpp"
 
-void menu();
-void load_network();
+struct network_init {
+	std::vector<size_t> dims;
+	std::vector<NeuralNetwork::activation_functions> activation;
+	NeuralNetwork::loss_metric loss;
+	NeuralNetwork::loss_metric metric;
+	NeuralNetwork::weight_init weights;
+};
+
+
+void menu(NeuralNetwork& model);
+void load_network(NeuralNetwork& model);
 void initialize_network(network_init& init);
 
 bool is_num(const std::string& str) {
@@ -28,21 +38,15 @@ size_t to_num(const std::string& str) {
 	return dims;
 }
 
-struct network_init {
-	std::vector<size_t> dims;
-	std::vector<NeuralNetwork::activation_functions> activation;
-	NeuralNetwork::loss_metric loss;
-	NeuralNetwork::loss_metric metric;
-};
-
 int main()
 {
 	system("CLS");
 	SetPriorityClass(GetStdHandle, REALTIME_PRIORITY_CLASS);
 	srand(time(0));
 
+	NeuralNetwork model;
 
-	menu();
+	menu(model);
 }
 
 void menu(NeuralNetwork& model) {
@@ -50,7 +54,37 @@ void menu(NeuralNetwork& model) {
 
 	network_init init;
 
-	L_MENU:
+	L1:
+	system("CLS");
+	std::cout << "Select a dataset:\n1: MNIST\n2: FMNIST\n3: Mandlebrot\nInput: ";
+	std::cin >> input;
+
+	if (!is_num(input)) {
+		goto L1;
+	}
+
+	Matrix x_train, y_train, x_test, y_test;
+	size_t end;
+
+	switch (to_num(input)) {
+	case 1:
+		std::tie(x_train, y_train, x_test, y_test) = MNIST::load_data(0, 0, 0, 0, 0, 0.0f, 1.0f);
+		end = 10;
+		break;
+	case 2:
+		std::tie(x_train, y_train, x_test, y_test) = FMNIST::load_data(0, 0, 0, 0, 0, 0.0f, 1.0f);
+		end = 10;
+		break;
+	case 3:
+		std::tie(x_train, y_train) = Mandlebrot::make_dataset(100000, 100, 0, 0, 0, 0, 0, 0.0f, 1.0f);
+		end = 1;
+		break;
+	default:
+		goto L1;
+	}
+
+
+	L2:
 	system("CLS");
 	std::cout << "Select an option:\n1: Load existing network\n2: Create new network\nInput: ";
 	std::cin >> input;
@@ -63,8 +97,27 @@ void menu(NeuralNetwork& model) {
 		initialize_network(init);
 		break;
 	default:
-		goto L_MENU;
+		goto L2;
 	}
+
+	init.dims[0] = x_train.ColumnCount;
+	init.dims.back() = end;
+
+	model.define(init.dims, init.activation);
+	model.compile(init.loss, init.metric, init.weights);
+
+	model.fit(
+		x_train,
+		y_train,
+		x_test,
+		y_test,
+		320,
+		100,
+		0.01f,
+		true,
+		1,
+		0.1f
+	);
 }
 
 void load_network(NeuralNetwork& model) {
@@ -75,9 +128,6 @@ void load_network(NeuralNetwork& model) {
 void initialize_network(network_init& init) {
 	std::string input;
 
-	NeuralNetwork::loss_metric loss;
-	NeuralNetwork::loss_metric metric;
-	NeuralNetwork::weight_init weight_init;
 
 	L1:
 	system("CLS");
@@ -90,10 +140,10 @@ void initialize_network(network_init& init) {
 	
 	size_t dims = to_num(input);
 
-	std::vector<size_t> dimensions(dims + 2, 0);
-	std::vector<NeuralNetwork::activation_functions> activations(dims + 1);
+	init.dims = std::vector<size_t>(dims + 2, 0);
+	init.activation = std::vector<NeuralNetwork::activation_functions>(dims + 1);
 
-	
+
 	// nodes in hidden layer
 	for (size_t i = 0; i < dims; i++) {
 
@@ -106,7 +156,7 @@ void initialize_network(network_init& init) {
 			goto L2;
 		}
 
-		dimensions[i + 1] = to_num(input);
+		init.dims[i + 1] = to_num(input);
 	}
 
 	// hidden layer activation
@@ -123,16 +173,16 @@ void initialize_network(network_init& init) {
 
 		switch (to_num(input)) {
 		case 1:
-			activations[i] = NeuralNetwork::activation_functions::relu;
+			init.activation[i] = NeuralNetwork::activation_functions::relu;
 			break;
 		case 2:
-			activations[i] = NeuralNetwork::activation_functions::leaky_relu;
+			init.activation[i] = NeuralNetwork::activation_functions::leaky_relu;
 			break;
 		case 3:
-			activations[i] = NeuralNetwork::activation_functions::elu;
+			init.activation[i] = NeuralNetwork::activation_functions::elu;
 			break;
 		case 4:
-			activations[i] = NeuralNetwork::activation_functions::sigmoid;
+			init.activation[i] = NeuralNetwork::activation_functions::sigmoid;
 			break;
 		default:
 			goto L3;
@@ -150,16 +200,16 @@ void initialize_network(network_init& init) {
 
 	switch (to_num(input)) {
 	case 1:
-		activations[dims] = NeuralNetwork::activation_functions::relu;
+		init.activation[dims] = NeuralNetwork::activation_functions::relu;
 		break;
 	case 2:
-		activations[dims] = NeuralNetwork::activation_functions::leaky_relu;
+		init.activation[dims] = NeuralNetwork::activation_functions::leaky_relu;
 		break;
 	case 3:
-		activations[dims] = NeuralNetwork::activation_functions::elu;
+		init.activation[dims] = NeuralNetwork::activation_functions::elu;
 		break;
 	case 4:
-		activations[dims] = NeuralNetwork::activation_functions::sigmoid;
+		init.activation[dims] = NeuralNetwork::activation_functions::sigmoid;
 		break;
 	default:
 		goto L4;
@@ -177,10 +227,10 @@ void initialize_network(network_init& init) {
 
 	switch (to_num(input)) {
 	case 1:
-		loss = NeuralNetwork::loss_metric::mae;
+		init.loss = NeuralNetwork::loss_metric::mae;
 		break;
 	case 2:
-		loss = NeuralNetwork::loss_metric::one_hot;
+		init.loss = NeuralNetwork::loss_metric::one_hot;
 		break;
 	default:
 		goto L5;
@@ -198,10 +248,10 @@ void initialize_network(network_init& init) {
 
 	switch (to_num(input)) {
 	case 1:
-		metric = NeuralNetwork::loss_metric::mae;
+		init.metric = NeuralNetwork::loss_metric::mae;
 		break;
 	case 2:
-		metric = NeuralNetwork::loss_metric::accuracy;
+		init.metric = NeuralNetwork::loss_metric::accuracy;
 		break;
 	default:
 		goto L6;
@@ -219,21 +269,16 @@ void initialize_network(network_init& init) {
 
 	switch (to_num(input)) {
 	case 1:
-		weight_init = NeuralNetwork::weight_init::he;
+		init.weights = NeuralNetwork::weight_init::he;
 		break;
 	case 2:
-		weight_init = NeuralNetwork::weight_init::normalize;
+		init.weights = NeuralNetwork::weight_init::normalize;
 		break;
 	case 3:
-		weight_init = NeuralNetwork::weight_init::xavier;
+		init.weights = NeuralNetwork::weight_init::xavier;
 		break;
 	default:
 		goto L7;
 	}
 	system("CLS");
-
-	init.dims = dimensions;
-	init.activation = activations;
-	init.loss = loss;
-	init.metric = metric;
 }

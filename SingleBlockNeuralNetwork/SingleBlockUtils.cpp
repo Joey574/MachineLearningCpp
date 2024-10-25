@@ -77,6 +77,12 @@ std::string NeuralNetwork::summary() {
 void NeuralNetwork::serialize(std::string filepath) {
 	std::ofstream fw(filepath, std::ios::binary);
 
+	if (fw.is_open()) {
+		std::cout << "Status: saving network to disk\n";
+	} else {
+		std::cout << "Status: file not found\n";
+	}
+
 	// write dims of network
 	size_t dims = m_dimensions.size();
 	fw.write(reinterpret_cast<const char*>(&dims), sizeof(size_t));
@@ -91,8 +97,10 @@ void NeuralNetwork::deserialize(std::string filepath) {
 	loaded = true;
 	std::ifstream fr(filepath, std::ios::binary);
 
-	if (!fr.is_open()) {
-		std::cout << "Network could not be found\n";
+	if (fr.is_open()) {
+		std::cout << "Status: loading network from disk\n";
+	} else {
+		std::cout << "Status: file not found\n";
 	}
 
 	// read dims size
