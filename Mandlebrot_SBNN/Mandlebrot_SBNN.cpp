@@ -100,7 +100,7 @@ int main()
 	const Matrix image_features = mandlebrot.create_image_features(width, height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
 
 
-	for (int i = 0; i < 500; i++) {
+	for (size_t i = 0; i < 500; i++) {
 		std::tie(x, y) = mandlebrot.make_dataset(100000, 500, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
 
 		model.fit(
@@ -116,7 +116,7 @@ int main()
 			validation_split
 		);
 
-		make_bmp("NetworkImages/2_image_" + std::to_string(i).append(".bmp"), width, height, 0.95f, model, image_features);
+		make_bmp("NetworkImages/3_image_" + std::to_string(i).append(".bmp"), width, height, 0.95f, model, image_features);
 
 		model.serialize("128_1024_9_network.txt");
 	}

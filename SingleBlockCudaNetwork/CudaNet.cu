@@ -189,16 +189,16 @@ void CudaNetwork::forward_prop(float* x_data, float* result_data, size_t activat
 		void* af_args[4] = { &output, &activation, &m_dimensions[i + 1], &num_elements };
 
 		// compute total
-		i == 0 ? cudaLaunchKernel(&dot_prod_t_b, grid, 8, dp_args, 0, nullptr) :
-				 cudaLaunchKernel(&dot_prod, grid, 8, dp_args, 0, nullptr);
+		i == 0 ? cudaLaunchKernel(dot_prod_t_b, grid, 8, dp_args, 0, nullptr) :
+				 cudaLaunchKernel(dot_prod, grid, 8, dp_args, 0, nullptr);
 		cudaDeviceSynchronize();
 		
 		// add bias
-		cudaLaunchKernel(&horizontal_add, ceil(m_dimensions[i + 1] / 8), 8, ba_args, 0, nullptr);
+		cudaLaunchKernel(horizontal_add, ceil(m_dimensions[i + 1] / 8), 8, ba_args, 0, nullptr);
 		cudaDeviceSynchronize();
 
 		// activation funciton
-		cudaLaunchKernel(&leaky_relu, grid, 8, af_args, 0, nullptr);
+		cudaLaunchKernel(leaky_relu, grid, 8, af_args, 0, nullptr);
 		cudaDeviceSynchronize();
 
 		weight_idx += m_dimensions[i] * m_dimensions[i + 1];
@@ -219,7 +219,7 @@ void CudaNetwork::back_prop(float* x_data, float* y_data, float learning_rate, s
 
 		void* args[5] = { &last_activation, &last_d_total, &y_data, &m_dimensions.back(), &num_elements };
 		
-		cudaLaunchKernel(&one_hot_loss, ceil(num_elements / 8), 8, args, 0, nullptr);
+		cudaLaunchKernel(one_hot_loss, ceil(num_elements / 8), 8, args, 0, nullptr);
 		cudaDeviceSynchronize();
 	}
 
@@ -240,11 +240,11 @@ void CudaNetwork::back_prop(float* x_data, float* y_data, float learning_rate, s
 			void* dp_args[7] = { &weight, &cur_d_total, &prev_d_total, &m_dimensions[i + 1], &m_dimensions[i], &m_dimensions[i + 1], &num_elements };
 			void* af_args[4] = { &prev_total, &prev_d_total, &m_dimensions[i], &num_elements };
 
-			cudaLaunchKernel(&dot_prod_t_a, ceil(m_dimensions[i + 1]), 8, dp_args, 0, nullptr);
+			cudaLaunchKernel(dot_prod_t_a, ceil(m_dimensions[i + 1]), 8, dp_args, 0, nullptr);
 			cudaDeviceSynchronize();
 
 			// multiply by activation function derivative
-			cudaLaunchKernel(&leaky_relu_derivative, ceil(m_dimensions[i + 1] / 8), 8, af_args, 0, nullptr);
+			cudaLaunchKernel(leaky_relu_derivative, ceil(m_dimensions[i + 1] / 8), 8, af_args, 0, nullptr);
 			cudaDeviceSynchronize();
 
 			d_total_idx -= m_dimensions[i] * num_elements;
@@ -276,12 +276,12 @@ void CudaNetwork::back_prop(float* x_data, float* y_data, float learning_rate, s
 
 			// d_weights
 			i == 0 ?
-				cudaLaunchKernel(&dot_prod, grid, 8, dw_args, 0, nullptr) :
-				cudaLaunchKernel(&dot_prod_t_b, grid, 8, dw_args, 0, nullptr);
+				cudaLaunchKernel(dot_prod, grid, 8, dw_args, 0, nullptr) :
+				cudaLaunchKernel(dot_prod_t_b, grid, 8, dw_args, 0, nullptr);
 			cudaDeviceSynchronize();
 
 			// d_biases
-			cudaLaunchKernel(&horizontal_sum, ceil(m_dimensions[i + 1] / 8), 8, db_args, 0, nullptr);
+			cudaLaunchKernel(horizontal_sum, ceil(m_dimensions[i + 1] / 8), 8, db_args, 0, nullptr);
 			cudaDeviceSynchronize();
 
 			d_bias_idx += m_dimensions[i + 1];
@@ -296,15 +296,19 @@ void CudaNetwork::back_prop(float* x_data, float* y_data, float learning_rate, s
 		void* uw_args[4] = { &m_network, &m_d_weights, &factor, &m_weights_size };
 		void* ub_args[4] = { &m_bias, &m_d_bias, &factor, &m_bias_size };
 
-		cudaLaunchKernel(&update_weights, ceil(m_weights_size / 8), 8, uw_args, 0, nullptr);
-		cudaLaunchKernel(&update_bias, ceil(m_bias_size / 8), 8, ub_args, 0, nullptr);
+		cudaLaunchKernel(update_weights, ceil(m_weights_size / 8), 8, uw_args, 0, nullptr);
+		cudaLaunchKernel(update_bias, ceil(m_bias_size / 8), 8, ub_args, 0, nullptr);
 		cudaDeviceSynchronize();
 	}
 }
 
 std::string CudaNetwork::test_network(float* x, float* y, size_t test_size) {
 
+	std::cout << "\nbefore test: " << cudaGetErrorString(cudaGetLastError()) << "\n";
+
 	forward_prop(x, m_test_data, m_test_activation_size, test_size);
+
+	std::cout << "after test: " << cudaGetErrorString(cudaGetLastError()) << "\n";
 
 	int* d_correct;
 	int correct = -1;
