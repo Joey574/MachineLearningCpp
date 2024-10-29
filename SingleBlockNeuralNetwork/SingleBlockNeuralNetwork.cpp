@@ -145,7 +145,7 @@
 
 		m_biases = &m_network[m_weights_size];
 
-		std::cout << "Status: network_training\n";
+		std::cout << "Status: network training\n";
 
 		history h;
 		auto start_time = std::chrono::high_resolution_clock::now();
@@ -193,7 +193,7 @@
 		h.epoch_time = (time / (double)epochs);
 		h.train_time = time;
 
-		std::cout << "Status: training_complete\n";
+		std::cout << "Status: training complete\n";
 
 		return h;
 	}
