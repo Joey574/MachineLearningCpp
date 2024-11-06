@@ -51,7 +51,7 @@ int main()
 	Matrix x;
 	Matrix y;
 	size_t batch_size = 640;
-	size_t epochs = 5;
+	size_t epochs = 25;
 	float learning_rate = 0.0001f;
 	bool shuffle = true;
 	int validation_freq = 1;
@@ -76,8 +76,11 @@ int main()
 	NeuralNetwork model;
 
 	model.define(dims, act);
-	model.compile(NeuralNetwork::loss_metric::mae, NeuralNetwork::loss_metric::mae, NeuralNetwork::weight_init::he);
 
+	model.deserialize("1024_4_96f_475.txt");
+
+	model.compile(NeuralNetwork::loss_metric::mae, NeuralNetwork::loss_metric::mae, NeuralNetwork::weight_init::he);
+	 
 	/* 16:9 resolutions
 	
 	160 x 90
@@ -110,7 +113,7 @@ int main()
 			validation_split
 		);
 
-		make_bmp("NetworkImages/4_image_" + std::to_string(i).append(".bmp"), width, height, 0.95f, model, image_features);
+		make_bmp("NetworkImages/7_image_" + std::to_string(i).append(".bmp"), width, height, 0.95f, model, image_features);
 
 		if (i % 25 == 0) {
 			model.serialize("1024_4_96f_" + std::to_string(i).append(".txt"));

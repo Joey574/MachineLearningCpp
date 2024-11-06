@@ -11,7 +11,7 @@ int main()
 	srand(time(0));
 
 	// Model definitions
-	std::vector<int> dims = { 784, 128, 128, 10 };
+	std::vector<int> dims = { 784, 1024, 10 };
 
 	// Model compilation parameters
 	NeuralNetwork::loss_metric loss = NeuralNetwork::loss_metric::cross_entropy;
@@ -25,7 +25,7 @@ int main()
 	Matrix x_test;
 	Matrix y_test;
 	int batch_size = 320;
-	int epochs = 20;
+	int epochs = 50;
 	float learning_rate = 0.1f;
 	float weight_decay = 0.0f;
 	float validation_split = 0.0f;
@@ -52,7 +52,10 @@ int main()
 
 	model.Define(
 		dims,
-		{ NeuralNetwork::activations::leakyReLU, NeuralNetwork::activations::leakyReLU, NeuralNetwork::activations::Softmax }
+		{ 
+			NeuralNetwork::activations::leakyReLU,
+			NeuralNetwork::activations::Sigmoid
+		}
 	);
 
 	// Compile the model
