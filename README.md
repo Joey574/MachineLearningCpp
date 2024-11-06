@@ -98,7 +98,7 @@ block
 
 I also make heavy use of pointer arithmetic to make my life easier, such as *m_biases* which points to **_biases_**, *m_test_activation* which points to... you guessed it, **_test_activation_**, and so on so forth.
 <br><br>
-The main benefit of this network over the **NeuralNetwork** class is that it allocates all the memory it needs up front. By doing this, we avoid the creation of temp objects and massive copies, instead just storing the data directly where we want it to be in the first place. Another benefit of doing this is we can chain operations together much better, for exmaple, if we wanted to do **_A = B * C + D_** where A, B, C, D are all matrices of the same size (element-wise operations as well), in the **Matrix** class that would look something like this
+The main benefit of this network over the **NeuralNetwork** class is that it allocates all the memory it needs up front. By doing this, we avoid the creation of temp objects and massive copies, instead just storing the data directly where we want it to be in the first place. Another benefit of doing this is we can chain operations together much better, for exmaple, if we wanted to do **_A = B * C + D_** where A, B, C, D are all matrices of the same size, in the **Matrix** class that would look something like this
 
 ```mermaid
     flowchart TD
@@ -118,14 +118,17 @@ Woah! That's insane! As it turns out, if we know we want the data to be in A fro
 <br><br>
 Transposes are also a big part of forward_prop and back_prop, however, these transposes are only really used in dot products with other matrices, as such, if we just *read* the data in a transposed manner, we can get the right result, without having to bother with actually transposing the matrix. Changing around a couple for loops also ensures we maintain decent cache access.
 <br><br>
-Of course, this class also make use of optimizations already present in the **matrix class**, like omp for parallelization, and simd intrinsics.
+Of course, this class also make use of optimizations already present in the **Matrix** class, like omp for parallelization, and simd intrinsics.
 <br><br>
-Overall I observed a 3-4x performance boost using this class over the **NeuralNetwork** class below are a couple results on various network sizes for **MNIST**
+Overall I observed a 3-4x performance boost using this class over the **NeuralNetwork** class
 <br>
+Below are a couple results on various network sizes for **MNIST**
+<br><br>
+![Performance Tests](https://github.com/Joey574/MLImageLearning/blob/main/Mandlebrot%20Aproximations/misc/Screenshot%202024-11-05%20192720.png)
 
 ### Single-Block Cuda Network
 **CURRENTLY NOT WORKING** <br>
-This project is my first attempt at running a neural network completely on cuda, I hope to use a similair design to **SingleBlockNeuralNetwork**
+This project is my first attempt at running a neural network completely on CUDA, I hope to use a similair design to **SingleBlockNeuralNetwork**
 
 
 ## Actual Projects
@@ -153,7 +156,7 @@ This network trains on, yet again, the **MNIST** dataset using the **SingleBlock
 This network is what really got me into fractals and neural networks alike, taking inspiration from 
 <br>
 https://www.youtube.com/watch?v=TkwXa7Cvfr8 (great video by the way you should totally watch it)
-<br>
+<br><br>
 I took the idea of approximating the mandlebrot with neural networks and ran with it, this specific version uses the **NeuralNetwork** class, some of the better images it produced being
 <br><br>
 
