@@ -124,7 +124,7 @@ Overall I observed a 3-4x performance boost using this class over the **NeuralNe
 <br>
 Below are a couple results on various network sizes for **MNIST**
 <br><br>
-![Performance Tests](https://github.com/Joey574/MLImageLearning/blob/main/Mandlebrot%20Aproximations/misc/Screenshot%202024-11-05%20192720.png)
+![Performance Tests](https://github.com/Joey574/Demos/blob/main/MachineLearningCpp/graphs/Screenshot%202024-11-05%20192720.png)
 
 ### Single-Block Cuda Network
 **CURRENTLY NOT WORKING** <br>
@@ -160,21 +160,21 @@ https://www.youtube.com/watch?v=TkwXa7Cvfr8 (great video by the way you should t
 I took the idea of approximating the mandlebrot with neural networks and ran with it, this specific version uses the **NeuralNetwork** class, some of the better images it produced being
 <br><br>
 
-![Mandlebrot approximation](https://github.com/Joey574/MLImageLearning/blob/main/Mandlebrot%20Aproximations/4-27-24%20Big%20Network%202/5_9_24_final(19).bmp)
+![Mandlebrot approximation](https://github.com/Joey574/Demos/blob/main/MachineLearningCpp/Images/5_9_24_final(19).bmp)
 *This bad boy was trained on and off over the course of a couple weeks* <br><br>
 
-![Mandlebrot approximation](https://github.com/Joey574/MLImageLearning/blob/main/Mandlebrot%20Aproximations/4-25-24%20Big%20Network%201/4_27_24_epoch1.bmp)
+![Mandlebrot approximation](https://github.com/Joey574/Demos/blob/main/MachineLearningCpp/Images/4_27_24_epoch1.bmp)
 *This guy probably took closer to a month, although it used a smaller network than in the previous image*<br><br>
 
 *Oh and just for reference heres what a "perfect" mandlebrot would look like* <br>
-![Perfect mandlebrot](https://github.com/Joey574/MLImageLearning/blob/main/Mandlebrot%20Aproximations/PerfectMandlebrots/1920_1080_500_0.95.bmp)
+![Perfect mandlebrot](https://github.com/Joey574/Demos/blob/main/MachineLearningCpp/Images/1920_1080_500_0.95.bmp)
 
 ### Mandlebrot_SBNN
 Thinking about how much time I spent using the old network pains me, with the performance improvements I managed with the **SingleBlockNeuralNetwork** perhaps I could've actually touched grass. At any rate this uses the aforementioned network and approximates the mandlebrot. 
 <br><br>
 As I finished this one much more recently, and I kind of exhausted myself on the mandlebrot already, I haven't trained with this one anywhere near as much, as such predictions are much lower quality.
 
-![Mandlebrot lesser approximation](https://github.com/Joey574/MLImageLearning/blob/main/Mandlebrot%20Aproximations/9-12-24%20Desktop/big%20net%2C%20new%20system/final.bmp)
+![Mandlebrot lesser approximation](https://github.com/Joey574/Demos/blob/main/MachineLearningCpp/Images/6_image_final.bmp)
 
 ## Honorable Mentions
 
