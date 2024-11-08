@@ -50,9 +50,9 @@ int main()
 	// Model fit information
 	Matrix x;
 	Matrix y;
-	size_t batch_size = 640;
-	size_t epochs = 25;
-	float learning_rate = 0.0001f;
+	size_t batch_size = 960;
+	size_t epochs = 5;
+	float learning_rate = 0.00025f;
 	bool shuffle = true;
 	int validation_freq = 1;
 	float validation_split = 0.01f;
@@ -60,7 +60,7 @@ int main()
 	// Feature engineering and dataset processing
 	Mandlebrot mandlebrot;
 
-	int fourier = 96;
+	int fourier = 64;
 	int taylor = 0;
 	int chebyshev = 0;
 	int legendre = 0;
@@ -77,7 +77,7 @@ int main()
 
 	model.define(dims, act);
 
-	model.deserialize("1024_4_96f_475.txt");
+	//model.deserialize("1024_4_96f_300.txt");
 
 	model.compile(NeuralNetwork::loss_metric::mae, NeuralNetwork::loss_metric::mae, NeuralNetwork::weight_init::he);
 	 
@@ -98,7 +98,7 @@ int main()
 
 
 	for (size_t i = 0; i < 500; i++) {
-		std::tie(x, y) = mandlebrot.make_dataset(100000, 500, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
+		std::tie(x, y) = mandlebrot.make_dataset(100000, 5000, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm);
 
 		model.fit(
 			x,
@@ -113,10 +113,10 @@ int main()
 			validation_split
 		);
 
-		make_bmp("NetworkImages/7_image_" + std::to_string(i).append(".bmp"), width, height, 0.95f, model, image_features);
+		make_bmp("NetworkImages/1_image_" + std::to_string(i).append(".bmp"), width, height, 0.95f, model, image_features);
 
-		if (i % 25 == 0) {
-			model.serialize("1024_4_96f_" + std::to_string(i).append(".txt"));
+		if (i % 25 == 0 || i == 499) {
+			model.serialize("1024_4_64f_" + std::to_string(i).append(".txt"));
 		}
 	}
 	
