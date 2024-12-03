@@ -38,11 +38,8 @@ int main()
 	srand(time(0));
 
 	// Model definitions
-	std::vector<size_t> dims = { 2, 1024, 1024, 1024, 1024, 1 };
+	std::vector<size_t> dims = { 2, 128, 1 };
 	std::vector<NeuralNetwork::activation_functions> act = {
-		NeuralNetwork::activation_functions::leaky_relu,
-		NeuralNetwork::activation_functions::leaky_relu,
-		NeuralNetwork::activation_functions::leaky_relu,
 		NeuralNetwork::activation_functions::leaky_relu,
 		NeuralNetwork::activation_functions::sigmoid
 	};
@@ -52,7 +49,7 @@ int main()
 	Matrix y;
 	size_t batch_size = 960;
 	size_t epochs = 25;
-	float learning_rate = 0.0001f;
+	float learning_rate = 0.01f;
 	bool shuffle = true;
 	int validation_freq = 1;
 	float validation_split = 0.01f;
@@ -60,7 +57,7 @@ int main()
 	// Feature engineering and dataset processing
 	Mandlebrot mandlebrot;
 
-	int fourier = 64;
+	int fourier = 32;
 	int taylor = 0;
 	int chebyshev = 0;
 	int legendre = 0;
@@ -77,7 +74,7 @@ int main()
 
 	model.define(dims, act);
 
-	model.deserialize("1024_4_64f_499.txt");
+	//model.deserialize("1024_4_64f_499.txt");
 
 	model.compile(NeuralNetwork::loss_metric::mae, NeuralNetwork::loss_metric::mae, NeuralNetwork::weight_init::he);
 	 
@@ -115,15 +112,13 @@ int main()
 
 		make_bmp("NetworkImages/2_image_" + std::to_string(i).append(".bmp"), width, height, 0.95f, model, image_features);
 
-		if (i % 25 == 0 || i == 499) {
+		/*if (i % 25 == 0 || i == 499) {
 			model.serialize("1024_4_64f_" + std::to_string(i).append(".txt"));
-		}
+		}*/
 	}
 
 	int f_width = 1920;
 	int f_height = 1080;
 
 	//make_bmp("NetworkImages/image_final.bmp", f_width, f_height, 0.95f, model, mandlebrot.create_image_features(f_width, f_height, fourier, taylor, chebyshev, legendre, laguarre, lower_norm, upper_norm));
-
-
 }

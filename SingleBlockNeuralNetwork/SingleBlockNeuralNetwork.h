@@ -11,13 +11,13 @@
 class NeuralNetwork {
 public:
 
-	static enum class weight_init {
+	static const enum class weight_init {
 		he, normalize, xavier
 	};
-	static enum class loss_metric {
+	static const enum class loss_metric {
 		mae, accuracy, one_hot
 	};
-	static enum class activation_functions {
+	static const enum class activation_functions {
 		relu, leaky_relu, elu, sigmoid, softmax
 	};
 
@@ -160,8 +160,8 @@ private:
 	std::vector<size_t> m_dimensions;
 	std::vector<activation_data> m_activation_data;
 
-	void (NeuralNetwork::* m_loss)(float*, float*, float*, size_t, size_t);
-	float (NeuralNetwork::* m_metric)(float* a, float* b, size_t a_r, size_t a_c);
+	void (NeuralNetwork::* m_loss)(float* x, float* y, float* c, size_t rows, size_t cols);
+	float (NeuralNetwork::* m_metric)(float* x, float* y, size_t rows, size_t cols);
 
 	void data_preprocess(Matrix& x_train, Matrix& y_train, Matrix& x_valid, Matrix& y_valid, float validation_split, bool shuffle);
 

@@ -97,5 +97,4 @@ int main()
 	double max_score = *std::max_element(h.metric_history.begin(), h.metric_history.end());
 
 	std::cout << "\nMin score: " << min_score << "\nMax score: " << max_score << "\n";
-
 }
