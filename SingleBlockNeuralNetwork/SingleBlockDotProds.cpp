@@ -6,12 +6,12 @@ void NeuralNetwork::dot_prod(float* a, float* b, float* c, size_t a_r, size_t a_
 
 		// first j loop to clear existing c values
 		if (clear) {
-			const __m256 _scalar = _mm256_set1_ps(a[i * a_c + 0]);
+			const __m256 _a = _mm256_set1_ps(a[i * a_c + 0]);
 
 			size_t k = 0;
 			for (; k + 8 <= b_c; k += 8) {
 				const __m256 _b = _mm256_load_ps(&b[0 * b_c + k]);
-				const __m256 _c = _mm256_mul_ps(_scalar, _b);
+				const __m256 _c = _mm256_mul_ps(_a, _b);
 
 				_mm256_store_ps(&c[i * b_c + k], _c);
 			}
@@ -22,13 +22,13 @@ void NeuralNetwork::dot_prod(float* a, float* b, float* c, size_t a_r, size_t a_
 		}
 
 		for (size_t j = clear ? 1 : 0; j < b_r; j++) {
-			const __m256 _scalar = _mm256_set1_ps(a[i * a_c + j]);
+			const __m256 _a = _mm256_set1_ps(a[i * a_c + j]);
 			
 			size_t k = 0;
 			for (; k + 8 <= b_c; k += 8) {
 				const __m256 _b = _mm256_load_ps(&b[j * b_c + k]);
 				const __m256 _c = _mm256_load_ps(&c[i * b_c + k]);
-				const __m256 _res = _mm256_fmadd_ps(_scalar, _b, _c);
+				const __m256 _res = _mm256_fmadd_ps(_a, _b, _c);
 
 				_mm256_store_ps(&c[i * b_c + k], _res);
 			}
@@ -45,12 +45,12 @@ void NeuralNetwork::dot_prod_t_a(float* a, float* b, float* c, size_t a_r, size_
 
 		// first j loop to clear existing c values
 		if (clear) {
-			const __m256 _scalar = _mm256_set1_ps(a[0 * a_c + i]);
+			const __m256 _a_t = _mm256_set1_ps(a[0 * a_c + i]);
 
 			size_t k = 0;
 			for (; k + 8 <= b_c; k += 8) {
 				const __m256 _b = _mm256_load_ps(&b[0 * b_c + k]);
-				const __m256 _c = _mm256_mul_ps(_scalar, _b);
+				const __m256 _c = _mm256_mul_ps(_a_t, _b);
 
 				_mm256_store_ps(&c[i * b_c + k], _c);
 			}
@@ -61,13 +61,13 @@ void NeuralNetwork::dot_prod_t_a(float* a, float* b, float* c, size_t a_r, size_
 		}
 
 		for (size_t j = clear ? 1 : 0; j < b_r; j++) {
-			const __m256 _scalar = _mm256_set1_ps(a[j * a_c + i]);
+			const __m256 _a_t = _mm256_set1_ps(a[j * a_c + i]);
 
 			size_t k = 0;
 			for (; k + 8 <= b_c; k += 8) {
 				const __m256 _b = _mm256_load_ps(&b[j * b_c + k]);
 				const __m256 _c = _mm256_load_ps(&c[i * b_c + k]);
-				const __m256 _res = _mm256_fmadd_ps(_scalar, _b, _c);
+				const __m256 _res = _mm256_fmadd_ps(_a_t, _b, _c);
 
 				_mm256_store_ps(&c[i * b_c + k], _res);
 			}
