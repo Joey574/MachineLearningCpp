@@ -42,7 +42,7 @@ void CudaNetwork::initialize_test_data(size_t test_size) {
 	}
 
 	cudaMalloc(&m_test_data, 2 * m_test_activation_size * sizeof(float));
-	m_test_activation = m_test_data + m_test_activation_size;
+	m_test_activation = &m_test_data[m_test_activation_size];
 }
 
 void CudaNetwork::define(std::vector<size_t> dimensions) {
@@ -136,6 +136,9 @@ void CudaNetwork::fit(matrix x_train, matrix y_train, matrix x_test, matrix y_te
 	initialize_batch_data(batch_size);
 	initialize_test_data(x_test.rows);
 
+	std::cout << "\nPointers:\nd_x_train:\t" << d_x_train << "\nd_y_train:\t" << d_y_train << "\nd_x_test:\t" << d_x_test << "\nd_y_test:\t" << d_y_test << "\n";
+	std::cout << "m_batch_data:\t" << m_batch_data << "\nm_test_data:\t" << m_test_data << "\n";
+
 	for (size_t e = 0; e < epochs; e++) {
 		auto epoch_start_time = std::chrono::high_resolution_clock::now();
 
@@ -164,6 +167,10 @@ void CudaNetwork::fit(matrix x_train, matrix y_train, matrix x_test, matrix y_te
 }
 
 void CudaNetwork::forward_prop(float* x_data, float* result_data, size_t activation_size, size_t num_elements) {
+
+	if (num_elements == 10000) {
+		std::cout << "FP Input:\n\trecieved x_data: " << x_data << "\n\trecieved result_data: " << result_data << "\n\trecieved activation_size: " << activation_size << "\n\trecieved num_elements: " << num_elements << "\n";
+	}
 
 	size_t weight_idx = 0;
 	size_t bias_idx = 0;
@@ -304,11 +311,11 @@ void CudaNetwork::back_prop(float* x_data, float* y_data, float learning_rate, s
 
 std::string CudaNetwork::test_network(float* x, float* y, size_t test_size) {
 
-	std::cout << "\nbefore test: " << cudaGetErrorString(cudaGetLastError()) << "\n";
+	std::cout << "\nTest input:\n\tx: " << x << "\n\ty: " << y << "\n\ttest_size: " << test_size << "\n\txy dif: " << (x - y) << "\n";
 
+	//std::cout << "before test: " << cudaGetErrorString(cudaGetLastError()) << "\n";
 	forward_prop(x, m_test_data, m_test_activation_size, test_size);
-
-	std::cout << "after test: " << cudaGetErrorString(cudaGetLastError()) << "\n";
+	//std::cout << "after test: " << cudaGetErrorString(cudaGetLastError()) << "\n";
 
 	int* d_correct;
 	int correct = -1;

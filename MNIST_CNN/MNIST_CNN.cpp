@@ -33,7 +33,7 @@ int main()
 	srand(time(0));
 
 	// Model definitions
-	std::vector<size_t> dims = { 784, 1024, 1024, 1024, 10 };
+	std::vector<size_t> dims = { 784, 512, 512, 512, 10 };
 
 	// Model fit information
 	Matrix x;
