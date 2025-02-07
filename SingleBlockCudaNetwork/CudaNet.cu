@@ -313,9 +313,9 @@ std::string CudaNetwork::test_network(float* x, float* y, size_t test_size) {
 
 	std::cout << "\nTest input:\n\tx: " << x << "\n\ty: " << y << "\n\ttest_size: " << test_size << "\n\txy dif: " << (x - y) << "\n";
 
-	//std::cout << "before test: " << cudaGetErrorString(cudaGetLastError()) << "\n";
+	std::cout << "before test: " << cudaGetErrorString(cudaGetLastError()) << "\n";
 	forward_prop(x, m_test_data, m_test_activation_size, test_size);
-	//std::cout << "after test: " << cudaGetErrorString(cudaGetLastError()) << "\n";
+	std::cout << "after test: " << cudaGetErrorString(cudaGetLastError()) << "\n";
 
 	int* d_correct;
 	int correct = -1;
