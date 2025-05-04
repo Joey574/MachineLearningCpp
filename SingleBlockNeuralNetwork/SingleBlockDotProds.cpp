@@ -1,6 +1,10 @@
 #include "SingleBlockNeuralNetwork.h"
 
-void NeuralNetwork::dot_prod(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear) {
+void NeuralNetwork::dot_prod(float* __restrict a, float* __restrict b, float* __restrict c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear) {
+	#if LOGDP
+		printf("[ %zu x %zu ] * [ %zu x %zu ] = [ %zu x %zu ]\n", a_r, a_c, b_r, b_c, a_r, b_c);
+	#endif
+
 	#pragma omp parallel for
 	for (size_t i = 0; i < a_r; i++) {
 
@@ -10,10 +14,10 @@ void NeuralNetwork::dot_prod(float* a, float* b, float* c, size_t a_r, size_t a_
 
 			size_t k = 0;
 			for (; k + 8 <= b_c; k += 8) {
-				const __m256 _b = _mm256_load_ps(&b[0 * b_c + k]);
+				const __m256 _b = _mm256_loadu_ps(&b[0 * b_c + k]);
 				const __m256 _c = _mm256_mul_ps(_a, _b);
 
-				_mm256_store_ps(&c[i * b_c + k], _c);
+				_mm256_storeu_ps(&c[i * b_c + k], _c);
 			}
 
 			for (; k < b_c; k++) {
@@ -26,11 +30,11 @@ void NeuralNetwork::dot_prod(float* a, float* b, float* c, size_t a_r, size_t a_
 			
 			size_t k = 0;
 			for (; k + 8 <= b_c; k += 8) {
-				const __m256 _b = _mm256_load_ps(&b[j * b_c + k]);
-				const __m256 _c = _mm256_load_ps(&c[i * b_c + k]);
+				const __m256 _b = _mm256_loadu_ps(&b[j * b_c + k]);
+				const __m256 _c = _mm256_loadu_ps(&c[i * b_c + k]);
 				const __m256 _res = _mm256_fmadd_ps(_a, _b, _c);
 
-				_mm256_store_ps(&c[i * b_c + k], _res);
+				_mm256_storeu_ps(&c[i * b_c + k], _res);
 			}
 
 			for (; k < b_c; k++) {
@@ -39,7 +43,11 @@ void NeuralNetwork::dot_prod(float* a, float* b, float* c, size_t a_r, size_t a_
 		}
 	}
 }
-void NeuralNetwork::dot_prod_t_a(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear) {
+void NeuralNetwork::dot_prod_t_a(float* __restrict a, float* __restrict b, float* __restrict c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear) {
+	#if LOGDP
+		printf("[ %zu x %zu ].T * [ %zu x %zu ] = [ %zu x %zu ]\n", a_r, a_c, b_r, b_c, a_c, b_c);
+	#endif
+
 	#pragma omp parallel for
 	for (size_t i = 0; i < a_c; i++) {
 
@@ -49,10 +57,10 @@ void NeuralNetwork::dot_prod_t_a(float* a, float* b, float* c, size_t a_r, size_
 
 			size_t k = 0;
 			for (; k + 8 <= b_c; k += 8) {
-				const __m256 _b = _mm256_load_ps(&b[0 * b_c + k]);
+				const __m256 _b = _mm256_loadu_ps(&b[0 * b_c + k]);
 				const __m256 _c = _mm256_mul_ps(_a_t, _b);
 
-				_mm256_store_ps(&c[i * b_c + k], _c);
+				_mm256_storeu_ps(&c[i * b_c + k], _c);
 			}
 
 			for (; k < b_c; k++) {
@@ -65,11 +73,11 @@ void NeuralNetwork::dot_prod_t_a(float* a, float* b, float* c, size_t a_r, size_
 
 			size_t k = 0;
 			for (; k + 8 <= b_c; k += 8) {
-				const __m256 _b = _mm256_load_ps(&b[j * b_c + k]);
-				const __m256 _c = _mm256_load_ps(&c[i * b_c + k]);
+				const __m256 _b = _mm256_loadu_ps(&b[j * b_c + k]);
+				const __m256 _c = _mm256_loadu_ps(&c[i * b_c + k]);
 				const __m256 _res = _mm256_fmadd_ps(_a_t, _b, _c);
 
-				_mm256_store_ps(&c[i * b_c + k], _res);
+				_mm256_storeu_ps(&c[i * b_c + k], _res);
 			}
 
 			for (; k < b_c; k++) {
@@ -77,65 +85,12 @@ void NeuralNetwork::dot_prod_t_a(float* a, float* b, float* c, size_t a_r, size_
 			}
 		}
 	}
+
 }
-void NeuralNetwork::dot_prod_t_b(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear) {
-
-	//float* b_t = (float*)malloc(b_r * b_c * sizeof(float));
-
-	//// transpose b into b_t
-	//#pragma omp parallel for
-	//for (size_t c = 0; c < b_c; c++) {
-	//	for (size_t r = 0; r < b_r; r++) {
-	//		b_t[c * b_r + r] = b[r * b_c + c];
-	//	}
-	//}
-
-	//size_t t = b_r;
-	//b_r = b_c;
-	//b_c = t;
-
-	//// normal dot_prod with b_t
-	//#pragma omp parallel for
-	//for (size_t i = 0; i < a_r; i++) {
-
-	//	// first j loop to clear existing c values
-	//	if (clear) {
-	//		const __m256 _scalar = _mm256_set1_ps(a[i * a_c + 0]);
-
-	//		size_t k = 0;
-	//		for (; k + 8 <= b_c; k += 8) {
-	//			const __m256 _b = _mm256_load_ps(&b_t[0 * b_c + k]);
-	//			const __m256 _c = _mm256_mul_ps(_scalar, _b);
-
-	//			_mm256_store_ps(&c[i * b_c + k], _c);
-	//		}
-
-	//		for (; k < b_c; k++) {
-	//			c[i * b_c + k] = a[i * a_c + 0] * b_t[0 * b_c + k];
-	//		}
-	//	}
-
-	//	for (size_t j = clear ? 1 : 0; j < b_r; j++) {
-	//		const __m256 _scalar = _mm256_set1_ps(a[i * a_c + j]);
-
-	//		size_t k = 0;
-	//		for (; k + 8 <= b_c; k += 8) {
-	//			const __m256 _b = _mm256_load_ps(&b_t[j * b_c + k]);
-	//			const __m256 _c = _mm256_load_ps(&c[i * b_c + k]);
-	//			const __m256 _res = _mm256_fmadd_ps(_scalar, _b, _c);
-
-	//			_mm256_store_ps(&c[i * b_c + k], _res);
-	//		}
-
-	//		for (; k < b_c; k++) {
-	//			c[i * b_c + k] += a[i * a_c + j] * b_t[j * b_c + k];
-	//		}
-	//	}
-	//}
-
-	//// free transposed matrix
-	//free(b_t);
-
+void NeuralNetwork::dot_prod_t_b(float* __restrict a, float* __restrict b, float* __restrict c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear) {
+	#if LOGDP
+		printf("[ %zu x %zu ] * [ %zu x %zu ].T = [ %zu x %zu ]\n", a_r, a_c, b_r, b_c, a_r, b_r);
+	#endif
 
 	#pragma omp parallel for
 	for (size_t i = 0; i < a_r; i++) {
@@ -148,8 +103,8 @@ void NeuralNetwork::dot_prod_t_b(float* a, float* b, float* c, size_t a_r, size_
 
 			__m256 sum = _mm256_setzero_ps();
 			for (; j + 8 <= b_c; j += 8) {
-				const __m256 _a = _mm256_load_ps(&a[i * a_c + j]);
-				const __m256 _b = _mm256_load_ps(&b[k * b_c + j]);
+				const __m256 _a = _mm256_loadu_ps(&a[i * a_c + j]);
+				const __m256 _b = _mm256_loadu_ps(&b[k * b_c + j]);
 
 				sum = _mm256_fmadd_ps(_a, _b, sum);
 			}

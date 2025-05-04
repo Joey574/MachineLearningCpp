@@ -1,22 +1,24 @@
 #include "SingleBlockNeuralNetwork.h"
 
 // loss
-void NeuralNetwork::mae_loss(float* x, float* y, float* c, size_t rows, size_t columns) {
+void NeuralNetwork::mae_loss(float* __restrict x, float* __restrict y, float* __restrict c, size_t rows, size_t columns) {
 	for (size_t i = 0; i < rows * columns; i++) {
 		c[i] = x[i] - y[i];
 	}
 }
-void NeuralNetwork::one_hot_loss(float* x, float* y, float* c, size_t rows, size_t columns) {
-	for (size_t i = 0; i < rows * columns; i++) {
-		c[i] = x[i];
-	}
+void NeuralNetwork::one_hot_loss(float* __restrict x, float* __restrict y, float* __restrict c, size_t rows, size_t columns) {
+	#if LOGLM
+		printf("Loss aplied [ %zu x %zu ]\n", rows, columns);
+	#endif
+	
+	std::memcpy(c, x, rows * columns * sizeof(float));
 	for (size_t i = 0; i < columns; i++) {
 		c[(int)y[i] * columns + i]--;
 	}
 }
 
 // score
-float NeuralNetwork::mae_score(float* x, float* y, size_t rows, size_t columns) {
+float NeuralNetwork::mae_score(float* __restrict x, float* __restrict y, size_t rows, size_t columns) {
 	float err = 0.0f;
 
 	for (size_t i = 0; i < rows * columns; i++) {
@@ -25,7 +27,7 @@ float NeuralNetwork::mae_score(float* x, float* y, size_t rows, size_t columns) 
 
 	return err / (float)columns;
 }
-float NeuralNetwork::accuracy_score(float* x, float* y, size_t rows, size_t columns) {
+float NeuralNetwork::accuracy_score(float* __restrict x, float* __restrict y, size_t rows, size_t columns) {
 	size_t correct = 0;
 
 	for (size_t i = 0; i < columns; i++) {

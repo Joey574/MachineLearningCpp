@@ -269,7 +269,7 @@ std::string NeuralNetwork::test_network(float* x, float* y, size_t test_size, hi
 	return "score: " + std::to_string(score);
 }
 
-void NeuralNetwork::forward_prop(float* x_data, float* result_data, size_t activation_size, size_t num_elements) {
+void NeuralNetwork::forward_prop(float* __restrict x_data, float* __restrict result_data, size_t activation_size, size_t num_elements) {
 
 	int weight_idx = 0;
 	int bias_idx = 0;
@@ -308,7 +308,7 @@ void NeuralNetwork::forward_prop(float* x_data, float* result_data, size_t activ
 		input_idx += i == 0 ? 0 : (m_dimensions[i] * num_elements);
 	}
 }
-void NeuralNetwork::back_prop(float* x_data, float* y_data, float learning_rate, size_t num_elements) {
+void NeuralNetwork::back_prop(float* __restrict x_data, float* __restrict y_data, float learning_rate, size_t num_elements) {
 
 	const float factor = learning_rate / (float)num_elements;
 	const __m256 _factor = _mm256_set1_ps(factor);

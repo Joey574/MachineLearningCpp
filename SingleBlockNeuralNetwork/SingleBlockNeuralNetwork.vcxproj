@@ -132,6 +132,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <IntelJCCErratum>true</IntelJCCErratum>
       <AdditionalOptions>-openmp:llvm %(AdditionalOptions)</AdditionalOptions>
+      <OmitFramePointers>true</OmitFramePointers>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

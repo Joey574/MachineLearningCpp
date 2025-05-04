@@ -8,6 +8,9 @@
 
 #include "Matrix.h"
 
+#define LOGDP 0
+#define LOGLM 0
+
 class NeuralNetwork {
 public:
 
@@ -166,15 +169,15 @@ private:
 	void data_preprocess(Matrix& x_train, Matrix& y_train, Matrix& x_valid, Matrix& y_valid, float validation_split, bool shuffle);
 
 	void forward_prop(
-		float* x_data,
-		float* result_data,
+		float* __restrict x_data,
+		float* __restrict result_data,
 		size_t activation_size,
 		size_t num_elements
 	);
 
 	void back_prop(
-		float* x_data,
-		float* y_data,
+		float* __restrict x_data,
+		float* __restrict y_data,
 		float learning_rate,
 		size_t num_elements
 	);
@@ -188,34 +191,34 @@ private:
 
 
 	// dot prods
-	void dot_prod(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear);
-	void dot_prod_t_a(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear);
-	void dot_prod_t_b(float* a, float* b, float* c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear);
+	void dot_prod(float* __restrict a, float* __restrict b, float* __restrict c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear);
+	void dot_prod_t_a(float* __restrict a, float* __restrict b, float* __restrict c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear);
+	void dot_prod_t_b(float* __restrict a, float* __restrict b, float* __restrict c, size_t a_r, size_t a_c, size_t b_r, size_t b_c, bool clear);
 
 	// mem init
 	void initialize_batch_data(size_t batch_size);
 	void initialize_test_data(size_t test_size);
 
 	// activation functions
-	void relu(float* x, float* y, size_t size);
-	void leaky_relu(float* x, float* y, size_t size);
-	void elu(float* x, float* y, size_t size);
-	void sigmoid(float* x, float* y, size_t size);
-	void softmax(float* x, float* y, size_t size);
+	void relu(float* __restrict x, float* __restrict y, size_t size);
+	void leaky_relu(float* __restrict x, float* __restrict y, size_t size);
+	void elu(float* __restrict x, float* __restrict y, size_t size);
+	void sigmoid(float* __restrict x, float* __restrict y, size_t size);
+	void softmax(float* __restrict x, float* __restrict y, size_t size);
 
 	// activation derivatives
-	void relu_derivative(float* x, float* y, size_t size);
-	void leaky_relu_derivative(float* x, float* y, size_t size);
-	void elu_derivative(float* x, float* y, size_t size);
-	void sigmoid_derivative(float* x, float* y, size_t size);
+	void relu_derivative(float* __restrict x, float* __restrict y, size_t size);
+	void leaky_relu_derivative(float* __restrict x, float* __restrict y, size_t size);
+	void elu_derivative(float* __restrict x, float* __restrict y, size_t size);
+	void sigmoid_derivative(float* __restrict x, float* __restrict y, size_t size);
 
 	// score
-	float mae_score(float* x, float* y, size_t rows, size_t columns);
-	float accuracy_score(float* x, float* y, size_t rows, size_t columns);
+	float mae_score(float* __restrict x, float* __restrict y, size_t rows, size_t columns);
+	float accuracy_score(float* __restrict x, float* __restrict y, size_t rows, size_t columns);
 
 	// loss
-	void mae_loss(float* x, float* y, float* c, size_t rows, size_t columns);
-	void one_hot_loss(float* x, float* y, float* c, size_t rows, size_t columns);
+	void mae_loss(float* __restrict x, float* __restrict y, float* __restrict c, size_t rows, size_t columns);
+	void one_hot_loss(float* __restrict x, float* __restrict y, float* __restrict c, size_t rows, size_t columns);
 
 	std::string clean_time(double time);
 };
